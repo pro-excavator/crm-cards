@@ -1,588 +1,876 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>EMP PARTS - Digital Business Card</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能识别系统 - 名片与产品管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- Firebase SDK - 仅用于 Firestore 文本数据同步 -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            background: #111;
-            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-        }
-
-        .card {
-            width: 100%;
-            max-width: 430px;
-            background: #141414;
-            min-height: 100vh;
-        }
-
-        /* ── COVER ── */
-        .cover-area {
-            width: 100%;
-            height: 130px;
-            overflow: hidden;
-            background: #1a2a38;
-            position: relative;
-        }
-        .cover-image {
-            width: 100%; height: 100%;
-            object-fit: cover; object-position: center;
-            display: block;
-        }
-        .cover-overlay {
-            position: absolute; inset: 0;
-            background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.65));
-        }
-
-        /* ── HEADER AREA ── */
-        .header-area {
-            background: #141414;
-            padding: 0 24px 20px;
-        }
-
-        /* Avatar pulled up over cover with negative margin */
-        .avatar-wrapper {
-            width: 90px; height: 90px;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 3px solid #ff8c42;
-            background: #2a2a2a;
-            box-shadow: 0 4px 18px rgba(255,140,66,0.38);
-            margin-top: -45px;
-            margin-bottom: 12px;
-            position: relative;
-            z-index: 20;
-        }
-        .avatar-wrapper img {
-            width: 100%; height: 100%;
-            object-fit: cover; display: block;
-        }
-        .av-ph {
-            width: 100%; height: 100%;
-            background: #ff8c42;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2rem; color: #fff;
-        }
-
-        .company-badge {
-            display: inline-block;
-            background: rgba(255,140,66,0.12);
-            border: 1px solid rgba(255,140,66,0.35);
-            color: #ff8c42;
-            font-size: 0.65rem; font-weight: 700;
-            letter-spacing: 1.5px; text-transform: uppercase;
-            padding: 5px 14px; border-radius: 20px;
-            margin-bottom: 10px;
-        }
-        .person-name {
-            font-size: clamp(1.7rem, 7vw, 2.2rem);
-            font-weight: 900; color: #fff;
-            line-height: 1.1; margin-bottom: 6px;
-        }
-        .person-title {
-            font-size: clamp(0.82rem, 3.2vw, 0.95rem);
-            color: #ff8c42; font-weight: 700; margin-bottom: 8px;
-        }
-        .tagline-text {
-            font-size: clamp(0.75rem, 2.8vw, 0.84rem);
-            color: rgba(255,255,255,0.4);
-            line-height: 1.55; margin-bottom: 12px;
-        }
-
-        /* Address in header */
-        .header-address {
-            display: flex; align-items: flex-start; gap: 8px;
-            margin-bottom: 12px;
-        }
-        .header-address i {
-            color: #ff8c42; font-size: 0.8rem;
-            margin-top: 2px; flex-shrink: 0;
-        }
-        .header-address span {
-            font-size: 0.78rem;
-            color: rgba(255,255,255,0.45);
-            line-height: 1.5;
-        }
-
-        .badge-strip { display: flex; gap: 8px; flex-wrap: wrap; }
-        .badge-pill { font-size: 0.65rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
-        .badge-pill.gold { background: rgba(255,180,0,0.1); color: #ffb400; border: 1px solid rgba(255,180,0,0.22); }
-        .badge-pill.blue { background: rgba(33,150,243,0.1); color: #64b5f6; border: 1px solid rgba(33,150,243,0.2); }
-
-        /* ── DIVIDER ── */
-        .divider { height: 1px; background: rgba(255,255,255,0.07); margin: 0 24px; }
-
-        /* ── CONTACT ROWS — no labels, compact ── */
-        .contact-section { padding: 0 24px; }
-
-        .contact-row {
-            display: flex; align-items: center; gap: 14px;
-            padding: 11px 0;   /* tighter than before */
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            text-decoration: none;
-            transition: opacity 0.15s;
-        }
-        .contact-row:last-child { border-bottom: none; }
-        .contact-row:hover { opacity: 0.8; }
-        .contact-row:hover .ci { background: #ff8c42; border-color: #ff8c42; }
-        .contact-row:hover .ci i { color: #fff; }
-
-        .ci {
-            width: 40px; height: 40px; border-radius: 50%;
-            background: rgba(255,140,66,0.1);
-            border: 1px solid rgba(255,140,66,0.22);
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; transition: all 0.2s;
-        }
-        .ci i { font-size: 0.95rem; color: #ff8c42; transition: color 0.2s; }
-
-        /* Value only — no label */
-        .c-value {
-            flex: 1;
-            font-size: 0.92rem; color: rgba(255,255,255,0.88);
-            font-weight: 600;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
-        .c-arrow { color: rgba(255,255,255,0.16); font-size: 0.7rem; flex-shrink: 0; }
-
-        /* Phone + WhatsApp combined */
-        .phone-wa-row {
-            display: flex; align-items: center; gap: 14px;
-            padding: 11px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        .ci-phone {
-            width: 40px; height: 40px; border-radius: 50%;
-            background: rgba(255,140,66,0.1);
-            border: 1px solid rgba(255,140,66,0.22);
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-        }
-        .ci-phone i { font-size: 0.95rem; color: #ff8c42; }
-        .phone-wa-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .phone-num {
-            font-size: 0.92rem; color: rgba(255,255,255,0.88);
-            font-weight: 600; text-decoration: none;
-        }
-        .phone-num:hover { color: #ff8c42; }
-        .wa-chip {
-            display: inline-flex; align-items: center; gap: 5px;
-            background: rgba(37,211,102,0.12);
-            border: 1px solid rgba(37,211,102,0.28);
-            color: #25d366;
-            padding: 3px 10px; border-radius: 20px;
-            font-size: 0.68rem; font-weight: 700;
-            text-decoration: none; transition: background 0.2s;
-        }
-        .wa-chip:hover { background: rgba(37,211,102,0.22); }
-        .wa-chip i { font-size: 0.75rem; }
-
-        /* ── SECTION BLOCK ── */
-        .sec { padding: 20px 24px 0; }
-        .sec-heading {
-            font-size: 0.6rem; font-weight: 700;
-            letter-spacing: 2.5px; text-transform: uppercase;
-            color: rgba(255,255,255,0.28);
-            display: flex; align-items: center; gap: 12px;
-            margin-bottom: 14px;
-        }
-        .sec-heading::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.07); }
-
-        /* ── SOCIAL ── */
-        .social-grid { display: flex; gap: 8px; flex-wrap: wrap; }
-        .social-btn {
-            display: flex; align-items: center; gap: 7px;
-            padding: 9px 16px; border-radius: 40px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.09);
-            text-decoration: none; transition: all 0.2s;
-            font-size: 0.78rem; font-weight: 600;
-            color: rgba(255,255,255,0.72);
-        }
-        .social-btn i { font-size: 0.95rem; }
-        .social-btn:hover { background: rgba(255,140,66,0.1); border-color: rgba(255,140,66,0.3); color: #ff8c42; }
-
-        /* ── PRODUCTS — full width each, stacked ── */
-        .products-list { display: flex; flex-direction: column; gap: 12px; }
-        .product-item {
-            background: #1e1e1e;
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.07);
-        }
-        .product-item img {
-            width: 100%;
-            height: auto;
-            display: block;
-            background: #1e1e1e;
-        }
-        .product-item-name {
-            font-size: 0.82rem;
-            padding: 10px 14px 12px;
-            color: rgba(255,255,255,0.75);
-            font-weight: 600;
-            line-height: 1.35;
-        }
-
-        /* ── PDF ── */
-        .pdf-list { display: flex; flex-direction: column; gap: 10px; }
-        .pdf-item {
-            display: flex; align-items: center; gap: 14px;
-            padding: 13px 15px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px; text-decoration: none; transition: all 0.2s;
-        }
-        .pdf-item:hover { background: rgba(255,140,66,0.08); border-color: rgba(255,140,66,0.28); }
-        .pdf-icon {
-            width: 38px; height: 38px; border-radius: 10px;
-            background: rgba(255,140,66,0.12);
-            display: flex; align-items: center; justify-content: center;
-            color: #ff8c42; font-size: 1rem; flex-shrink: 0;
-        }
-        .pdf-name { flex: 1; font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.82); }
-        .pdf-arrow { color: rgba(255,255,255,0.22); font-size: 0.75rem; }
-
-        /* ── CUSTOM ── */
-        .custom-item {
-            display: flex; align-items: center; gap: 14px;
-            padding: 13px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        .custom-item:last-child { border-bottom: none; }
-        .custom-icon-box {
-            width: 40px; height: 40px; border-radius: 10px;
-            background: rgba(255,255,255,0.05);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.1rem; flex-shrink: 0;
-        }
-        .c-ttl { font-size: 0.6rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px; }
-        .c-val { font-size: 0.85rem; color: rgba(255,255,255,0.82); font-weight: 500; word-break: break-all; }
-        a.c-val { color: #ff8c42; text-decoration: none; }
-
-        /* ── QR ── */
-        .qr-box {
-            text-align: center; padding: 22px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 18px;
-        }
-        .qr-label { font-size: 0.62rem; color: rgba(255,255,255,0.28); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px; }
-        #qrcode { display: flex; justify-content: center; }
-        #qrcode canvas, #qrcode img { border-radius: 8px; }
-
-        /* ── BUTTONS ── */
-        .action-buttons { display: flex; gap: 12px; padding: 20px 24px 30px; }
-        .btn {
-            flex: 1; padding: 15px 8px; border-radius: 40px;
-            font-weight: 700; font-size: 0.85rem;
-            cursor: pointer; border: none;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: all 0.2s;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #ff8c42, #ff6020);
-            color: #fff; box-shadow: 0 4px 16px rgba(255,140,66,0.38);
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(255,140,66,0.5); }
-        .btn-outline {
-            background: rgba(255,255,255,0.05);
-            border: 1.5px solid rgba(255,140,66,0.45);
-            color: #ff8c42;
-        }
-        .btn-outline:hover { background: rgba(255,140,66,0.1); transform: translateY(-2px); }
-
-        /* ── FOOTER ── */
-        .footer {
-            text-align: center; font-size: 0.58rem;
-            color: rgba(255,255,255,0.18);
-            padding: 14px 24px 28px;
-            border-top: 1px solid rgba(255,255,255,0.06);
-            line-height: 1.8;
-        }
-        .admin-link { color: rgba(255,255,255,0.18); text-decoration: none; }
-        .admin-link:hover { color: #ff8c42; }
+        body{font-family:'Segoe UI',Roboto,sans-serif;background:#f3f4f6}
+        .drop-zone{transition:all 0.3s ease;border:2px dashed #cbd5e1;min-height:160px}
+        .drop-zone.active{border-color:#3b82f6;background:#eff6ff}
+        .kanban-col{min-height:400px;max-height:calc(100vh - 280px);overflow-y:auto}
+        .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+        .toast{min-width:250px;padding:12px 16px;border-radius:6px;color:white;box-shadow:0 4px 6px rgba(0,0,0,0.1);animation:slideIn 0.3s ease-out;display:flex;align-items:center}
+        @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+        .loader{border:3px solid #f3f3f3;border-radius:50%;border-top:3px solid #3498db;width:20px;height:20px;animation:spin 1s linear infinite;display:inline-block}
+        @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+        .debug-area{background:#1e1e1e;color:#d4d4d4;padding:12px;font-family:monospace;font-size:12px;max-height:200px;overflow:auto;white-space:pre-wrap;border-radius:8px;margin-top:16px}
+        .login-container{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
+        .login-box{background:white;border-radius:16px;padding:40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+        .nav-btn.active{background-color:#dbeafe;color:#1d4ed8}
+        .hidden{display:none}
+        .github-status-badge{position:fixed;bottom:20px;right:20px;background:#24292e;color:white;padding:6px 12px;border-radius:20px;font-size:12px;z-index:100}
+        .whatsapp-btn{display:inline-flex;align-items:center;gap:4px;background:#25D366;color:white;padding:4px 10px;border-radius:20px;font-size:11px;text-decoration:none;border:none;cursor:pointer}
+        .whatsapp-btn:hover{background:#128C7E}
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:50;align-items:center;justify-content:center;padding:20px}
+        .modal-overlay.active{display:flex}
+        .modal-content{background:white;border-radius:12px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+        .card-dragging{opacity:0.5}
     </style>
 </head>
 <body>
-<div class="card" id="card"></div>
 
-<script>
-    let cardData = {};
-
-    async function loadData() {
-        try {
-            const r = await fetch('data/config.json?v=' + Date.now());
-            if (r.ok) cardData = await r.json();
-        } catch(e) { console.error(e); }
-        renderCard();
-    }
-
-    function esc(s) {
-        if (!s) return '';
-        return String(s).replace(/[&<>"']/g, m =>
-            ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
-    }
-    function fmtWeb(u) { return (u||'').replace(/^https?:\/\//,'').replace(/\/$/,''); }
-
-    function renderCard() {
-        const d = cardData;
-        const wechatQrSrc = d.wechatQr || 'images/wechat-qr.jpg';
-        const wechatId = d.wechat || 'empparts';
-
-        /* Cover */
-        const coverHtml = d.coverImage
-            ? `<img class="cover-image" src="${esc(d.coverImage)}" onerror="this.style.display='none'">`
-            : `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a3a4a,#0a1e2e)"></div>`;
-
-        /* Avatar */
-        const avatarHtml = `<div class="avatar-wrapper">
-            ${d.avatar
-                ? `<img src="${esc(d.avatar)}" alt="avatar" onerror="this.style.display='none';this.nextSibling.style.display='flex'">
-                   <div class="av-ph" style="display:none">👤</div>`
-                : `<div class="av-ph">👤</div>`}
-        </div>`;
-
-        /* Badges */
-        const badgesHtml = (d.badgeText||d.badgeSubText) ? `<div class="badge-strip" style="margin-top:12px;">
-            ${d.badgeText    ? `<span class="badge-pill gold">🏆 ${esc(d.badgeText)}</span>` : ''}
-            ${d.badgeSubText ? `<span class="badge-pill blue">${esc(d.badgeSubText)}</span>` : ''}
-        </div>` : '';
-
-
-
-        /* Company name row above phone */
-        const companyRowHtml = d.companyName ? `
-        <div class="phone-wa-row" style="border-bottom:1px solid rgba(255,255,255,0.06);">
-            <div class="ci-phone"><i class="fas fa-building"></i></div>
-            <div class="phone-wa-info">
-                <span class="phone-num" style="font-size:1rem;color:rgba(255,255,255,0.95);">${esc(d.companyName)}</span>
+<!-- 登录页面 -->
+<div id="login-page" class="login-container">
+    <div class="login-box">
+        <div class="text-center mb-8">
+            <i class="fas fa-address-card text-5xl text-indigo-600 mb-4"></i>
+            <h1 class="text-2xl font-bold text-gray-900">智能识别系统</h1>
+            <p class="text-gray-500 mt-2">名片 + 产品信息管理 | Firestore云端同步 + GitHub图片存储</p>
+        </div>
+        <div id="password-login-section">
+            <div class="space-y-4">
+                <div><label class="block text-sm font-medium text-gray-700 mb-1">访问密码</label><input type="password" id="login-password" class="w-full border p-2.5 rounded-lg" placeholder="请输入访问密码"></div>
+                <button id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium"><i class="fas fa-lock-open mr-2"></i> 登录系统</button>
+                <p class="text-xs text-gray-500 text-center" id="password-hint"></p>
             </div>
-        </div>` : '';
-
-
-        const wechatRowHtml = `
-        <div class="contact-row" style="cursor:default;">
-            <div class="ci" style="background:rgba(7,193,96,0.1);border-color:rgba(7,193,96,0.25);">
-                <i class="fab fa-weixin" style="color:#07C160;"></i>
+            <div class="mt-4 text-center"><button id="btn-show-set-password" class="text-sm text-indigo-600 hover:text-indigo-800"><i class="fas fa-cog mr-1"></i> 首次使用？设置密码</button></div>
+        </div>
+        <div id="set-password-section" class="hidden mt-6 border-t pt-4">
+            <h3 class="text-lg font-medium mb-3">设置访问密码</h3>
+            <div class="space-y-3">
+                <div><label class="block text-sm font-medium">新密码（至少6位）</label><input type="password" id="new-password" class="w-full border p-2.5 rounded-lg" minlength="6"></div>
+                <div><label class="block text-sm font-medium">确认密码</label><input type="password" id="confirm-password" class="w-full border p-2.5 rounded-lg"></div>
+                <div><label class="block text-sm font-medium">密码提示（可选）</label><input type="text" id="password-hint-input" class="w-full border p-2.5 rounded-lg" placeholder="例如：公司名称"></div>
+                <button id="btn-save-password" class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-medium">保存密码</button>
+                <button id="btn-back-to-login" class="w-full text-gray-500 hover:text-gray-700 py-2">返回登录</button>
             </div>
-            <div class="c-value" style="color:rgba(255,255,255,0.88);">${esc(wechatId)}</div>
-        </div>`;
+        </div>
+    </div>
+</div>
 
-        /* Phone + WhatsApp row */
-        const phoneWaHtml = (d.phone || d.whatsapp) ? `
-        <div class="phone-wa-row">
-            <div class="ci-phone"><i class="fas fa-phone-alt"></i></div>
-            <div class="phone-wa-info">
-                ${d.phone    ? `<a href="tel:${esc(d.phone)}" class="phone-num">${esc(d.phone)}</a>` : ''}
-                ${d.whatsapp ? `<a href="https://wa.me/${d.whatsapp.replace(/\D/g,'')}" target="_blank" class="wa-chip"><i class="fab fa-whatsapp"></i>WhatsApp</a>` : ''}
-            </div>
-        </div>` : '';
+<!-- 主应用 -->
+<div id="main-app" class="hidden h-screen flex flex-col">
+    <div class="toast-container" id="toast-container"></div>
+    <header class="bg-white shadow-sm z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3"><i class="fas fa-address-card text-blue-600 text-2xl"></i><h1 class="text-xl font-bold text-gray-900">OCR识别 + 产品信息管理</h1></div>
+            <nav class="flex gap-4 items-center">
+                <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium bg-blue-100 text-blue-700 active" data-tab="ocr"><i class="fas fa-camera mr-1"></i> 名片识别</button>
+                <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="product"><i class="fas fa-boxes mr-1"></i> 产品识别</button>
+                <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="kanban"><i class="fas fa-columns mr-1"></i> 客户看板</button>
+                <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="settings"><i class="fas fa-cog mr-1"></i> 系统设置</button>
+                <button id="btn-logout" class="px-3 py-2 rounded-md text-sm font-medium text-red-500 hover:bg-red-50"><i class="fas fa-sign-out-alt mr-1"></i> 退出</button>
+            </nav>
+        </div>
+    </header>
 
-        /* Email + Website + Address rows — value only, no label */
-        const addrRowHtml = d.address ? `
-            <div class="contact-row" style="cursor:default;">
-                <div class="ci"><i class="fas fa-map-marker-alt"></i></div>
-                <div class="c-value" style="white-space:normal;font-size:0.85rem;font-weight:500;color:rgba(255,255,255,0.65);">${esc(d.address)}</div>
-            </div>` : '';
-
-        const otherContacts = [
-            d.email   && {href:`mailto:${d.email}`, icon:'fas fa-envelope', val:d.email,           ext:false},
-            d.website && {href:d.website,            icon:'fas fa-globe',   val:fmtWeb(d.website), ext:true},
-        ].filter(Boolean).map(c=>`
-            <a href="${esc(c.href)}" class="contact-row" ${c.ext?'target="_blank"':''}>
-                <div class="ci"><i class="${c.icon}"></i></div>
-                <div class="c-value">${esc(c.val)}</div>
-                <i class="fas fa-chevron-right c-arrow"></i>
-            </a>`).join('') + addrRowHtml;
-
-        /* Social */
-        const socList = [
-            d.instagram && {href:d.instagram, icon:'fab fa-instagram', label:'Instagram', clr:'#E1306C'},
-            d.facebook  && {href:d.facebook,  icon:'fab fa-facebook',  label:'Facebook',  clr:'#1877F2'},
-            d.youtube   && {href:d.youtube,   icon:'fab fa-youtube',   label:'YouTube',   clr:'#FF0000'},
-            d.linkedin  && {href:d.linkedin,  icon:'fab fa-linkedin',  label:'LinkedIn',  clr:'#0A66C2'},
-            d.tiktok    && {href:d.tiktok,    icon:'fab fa-tiktok',    label:'TikTok',    clr:'#fff'},
-            d.twitter   && {href:d.twitter,   icon:'fab fa-twitter',   label:'Twitter',   clr:'#1DA1F2'},
-        ].filter(Boolean);
-
-        const socialHtml = socList.length ? `<div class="sec">
-            <div class="sec-heading">Social Media</div>
-            <div class="social-grid">
-                ${socList.map(s=>`<a href="${esc(s.href)}" target="_blank" class="social-btn">
-                    <i class="${s.icon}" style="color:${s.clr}"></i>${s.label}
-                </a>`).join('')}
-            </div></div>` : '';
-
-        /* Products — full width stacked */
-        const vp = (d.products||[]).filter(p=>p&&p.img);
-        const productsHtml = vp.length ? `<div class="sec">
-            <div class="sec-heading">Products &amp; Brands</div>
-            <div class="products-list">
-                ${vp.map(p=>`<div class="product-item">
-                    <img src="${esc(p.img)}" alt="${esc(p.name)}" onerror="this.style.background='#2a2a2a'">
-                    <div class="product-item-name">${esc(p.name)}</div>
-                </div>`).join('')}
-            </div></div>` : '';
-
-        /* PDFs */
-        const pdfHtml = (d.pdfFiles||[]).length ? `<div class="sec">
-            <div class="sec-heading">Company Brochures</div>
-            <div class="pdf-list">
-                ${d.pdfFiles.map(f=>`<a href="${esc(f.url)}" target="_blank" class="pdf-item">
-                    <div class="pdf-icon"><i class="fas fa-file-pdf"></i></div>
-                    <div class="pdf-name">${esc(f.name)}</div>
-                    <i class="fas fa-external-link-alt pdf-arrow"></i>
-                </a>`).join('')}
-            </div></div>` : '';
-
-        /* Custom */
-        const customHtml = (d.customItems||[]).length ? `<div class="sec">
-            <div class="sec-heading">More Info</div>
-            <div>${d.customItems.map(item=>`
-                <div class="custom-item">
-                    <div class="custom-icon-box">${item.icon||'📌'}</div>
-                    <div style="flex:1;min-width:0;">
-                        <div class="c-ttl">${esc(item.title)}</div>
-                        ${item.link
-                            ? `<a href="${esc(item.link)}" target="_blank" class="c-val">${esc(item.value)}&nbsp;<i class="fas fa-external-link-alt" style="font-size:.58rem;"></i></a>`
-                            : `<div class="c-val">${esc(item.value)}</div>`}
-                    </div>
-                </div>`).join('')}
-            </div></div>` : '';
-
-        /* Assemble */
-        document.getElementById('card').innerHTML = `
-            <div class="cover-area">
-                ${coverHtml}
-                <div class="cover-overlay"></div>
-            </div>
-
-            <div class="header-area">
-                ${avatarHtml}
-                <div class="person-name">${esc(d.name||'')}</div>
-                ${d.title   ? `<div class="person-title">${esc(d.title)}</div>` : ''}
-                ${d.tagline ? `<div class="tagline-text">${esc(d.tagline)}</div>` : ''}
-                ${badgesHtml}
-            </div>
-
-            <div class="divider"></div>
-
-            <div class="contact-section">
-                ${companyRowHtml}
-                ${phoneWaHtml}
-                ${otherContacts}
-                ${wechatRowHtml}
-            </div>
-
-            ${socialHtml}
-            ${productsHtml}
-            ${pdfHtml}
-            ${customHtml}
-
-            <div class="sec" style="margin-bottom:22px;">
-                <div class="sec-heading">Scan to Connect</div>
-                <div style="display:flex;gap:12px;">
-                    <div class="qr-box" style="flex:1;">
-                        <div class="qr-label">📱 Digital Card</div>
-                        <div id="qrcode"></div>
-                    </div>
-                    <div class="qr-box" style="flex:1;">
-                        <div class="qr-label" style="color:#07C160;">
-                            <i class="fab fa-weixin" style="font-size:0.9rem;margin-right:4px;"></i>WeChat
-                        </div>
-                        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
-                            <img src="${wechatQrSrc}" 
-                                 style="width:148px;height:148px;border-radius:8px;object-fit:contain;background:#fff;"
-                                 onerror="this.style.display='none';this.nextSibling.style.display='flex'">
-                            <div style="display:none;width:148px;height:148px;border-radius:8px;background:rgba(7,193,96,0.08);border:1px dashed rgba(7,193,96,0.3);align-items:center;justify-content:center;flex-direction:column;gap:6px;">
-                                <i class="fab fa-weixin" style="font-size:2rem;color:#07C160;"></i>
-                                <span style="font-size:0.62rem;color:rgba(255,255,255,0.4);">Upload QR in Admin</span>
+    <main class="flex-1 overflow-hidden relative">
+        <!-- 名片识别页面 -->
+        <section class="absolute inset-0 overflow-y-auto p-6 bg-gray-50" id="section-ocr">
+            <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h2 class="text-lg font-semibold mb-4"><i class="fas fa-upload mr-2 text-blue-500"></i> 上传名片</h2>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">名片正面 *</label>
+                        <div class="drop-zone rounded-lg flex flex-col items-center justify-center cursor-pointer bg-gray-50 relative" id="drop-zone-front">
+                            <input accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-input-front" type="file">
+                            <div class="text-center p-4" id="upload-placeholder-front">
+                                <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-1"></i>
+                                <p class="text-gray-500 text-sm">点击或拖拽正面图片</p>
                             </div>
-                            <div style="font-size:0.72rem;color:#07C160;font-weight:700;">
-                                <i class="fab fa-weixin"></i> empparts
+                            <img class="hidden max-h-32 object-contain" id="image-preview-front">
+                        </div>
+                        <div class="flex justify-between mt-1"><span class="text-xs text-gray-500" id="file-name-front">未选择</span><button class="text-xs text-red-500 hidden" id="btn-clear-front">清除</button></div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">名片背面 (可选)</label>
+                        <div class="drop-zone rounded-lg flex flex-col items-center justify-center cursor-pointer bg-gray-50 relative" id="drop-zone-back">
+                            <input accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-input-back" type="file">
+                            <div class="text-center p-4" id="upload-placeholder-back">
+                                <i class="fas fa-plus-circle text-3xl text-gray-400 mb-1"></i>
+                                <p class="text-gray-500 text-sm">点击或拖拽背面图片</p>
+                            </div>
+                            <img class="hidden max-h-32 object-contain" id="image-preview-back">
+                        </div>
+                        <div class="flex justify-between mt-1"><span class="text-xs text-gray-500" id="file-name-back">未选择</span><button class="text-xs text-red-500 hidden" id="btn-clear-back">清除</button></div>
+                    </div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs text-gray-400">自动压缩至500KB</span>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50 flex items-center" disabled id="btn-recognize">
+                            <span>开始识别</span>
+                            <div class="loader ml-2 hidden" id="btn-loader"></div>
+                        </button>
+                    </div>
+                    <details open>
+                        <summary class="text-xs text-gray-500 cursor-pointer mb-2">🔍 原始识别结果</summary>
+                        <div class="debug-area mt-2" id="debug-ocr-text">等待识别...</div>
+                    </details>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold"><i class="fas fa-user-edit mr-2 text-green-500"></i> 客户信息</h2>
+                        <div class="flex gap-2">
+                            <span class="text-xs bg-gray-100 px-2 py-1 rounded" id="edit-mode-indicator">新增模式</span>
+                            <button class="text-xs text-blue-600 hidden" id="btn-cancel-edit">取消编辑</button>
+                        </div>
+                    </div>
+                    <form id="customer-form">
+                        <input type="hidden" id="cust-id">
+                        <div class="space-y-3">
+                            <div><label>姓名 *</label><input type="text" id="cust-name" class="w-full border p-2 rounded" required></div>
+                            <div><label>公司</label><input type="text" id="cust-company" class="w-full border p-2 rounded"></div>
+                            <div><label>职位</label><input type="text" id="cust-position" class="w-full border p-2 rounded"></div>
+                            <div><label>电话</label><input type="tel" id="cust-phone" class="w-full border p-2 rounded"></div>
+                            <div><label>邮箱</label><input type="email" id="cust-email" class="w-full border p-2 rounded"></div>
+                            <div><label>国家</label><input type="text" id="cust-country" list="country-list" class="w-full border p-2 rounded"><datalist id="country-list"><option>中国</option><option>美国</option><option>日本</option><option>德国</option></datalist></div>
+                            <div><label>备注</label><textarea id="cust-notes" rows="2" class="w-full border p-2 rounded"></textarea></div>
+                            <div class="flex gap-2">
+                                <button type="submit" class="flex-1 bg-green-600 text-white py-2 rounded">保存客户</button>
+                                <button type="button" id="btn-whatsapp-from-form" class="bg-green-500 text-white px-4 py-2 rounded whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp</button>
                             </div>
                         </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- 产品识别页面 -->
+        <section class="absolute inset-0 overflow-y-auto p-6 bg-gray-50 hidden" id="section-product">
+            <div class="max-w-7xl mx-auto">
+                <div class="bg-white p-6 rounded-xl shadow-sm mb-6">
+                    <h2 class="text-xl font-bold mb-4"><i class="fas fa-microchip text-purple-500 mr-2"></i> 产品信息智能识别</h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 transition" id="product-dropzone">
+                            <input type="file" id="product-image-input" accept="image/*" class="hidden">
+                            <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
+                            <p class="text-gray-600">点击或拖拽产品图片/表格截图</p>
+                            <p class="text-xs text-gray-400 mt-1">支持识别品牌、型号、零件号等</p>
+                            <img id="product-preview" class="hidden mt-3 max-h-40 mx-auto rounded border">
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex justify-between items-center mb-3">
+                                <h3 class="font-semibold"><i class="fas fa-list-ul"></i> 识别结果</h3>
+                                <button id="clear-product-form" class="text-red-500 text-sm">清空</button>
+                            </div>
+                            <form id="product-form" class="space-y-3">
+                                <input type="hidden" id="product-id">
+                                <div><label>品牌</label><input type="text" id="product-brand" class="w-full border p-2 rounded" placeholder="如 DOOSAN, HITACHI"></div>
+                                <div><label>产品类型/品名</label><input type="text" id="product-type" class="w-full border p-2 rounded" placeholder="回转机构总成"></div>
+                                <div><label>型号</label><input type="text" id="product-model" class="w-full border p-2 rounded" placeholder="PC160LC-8"></div>
+                                <div><label>零件号</label><input type="text" id="product-partno" class="w-full border p-2 rounded" placeholder="401-00356A"></div>
+                                <div><label>序列号</label><input type="text" id="product-serial" class="w-full border p-2 rounded" placeholder="830269"></div>
+                                <div><label>备注</label><textarea id="product-notes" rows="2" class="w-full border p-2 rounded"></textarea></div>
+                                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded">保存产品</button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex gap-3 justify-end">
+                        <button id="export-products-excel" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"><i class="fas fa-file-excel"></i> 导出产品Excel</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="px-6 py-3 bg-gray-100 border-b font-semibold">📦 产品信息库</div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead class="bg-gray-50"><tr><th class="px-4 py-2">品牌</th><th>品名</th><th>型号</th><th>零件号</th><th>序列号</th><th>操作</th></tr></thead>
+                            <tbody id="product-list-body"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
+        </section>
 
-            <div class="action-buttons">
-                <button class="btn btn-primary" id="saveContactBtn">
-                    <i class="fas fa-user-plus"></i> Save Contact
-                </button>
-                <button class="btn btn-outline" id="shareCardBtn">
-                    <i class="fas fa-share-alt"></i> Share Card
-                </button>
+        <!-- 客户看板 -->
+        <section class="absolute inset-0 overflow-hidden flex flex-col bg-gray-50 hidden" id="section-kanban">
+            <div class="p-4 bg-white border-b">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-bold">客户沟通进度</h2>
+                    <div>共 <span id="total-customers">0</span> 位客户</div>
+                </div>
+                <div class="flex flex-wrap gap-4">
+                    <input type="text" id="search-input" placeholder="🔍 搜索姓名/公司/电话..." class="border p-2 rounded w-64">
+                    <input type="text" id="country-filter" placeholder="国家筛选" class="border p-2 rounded w-40">
+                    <button id="reset-filter" class="bg-gray-200 px-3 py-2 rounded hover:bg-gray-300">重置</button>
+                </div>
             </div>
+            <div class="flex-1 overflow-x-auto p-4">
+                <div class="flex gap-4 h-full min-w-max">
+                    <div class="w-80 flex flex-col bg-gray-100 rounded" data-status="potential"><div class="p-3 bg-gray-200 font-semibold">潜在客户 <span class="count-badge bg-gray-300 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 overflow-y-auto kanban-col space-y-3" id="col-potential"></div></div>
+                    <div class="w-80 flex flex-col bg-yellow-50 rounded" data-status="contacted"><div class="p-3 bg-yellow-100 font-semibold">已联系 <span class="count-badge bg-yellow-200 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 overflow-y-auto kanban-col space-y-3" id="col-contacted"></div></div>
+                    <div class="w-80 flex flex-col bg-blue-50 rounded" data-status="followed_up"><div class="p-3 bg-blue-100 font-semibold">已跟进 <span class="count-badge bg-blue-200 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 overflow-y-auto kanban-col space-y-3" id="col-followed_up"></div></div>
+                    <div class="w-80 flex flex-col bg-green-50 rounded" data-status="closed"><div class="p-3 bg-green-100 font-semibold">已成交 <span class="count-badge bg-green-200 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 overflow-y-auto kanban-col space-y-3" id="col-closed"></div></div>
+                    <div class="w-80 flex flex-col bg-red-50 rounded" data-status="lost"><div class="p-3 bg-red-100 font-semibold">已丢失 <span class="count-badge bg-red-200 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 overflow-y-auto kanban-col space-y-3" id="col-lost"></div></div>
+                </div>
+            </div>
+        </section>
 
-            <div class="footer">
-                EMP PARTS CO., LTD. &nbsp;·&nbsp; Trusted Partner Since 2002<br>
-                <a href="admin.html" class="admin-link">🔐 Admin</a>
-            </div>`;
+        <!-- 系统设置 -->
+        <section class="absolute inset-0 overflow-y-auto p-6 bg-gray-50 hidden" id="section-settings">
+            <div class="max-w-2xl mx-auto space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h2 class="text-lg font-semibold border-b pb-2"><i class="fas fa-database text-blue-500 mr-2"></i> Firestore 云同步</h2>
+                    <p class="text-sm text-gray-600 mt-2">客户和产品文本数据自动同步到Firestore，跨设备访问</p>
+                    <div class="mt-3"><textarea id="firebase-config-area" rows="4" class="w-full border p-2 font-mono text-sm" placeholder='{"apiKey":"xxx","authDomain":"xxx","projectId":"xxx","messagingSenderId":"xxx","appId":"xxx"}'></textarea></div>
+                    <button id="init-firebase-btn" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded"><i class="fas fa-cloud-upload-alt"></i> 连接Firestore</button>
+                    <div id="firebase-status" class="text-sm text-green-600 hidden mt-2"><i class="fas fa-check-circle"></i> 已连接云端</div>
+                </div>
 
-        /* QR */
-        const qrDiv = document.getElementById('qrcode');
-        if (qrDiv) {
-            qrDiv.innerHTML = '';
-            new QRCode(qrDiv, {
-                text: window.location.href,
-                width: 148, height: 148,
-                colorDark: '#ffffff', colorLight: '#141414'
-            });
-        }
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h2 class="text-lg font-semibold border-b pb-2"><i class="fab fa-github text-gray-800 mr-2"></i> GitHub 图片存储</h2>
+                    <p class="text-sm text-gray-600 mt-2">名片图片上传到GitHub仓库，永久保存</p>
+                    <div class="space-y-3 mt-3">
+                        <div><label>GitHub Token</label><input type="password" id="github-token" class="w-full border p-2 rounded" placeholder="ghp_xxxxxx"></div>
+                        <div><label>GitHub 用户名</label><input type="text" id="github-username" class="w-full border p-2 rounded" placeholder="your-username"></div>
+                        <div><label>仓库名</label><input type="text" id="github-repo" class="w-full border p-2 rounded" placeholder="crm-images"></div>
+                        <button id="save-github-config" class="w-full bg-gray-800 text-white py-2 rounded"><i class="fab fa-github"></i> 启用GitHub存储</button>
+                        <div id="github-status" class="text-xs text-center hidden"></div>
+                    </div>
+                </div>
 
-        document.getElementById('saveContactBtn')?.addEventListener('click', saveContact);
-        document.getElementById('shareCardBtn')?.addEventListener('click', shareCard);
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h2 class="text-lg font-semibold border-b pb-2"><i class="fas fa-key mr-2"></i> API & 安全</h2>
+                    <div><label>通义千问 API Key</label><input id="api-key-input" class="w-full border p-2 rounded" type="password" placeholder="sk-..."></div>
+                    <button id="save-api-key-btn" class="mt-2 bg-gray-800 text-white px-4 py-2 rounded">保存</button>
+                    <div class="mt-3"><label>修改访问密码</label><input type="password" id="change-password-input" class="w-full border p-2 rounded mt-1"><button id="change-password-btn" class="mt-2 bg-indigo-600 text-white px-3 py-1 rounded">修改密码</button></div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h2 class="text-lg font-semibold border-b pb-2">数据管理</h2>
+                    <div class="flex gap-4"><button id="export-customers-excel" class="bg-green-600 text-white px-3 py-2 rounded">导出客户Excel</button><button id="clear-all-data" class="bg-red-600 text-white px-3 py-2 rounded">清空数据</button></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 沟通记录模态框 -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4" id="log-modal">
+        <div class="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between"><h3 class="text-lg font-bold">沟通记录</h3><button id="close-log-modal" class="text-gray-400 hover:text-gray-600">&times;</button></div>
+            <div class="p-4 flex-1 overflow-y-auto bg-gray-50">
+                <div class="space-y-4 mb-6" id="log-history"></div>
+                <form id="log-form" class="bg-white p-4 rounded border">
+                    <input type="hidden" id="log-customer-id">
+                    <div class="mb-3"><label>时间</label><input type="datetime-local" id="log-time" class="w-full border p-2 rounded"></div>
+                    <div class="mb-3"><label>类型</label><select id="log-type" class="w-full border p-2 rounded"><option value="phone">电话沟通</option><option value="email">邮件沟通</option><option value="online">在线沟通</option><option value="meeting">面谈</option></select></div>
+                    <div class="mb-3"><label>内容</label><textarea id="log-content" rows="2" class="w-full border p-2 rounded" required></textarea></div>
+                    <div class="mb-3"><label>下一步计划</label><input type="text" id="log-next" class="w-full border p-2 rounded"></div>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">添加记录</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="github-status-badge" class="github-status-badge hidden"><i class="fab fa-github"></i> GitHub图片存储已启用</div>
+
+<script>
+// Toast提示
+function showToast(msg, type) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-gray-800'}`;
+    toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'} mr-2"></i>${msg}`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// 全局数据
+let customers = [];
+let products = [];
+let firestoreEnabled = false;
+let db = null;
+let currentImageBlob = null;
+let draggedCustomerId = null;
+let currentSearchKeyword = '';
+let currentCountryFilter = '';
+
+// GitHub配置
+let githubConfig = { enabled: false, token: '', username: '', repo: '' };
+
+function loadGithubConfig() {
+    const saved = localStorage.getItem('crm_github_config');
+    if (saved) {
+        try {
+            githubConfig = JSON.parse(saved);
+            githubConfig.enabled = true;
+            document.getElementById('github-token').value = githubConfig.token || '';
+            document.getElementById('github-username').value = githubConfig.username || '';
+            document.getElementById('github-repo').value = githubConfig.repo || '';
+            document.getElementById('github-status-badge').classList.remove('hidden');
+            document.getElementById('github-status').innerHTML = '<span class="text-green-600">✓ GitHub存储已启用</span>';
+            document.getElementById('github-status').classList.remove('hidden');
+        } catch(e) {}
     }
+}
 
-    /* vCard */
-    function saveContact() {
-        const d = cardData;
-        const ln = (d.name||'').split(' ');
-        const lines = [
-            'BEGIN:VCARD','VERSION:3.0',
-            `FN:${d.name||''}`,
-            `N:${ln.slice(1).join(' ')};${ln[0]};;;`,
-            `ORG:${d.companyName||''}`,
-            `TITLE:${d.title||''}`,
-        ];
-        if (d.phone)    lines.push(`TEL;TYPE=WORK,VOICE:${d.phone}`);
-        if (d.whatsapp) lines.push(`TEL;TYPE=CELL:+${d.whatsapp.replace(/\D/g,'')}`);
-        if (d.email)    lines.push(`EMAIL;TYPE=WORK:${d.email}`);
-        if (d.website)  lines.push(`URL:${d.website}`);
-        if (d.address)  lines.push(`ADR;TYPE=WORK:;;${(d.address||'').replace(/\n/g,', ')};;;;`);
-        if (d.instagram) lines.push(`X-SOCIALPROFILE;type=instagram:${d.instagram}`);
-        if (d.linkedin)  lines.push(`X-SOCIALPROFILE;type=linkedin:${d.linkedin}`);
-        if (d.tagline)   lines.push(`NOTE:${d.tagline}`);
-        lines.push('END:VCARD');
-        const blob = new Blob([lines.join('\r\n')], {type:'text/vcard;charset=utf-8'});
-        const url = URL.createObjectURL(blob);
-        const a = Object.assign(document.createElement('a'),
-            {href:url, download:`${(d.name||'contact').replace(/\s+/g,'_')}.vcf`});
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+function saveGithubConfig() {
+    const token = document.getElementById('github-token').value.trim();
+    const username = document.getElementById('github-username').value.trim();
+    const repo = document.getElementById('github-repo').value.trim();
+    if (!token || !username || !repo) { showToast('请填写完整信息', 'error'); return; }
+    githubConfig = { token, username, repo, enabled: true };
+    localStorage.setItem('crm_github_config', JSON.stringify(githubConfig));
+    document.getElementById('github-status-badge').classList.remove('hidden');
+    document.getElementById('github-status').innerHTML = '<span class="text-green-600">✓ GitHub存储已启用</span>';
+    document.getElementById('github-status').classList.remove('hidden');
+    showToast('GitHub配置已保存，图片将自动上传', 'success');
+}
+
+async function uploadToGitHub(customerId, blob, type = 'card') {
+    if (!githubConfig.enabled) return null;
+    try {
+        const base64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(blob);
+        });
+        const path = `${type}s/${customerId}.jpg`;
+        const apiUrl = `https://api.github.com/repos/${githubConfig.username}/${githubConfig.repo}/contents/${path}`;
+        let sha = null;
+        try {
+            const checkRes = await fetch(apiUrl, { headers: { 'Authorization': `token ${githubConfig.token}` } });
+            if (checkRes.ok) { const fileData = await checkRes.json(); sha = fileData.sha; }
+        } catch(e) {}
+        const response = await fetch(apiUrl, {
+            method: 'PUT',
+            headers: { 'Authorization': `token ${githubConfig.token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: `上传${type}图片 ${customerId}`, content: base64, sha: sha })
+        });
+        if (!response.ok) throw new Error('上传失败');
+        const data = await response.json();
+        return data.content.download_url;
+    } catch(e) { console.error('GitHub上传失败:', e); return null; }
+}
+
+// 本地存储
+function saveCustomersToLocal() { localStorage.setItem('crm_customers', JSON.stringify(customers)); }
+function saveProductsToLocal() { localStorage.setItem('crm_products', JSON.stringify(products)); }
+
+function loadLocalData() {
+    const savedCustomers = localStorage.getItem('crm_customers');
+    if (savedCustomers) customers = JSON.parse(savedCustomers);
+    const savedProducts = localStorage.getItem('crm_products');
+    if (savedProducts) products = JSON.parse(savedProducts);
+    renderKanban();
+    renderProductTable();
+}
+
+// Firestore同步
+async function syncToFirestore() {
+    if (!firestoreEnabled) return;
+    try {
+        for (let c of customers) await db.collection('customers').doc(c.id).set(c);
+        for (let p of products) await db.collection('products').doc(p.id).set(p);
+    } catch(e) { console.warn(e); }
+}
+
+async function loadFromFirestore() {
+    if (!firestoreEnabled) return;
+    try {
+        const custSnap = await db.collection('customers').get();
+        customers = [];
+        custSnap.forEach(d => customers.push({ ...d.data(), id: d.id }));
+        const prodSnap = await db.collection('products').get();
+        products = [];
+        prodSnap.forEach(d => products.push({ ...d.data(), id: d.id }));
+        saveCustomersToLocal(); saveProductsToLocal();
+        renderKanban(); renderProductTable();
+        showToast('已从云端同步数据', 'success');
+    } catch(e) { showToast('同步失败: ' + e.message, 'error'); }
+}
+
+function initFirestore() {
+    const configText = document.getElementById('firebase-config-area').value.trim();
+    if (!configText) { showToast('请输入Firebase配置', 'error'); return; }
+    try {
+        const config = JSON.parse(configText);
+        if (!firebase.apps.length) firebase.initializeApp(config);
+        db = firebase.firestore();
+        firestoreEnabled = true;
+        localStorage.setItem('crm_firebase_config', configText);
+        document.getElementById('firebase-status').classList.remove('hidden');
+        loadFromFirestore();
+        showToast('Firestore连接成功', 'success');
+    } catch(e) { showToast('配置错误: ' + e.message, 'error'); }
+}
+
+// WhatsApp功能
+function openWhatsApp(phone) {
+    if (!phone) { showToast('请先填写手机号', 'error'); return; }
+    let cleanPhone = phone.replace(/[^\d+]/g, '');
+    if (!cleanPhone.startsWith('+')) {
+        if (cleanPhone.startsWith('1') && cleanPhone.length === 11) cleanPhone = '+86' + cleanPhone;
+        else if (cleanPhone.length > 0) cleanPhone = '+' + cleanPhone;
     }
+    window.open(`https://wa.me/${cleanPhone}`, '_blank');
+}
 
-    /* Share */
-    function shareCard() {
-        const d = cardData;
-        if (navigator.share) {
-            navigator.share({title:(d.name||'')+' - Business Card', url:window.location.href});
+function whatsAppFromForm() {
+    const phone = document.getElementById('cust-phone').value;
+    if (!phone) { showToast('请先填写手机号', 'error'); return; }
+    openWhatsApp(phone);
+}
+
+// 保存客户
+async function saveCustomer(e) {
+    e.preventDefault();
+    const id = document.getElementById('cust-id').value || Date.now().toString();
+    let cardImageUrl = null;
+    
+    if (currentImageBlob && githubConfig.enabled) {
+        showToast('正在上传图片到GitHub...', 'info');
+        cardImageUrl = await uploadToGitHub(id, currentImageBlob, 'card');
+        if (cardImageUrl) showToast('图片上传成功', 'success');
+        currentImageBlob = null;
+    }
+    
+    const customer = {
+        id: id,
+        name: document.getElementById('cust-name').value,
+        company: document.getElementById('cust-company').value,
+        position: document.getElementById('cust-position').value,
+        phone: document.getElementById('cust-phone').value,
+        email: document.getElementById('cust-email').value,
+        country: document.getElementById('cust-country').value,
+        notes: document.getElementById('cust-notes').value,
+        cardImage: cardImageUrl,
+        status: 'potential',
+        logs: [],
+        createTime: new Date().toISOString()
+    };
+    
+    const existing = customers.findIndex(c => c.id === id);
+    if (existing !== -1) customers[existing] = customer;
+    else customers.push(customer);
+    
+    saveCustomersToLocal();
+    if (firestoreEnabled) await db.collection('customers').doc(id).set(customer);
+    renderKanban();
+    document.getElementById('customer-form').reset();
+    document.getElementById('cust-id').value = '';
+    document.getElementById('edit-mode-indicator').innerHTML = '新增模式';
+    document.getElementById('btn-cancel-edit').classList.add('hidden');
+    showToast('客户已保存', 'success');
+}
+
+function editCustomer(id) {
+    const c = customers.find(x => x.id === id);
+    if (c) {
+        document.getElementById('cust-id').value = c.id;
+        document.getElementById('cust-name').value = c.name || '';
+        document.getElementById('cust-company').value = c.company || '';
+        document.getElementById('cust-position').value = c.position || '';
+        document.getElementById('cust-phone').value = c.phone || '';
+        document.getElementById('cust-email').value = c.email || '';
+        document.getElementById('cust-country').value = c.country || '';
+        document.getElementById('cust-notes').value = c.notes || '';
+        document.getElementById('edit-mode-indicator').innerHTML = '编辑模式';
+        document.getElementById('btn-cancel-edit').classList.remove('hidden');
+        showToast('已加载客户信息', 'info');
+        switchTab('ocr');
+    }
+}
+
+function cancelEdit() {
+    document.getElementById('customer-form').reset();
+    document.getElementById('cust-id').value = '';
+    document.getElementById('edit-mode-indicator').innerHTML = '新增模式';
+    document.getElementById('btn-cancel-edit').classList.add('hidden');
+}
+
+function deleteCustomer(id) {
+    if (confirm('确定删除吗？')) {
+        customers = customers.filter(c => c.id !== id);
+        saveCustomersToLocal();
+        if (firestoreEnabled) db.collection('customers').doc(id).delete();
+        renderKanban();
+        showToast('已删除', 'success');
+    }
+}
+
+function updateStatus(id, newStatus) {
+    const customer = customers.find(c => c.id === id);
+    if (customer && customer.status !== newStatus) {
+        customer.status = newStatus;
+        saveCustomersToLocal();
+        if (firestoreEnabled) db.collection('customers').doc(id).set(customer);
+        renderKanban();
+        showToast('状态已更新', 'success');
+    }
+}
+
+// 沟通记录
+function openLogModal(id) {
+    const customer = customers.find(c => c.id === id);
+    if (!customer) return;
+    document.getElementById('log-customer-id').value = id;
+    const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('log-time').value = now.toISOString().slice(0, 16);
+    renderLogHistory(customer.logs || []);
+    document.getElementById('log-modal').style.display = 'flex';
+    document.getElementById('log-modal').classList.add('active');
+}
+
+function closeLogModal() {
+    document.getElementById('log-modal').style.display = 'none';
+    document.getElementById('log-modal').classList.remove('active');
+}
+
+function renderLogHistory(logs) {
+    const container = document.getElementById('log-history');
+    if (!logs || !logs.length) { container.innerHTML = '<p class="text-center text-gray-400 py-4">暂无记录</p>'; return; }
+    container.innerHTML = logs.slice().sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).map(l => {
+        const icons = { phone:'fa-phone', email:'fa-envelope', online:'fa-headset', meeting:'fa-users' };
+        return `<div class="bg-white p-3 rounded border text-sm">
+            <div class="flex justify-between"><span class="font-bold"><i class="fas ${icons[l.type] || 'fa-phone'} text-blue-500"></i> ${new Date(l.timestamp).toLocaleString()}</span></div>
+            <p class="mt-1">${escapeHtml(l.content)}</p>
+            ${l.nextStep ? `<div class="mt-2 bg-yellow-50 p-2 rounded text-xs"><i class="fas fa-forward"></i> 计划: ${escapeHtml(l.nextStep)}</div>` : ''}
+        </div>`;
+    }).join('');
+}
+
+function saveLog(e) {
+    e.preventDefault();
+    const id = document.getElementById('log-customer-id').value;
+    const customer = customers.find(c => c.id === id);
+    if (!customer) return;
+    const newLog = {
+        timestamp: document.getElementById('log-time').value || new Date().toISOString(),
+        type: document.getElementById('log-type').value,
+        content: document.getElementById('log-content').value.trim(),
+        nextStep: document.getElementById('log-next').value.trim()
+    };
+    if (!newLog.content) { showToast('请输入内容', 'error'); return; }
+    customer.logs = customer.logs || [];
+    customer.logs.push(newLog);
+    saveCustomersToLocal();
+    if (firestoreEnabled) db.collection('customers').doc(id).set(customer);
+    renderLogHistory(customer.logs);
+    document.getElementById('log-content').value = '';
+    document.getElementById('log-next').value = '';
+    showToast('记录已添加', 'success');
+}
+
+// 保存产品
+async function saveProduct(e) {
+    e.preventDefault();
+    const id = document.getElementById('product-id').value || Date.now().toString();
+    const product = {
+        id: id,
+        brand: document.getElementById('product-brand').value,
+        type: document.getElementById('product-type').value,
+        model: document.getElementById('product-model').value,
+        partNo: document.getElementById('product-partno').value,
+        serial: document.getElementById('product-serial').value,
+        notes: document.getElementById('product-notes').value,
+        createTime: new Date().toISOString()
+    };
+    const existing = products.findIndex(p => p.id === id);
+    if (existing !== -1) products[existing] = product;
+    else products.push(product);
+    saveProductsToLocal();
+    if (firestoreEnabled) await db.collection('products').doc(id).set(product);
+    renderProductTable();
+    document.getElementById('product-form').reset();
+    document.getElementById('product-id').value = '';
+    showToast('产品已保存', 'success');
+}
+
+function deleteProduct(id) {
+    if (confirm('确定删除产品吗？')) {
+        products = products.filter(p => p.id !== id);
+        saveProductsToLocal();
+        if (firestoreEnabled) db.collection('products').doc(id).delete();
+        renderProductTable();
+        showToast('已删除', 'success');
+    }
+}
+
+function renderProductTable() {
+    const tbody = document.getElementById('product-list-body');
+    if (!tbody) return;
+    tbody.innerHTML = products.map(p => `<tr class="border-b hover:bg-gray-50"><td class="px-3 py-2">${escapeHtml(p.brand||'')}</td><td class="px-3 py-2">${escapeHtml(p.type||'')}</td><td class="px-3 py-2">${escapeHtml(p.model||'')}</td><td class="px-3 py-2">${escapeHtml(p.partNo||'')}</td><td class="px-3 py-2">${escapeHtml(p.serial||'')}</td><td class="px-3 py-2"><button onclick="deleteProduct('${p.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+}
+
+function renderKanban() {
+    let filtered = [...customers];
+    if (currentSearchKeyword) {
+        const kw = currentSearchKeyword.toLowerCase();
+        filtered = filtered.filter(c => (c.name && c.name.toLowerCase().includes(kw)) || (c.company && c.company.toLowerCase().includes(kw)) || (c.phone && c.phone.includes(kw)));
+    }
+    if (currentCountryFilter) filtered = filtered.filter(c => c.country === currentCountryFilter);
+    
+    document.getElementById('total-customers').innerHTML = filtered.length;
+    const statuses = ['potential', 'contacted', 'followed_up', 'closed', 'lost'];
+    statuses.forEach(s => {
+        const col = document.getElementById(`col-${s}`);
+        if (col) col.innerHTML = '';
+        const count = filtered.filter(c => c.status === s).length;
+        const badge = document.querySelector(`[data-status="${s}"] .count-badge`);
+        if (badge) badge.innerText = count;
+    });
+    
+    filtered.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'bg-white p-3 rounded shadow-sm border border-gray-200 cursor-move hover:shadow-md relative group mb-3';
+        card.draggable = true;
+        card.setAttribute('data-id', c.id);
+        card.addEventListener('dragstart', e => { draggedCustomerId = c.id; e.dataTransfer.effectAllowed = 'move'; setTimeout(() => card.classList.add('card-dragging'), 0); });
+        card.addEventListener('dragend', () => { card.classList.remove('card-dragging'); draggedCustomerId = null; });
+        
+        const imgHtml = c.cardImage ? `<div class="mb-2"><img src="${c.cardImage}" class="w-full h-20 object-cover rounded cursor-pointer" onclick="window.open('${c.cardImage}','_blank')"></div>` : '';
+        const logsCount = (c.logs || []).length;
+        
+        card.innerHTML = `
+            ${imgHtml}
+            <div class="flex justify-between items-start mb-2">
+                <h4 class="font-bold truncate cursor-pointer hover:text-blue-600" onclick="editCustomer('${c.id}')">${escapeHtml(c.name)}</h4>
+                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="editCustomer('${c.id}')" class="text-blue-500 hover:text-blue-700" title="编辑"><i class="fas fa-edit"></i></button>
+                    <button onclick="openLogModal('${c.id}')" class="text-green-500 hover:text-green-700" title="沟通记录 (${logsCount})"><i class="far fa-comment-dots"></i></button>
+                    <button onclick="deleteCustomer('${c.id}')" class="text-red-400 hover:text-red-600" title="删除"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            </div>
+            <div class="text-xs text-gray-500 space-y-1" onclick="editCustomer('${c.id}')" style="cursor:pointer">
+                ${c.company ? `<div><i class="far fa-building"></i> ${escapeHtml(c.company)}</div>` : ''}
+                ${c.position ? `<div><i class="far fa-id-badge"></i> ${escapeHtml(c.position)}</div>` : ''}
+                ${c.phone ? `<div><i class="fas fa-phone"></i> ${escapeHtml(c.phone)}</div>` : ''}
+                ${c.email ? `<div><i class="fas fa-envelope"></i> ${escapeHtml(c.email)}</div>` : ''}
+                ${c.country ? `<div><i class="fas fa-globe"></i> ${escapeHtml(c.country)}</div>` : ''}
+            </div>
+            <div class="mt-2 pt-2 border-t flex justify-between items-center">
+                <span class="text-[10px] text-gray-400">${new Date(c.createTime).toLocaleDateString()}</span>
+                <div class="flex gap-2">
+                    ${c.phone ? `<button onclick="openWhatsApp('${c.phone.replace(/'/g, "\\'")}')" class="whatsapp-btn text-xs"><i class="fab fa-whatsapp"></i> WhatsApp</button>` : ''}
+                    <select onchange="updateStatus('${c.id}',this.value)" class="text-xs border rounded p-1 bg-white">
+                        <option value="potential" ${c.status === 'potential' ? 'selected' : ''}>潜在</option>
+                        <option value="contacted" ${c.status === 'contacted' ? 'selected' : ''}>已联系</option>
+                        <option value="followed_up" ${c.status === 'followed_up' ? 'selected' : ''}>已跟进</option>
+                        <option value="closed" ${c.status === 'closed' ? 'selected' : ''}>已成交</option>
+                        <option value="lost" ${c.status === 'lost' ? 'selected' : ''}>已丢失</option>
+                    </select>
+                </div>
+            </div>
+        `;
+        document.getElementById(`col-${c.status}`).appendChild(card);
+    });
+    
+    // 设置拖拽放置区域
+    document.querySelectorAll('.kanban-col').forEach(col => {
+        const parent = col.closest('[data-status]');
+        if (!parent) return;
+        col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('bg-blue-50'); });
+        col.addEventListener('dragleave', () => col.classList.remove('bg-blue-50'));
+        col.addEventListener('drop', e => {
+            e.preventDefault();
+            col.classList.remove('bg-blue-50');
+            const newStatus = parent.getAttribute('data-status');
+            if (draggedCustomerId && newStatus) updateStatus(draggedCustomerId, newStatus);
+        });
+    });
+}
+
+function escapeHtml(s) { if(!s) return ''; return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
+// OCR配置
+const CONFIG = { apiKey: localStorage.getItem('crm_api_key') || '', apiModel: 'qwen-vl-ocr', apiEndpoint: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation' };
+
+function compressImage(file) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let w = img.width, h = img.height;
+            const max = 1200;
+            if(w > max) { h = (h * max) / w; w = max; }
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(resolve, 'image/jpeg', 0.8);
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+    });
+}
+
+async function recognizeBusinessCard() {
+    if(!CONFIG.apiKey) { showToast('请先配置API Key', 'error'); switchTab('settings'); return; }
+    if(!frontImageFile) { showToast('请上传名片正面', 'error'); return; }
+    const btn = document.getElementById('btn-recognize'); btn.disabled = true; 
+    const loader = document.getElementById('btn-loader'); loader.classList.remove('hidden');
+    try {
+        currentImageBlob = await compressImage(frontImageFile);
+        const base64 = await new Promise(resolve => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.readAsDataURL(currentImageBlob); });
+        const payload = { model: CONFIG.apiModel, input: { messages: [{ role: "user", content: [{ image: base64 }, { text: "请识别这张名片上的信息，提取姓名、公司、职位、电话、邮箱、国家。返回JSON格式如{\"name\":\"张三\",\"company\":\"某某公司\",\"position\":\"经理\",\"phone\":\"13800138000\",\"email\":\"test@test.com\",\"country\":\"中国\"}" }] }] }, parameters: { result_format: "message" } };
+        const response = await fetch(CONFIG.apiEndpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${CONFIG.apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if(!response.ok) throw new Error('API请求失败: ' + response.status);
+        const data = await response.json();
+        const text = data.output.choices[0].message.content[0].text;
+        document.getElementById('debug-ocr-text').innerText = text;
+        const match = text.match(/\{.*\}/s);
+        if(match) {
+            const extracted = JSON.parse(match[0]);
+            if(extracted.name) document.getElementById('cust-name').value = extracted.name;
+            if(extracted.company) document.getElementById('cust-company').value = extracted.company;
+            if(extracted.position) document.getElementById('cust-position').value = extracted.position;
+            if(extracted.phone) document.getElementById('cust-phone').value = extracted.phone;
+            if(extracted.email) document.getElementById('cust-email').value = extracted.email;
+            if(extracted.country) document.getElementById('cust-country').value = extracted.country;
+            showToast('识别成功！请检查并保存', 'success');
         } else {
-            navigator.clipboard.writeText(window.location.href).then(()=>alert('Link copied!'));
+            showToast('识别完成，请手动填写', 'info');
         }
-    }
+    } catch(err) { showToast('识别失败: ' + err.message, 'error'); document.getElementById('debug-ocr-text').innerText = err.message; }
+    finally { btn.disabled = false; loader.classList.add('hidden'); }
+}
 
-    loadData();
+async function recognizeProduct(file) {
+    if(!CONFIG.apiKey) { showToast('请配置API Key', 'error'); return null; }
+    const compressed = await compressImage(file);
+    const base64 = await new Promise(resolve => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.readAsDataURL(compressed); });
+    const payload = { model: CONFIG.apiModel, input: { messages: [{ role: "user", content: [{ image: base64 }, { text: "提取产品信息：品牌、产品类型、型号、零件号、序列号。返回JSON如{\"brand\":\"DOOSAN\",\"type\":\"回转机构总成\",\"model\":\"PC160LC-8\",\"partNo\":\"401-00356A\",\"serial\":\"830269\"}" }] }] }, parameters: { result_format: "message" } };
+    const response = await fetch(CONFIG.apiEndpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${CONFIG.apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if(!response.ok) throw new Error('API请求失败');
+    const data = await response.json();
+    const text = data.output.choices[0].message.content[0].text;
+    const match = text.match(/\{.*\}/s);
+    return match ? JSON.parse(match[0]) : null;
+}
+
+// 事件绑定
+let frontImageFile = null, backImageFile = null;
+
+document.getElementById('file-input-front')?.addEventListener('change', e => { if(e.target.files[0]) { frontImageFile = e.target.files[0]; const url = URL.createObjectURL(e.target.files[0]); document.getElementById('image-preview-front').src = url; document.getElementById('image-preview-front').classList.remove('hidden'); document.getElementById('upload-placeholder-front').classList.add('hidden'); document.getElementById('btn-recognize').disabled = false; } });
+document.getElementById('file-input-back')?.addEventListener('change', e => { if(e.target.files[0]) { backImageFile = e.target.files[0]; const url = URL.createObjectURL(e.target.files[0]); document.getElementById('image-preview-back').src = url; document.getElementById('image-preview-back').classList.remove('hidden'); document.getElementById('upload-placeholder-back').classList.add('hidden'); } });
+document.getElementById('btn-clear-front')?.addEventListener('click', () => { frontImageFile = null; document.getElementById('image-preview-front').classList.add('hidden'); document.getElementById('upload-placeholder-front').classList.remove('hidden'); document.getElementById('btn-recognize').disabled = true; });
+document.getElementById('btn-clear-back')?.addEventListener('click', () => { backImageFile = null; document.getElementById('image-preview-back').classList.add('hidden'); document.getElementById('upload-placeholder-back').classList.remove('hidden'); });
+document.getElementById('btn-recognize')?.addEventListener('click', recognizeBusinessCard);
+document.getElementById('btn-whatsapp-from-form')?.addEventListener('click', whatsAppFromForm);
+document.getElementById('btn-cancel-edit')?.addEventListener('click', cancelEdit);
+document.getElementById('customer-form')?.addEventListener('submit', saveCustomer);
+document.getElementById('product-form')?.addEventListener('submit', saveProduct);
+document.getElementById('log-form')?.addEventListener('submit', saveLog);
+document.getElementById('close-log-modal')?.addEventListener('click', closeLogModal);
+document.getElementById('log-modal')?.addEventListener('click', e => { if(e.target === document.getElementById('log-modal')) closeLogModal(); });
+
+// 产品上传
+const prodZone = document.getElementById('product-dropzone');
+const prodInput = document.getElementById('product-image-input');
+if(prodZone) {
+    prodZone.addEventListener('click', () => prodInput.click());
+    prodZone.addEventListener('dragover', e => { e.preventDefault(); prodZone.classList.add('active'); });
+    prodZone.addEventListener('dragleave', () => prodZone.classList.remove('active'));
+    prodZone.addEventListener('drop', async e => { e.preventDefault(); prodZone.classList.remove('active'); const file = e.dataTransfer.files[0]; if(file) { const url = URL.createObjectURL(file); document.getElementById('product-preview').src = url; document.getElementById('product-preview').classList.remove('hidden'); const result = await recognizeProduct(file); if(result) { document.getElementById('product-brand').value = result.brand || ''; document.getElementById('product-type').value = result.type || ''; document.getElementById('product-model').value = result.model || ''; document.getElementById('product-partno').value = result.partNo || ''; document.getElementById('product-serial').value = result.serial || ''; showToast('识别完成', 'success'); } } });
+}
+prodInput?.addEventListener('change', async e => { if(e.target.files[0]) { const url = URL.createObjectURL(e.target.files[0]); document.getElementById('product-preview').src = url; document.getElementById('product-preview').classList.remove('hidden'); const result = await recognizeProduct(e.target.files[0]); if(result) { document.getElementById('product-brand').value = result.brand || ''; document.getElementById('product-type').value = result.type || ''; document.getElementById('product-model').value = result.model || ''; document.getElementById('product-partno').value = result.partNo || ''; document.getElementById('product-serial').value = result.serial || ''; showToast('识别完成', 'success'); } } });
+document.getElementById('clear-product-form')?.addEventListener('click', () => { document.getElementById('product-form').reset(); document.getElementById('product-preview').classList.add('hidden'); });
+
+// 导出和设置
+document.getElementById('export-products-excel')?.addEventListener('click', () => { if(!products.length) { showToast('无产品数据', 'error'); return; } const ws = XLSX.utils.json_to_sheet(products.map(p => ({ '品牌': p.brand, '品名': p.type, '型号': p.model, '零件号': p.partNo, '序列号': p.serial, '备注': p.notes }))); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '产品清单'); XLSX.writeFile(wb, `产品数据_${new Date().toISOString().slice(0,10)}.xlsx`); showToast('导出成功', 'success'); });
+document.getElementById('export-customers-excel')?.addEventListener('click', () => { if(!customers.length) { showToast('无客户数据', 'error'); return; } const ws = XLSX.utils.json_to_sheet(customers.map(c => ({ '姓名': c.name, '公司': c.company, '职位': c.position, '电话': c.phone, '邮箱': c.email, '国家': c.country, '备注': c.notes, '状态': c.status }))); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, '客户列表'); XLSX.writeFile(wb, `客户数据_${new Date().toISOString().slice(0,10)}.xlsx`); showToast('导出成功', 'success'); });
+document.getElementById('save-api-key-btn')?.addEventListener('click', () => { const key = document.getElementById('api-key-input').value.trim(); if(key) { localStorage.setItem('crm_api_key', key); CONFIG.apiKey = key; showToast('API Key已保存', 'success'); } });
+document.getElementById('api-key-input').value = CONFIG.apiKey;
+document.getElementById('init-firebase-btn')?.addEventListener('click', initFirestore);
+document.getElementById('save-github-config')?.addEventListener('click', saveGithubConfig);
+document.getElementById('change-password-btn')?.addEventListener('click', () => { const pwd = document.getElementById('change-password-input').value; if(pwd.length >= 6) { localStorage.setItem('crm_password', pwd); showToast('密码已修改', 'success'); document.getElementById('change-password-input').value = ''; } else showToast('密码至少6位', 'error'); });
+document.getElementById('clear-all-data')?.addEventListener('click', () => { if(confirm('确定清空所有数据？不可恢复！')) { customers = []; products = []; saveCustomersToLocal(); saveProductsToLocal(); if(firestoreEnabled) { db.collection('customers').get().then(snap => snap.forEach(d => d.ref.delete())); db.collection('products').get().then(snap => snap.forEach(d => d.ref.delete())); } renderKanban(); renderProductTable(); showToast('已清空', 'success'); } });
+
+// 筛选
+document.getElementById('search-input')?.addEventListener('input', e => { currentSearchKeyword = e.target.value; renderKanban(); });
+document.getElementById('country-filter')?.addEventListener('input', e => { currentCountryFilter = e.target.value; renderKanban(); });
+document.getElementById('reset-filter')?.addEventListener('click', () => { document.getElementById('search-input').value = ''; document.getElementById('country-filter').value = ''; currentSearchKeyword = ''; currentCountryFilter = ''; renderKanban(); showToast('筛选已重置', 'info'); });
+
+// 登录逻辑
+function checkLogin() {
+    const savedPwd = localStorage.getItem('crm_password');
+    if(!savedPwd) { document.getElementById('password-login-section').classList.add('hidden'); document.getElementById('set-password-section').classList.remove('hidden'); return false; }
+    if(sessionStorage.getItem('crm_logged_in') === 'true') {
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('main-app').classList.remove('hidden');
+        loadLocalData();
+        loadGithubConfig();
+        const savedFire = localStorage.getItem('crm_firebase_config');
+        if(savedFire) {
+            try {
+                document.getElementById('firebase-config-area').value = savedFire;
+                const config = JSON.parse(savedFire);
+                if(!firebase.apps.length) firebase.initializeApp(config);
+                db = firebase.firestore();
+                firestoreEnabled = true;
+                document.getElementById('firebase-status').classList.remove('hidden');
+                loadFromFirestore();
+            } catch(e) {}
+        }
+        return true;
+    }
+    const hint = localStorage.getItem('crm_password_hint');
+    if(hint) document.getElementById('password-hint').innerHTML = '提示: ' + hint;
+    return false;
+}
+
+function doLogin() {
+    const inputPwd = document.getElementById('login-password').value;
+    const savedPwd = localStorage.getItem('crm_password');
+    if(!savedPwd) { showToast('请先设置密码', 'error'); document.getElementById('btn-show-set-password').click(); return; }
+    if(inputPwd === savedPwd) {
+        sessionStorage.setItem('crm_logged_in', 'true');
+        document.getElementById('login-page').style.display = 'none';
+        document.getElementById('main-app').classList.remove('hidden');
+        loadLocalData();
+        loadGithubConfig();
+        showToast('登录成功', 'success');
+    } else { showToast('密码错误', 'error'); document.getElementById('login-password').value = ''; }
+}
+
+function doSetPassword() {
+    const newPwd = document.getElementById('new-password').value;
+    const confirmPwd = document.getElementById('confirm-password').value;
+    if(newPwd.length < 6) { showToast('密码至少6位', 'error'); return; }
+    if(newPwd !== confirmPwd) { showToast('两次密码不一致', 'error'); return; }
+    localStorage.setItem('crm_password', newPwd);
+    const hint = document.getElementById('password-hint-input').value.trim();
+    if(hint) localStorage.setItem('crm_password_hint', hint);
+    showToast('密码设置成功，请登录', 'success');
+    document.getElementById('set-password-section').classList.add('hidden');
+    document.getElementById('password-login-section').classList.remove('hidden');
+}
+
+function logout() { sessionStorage.removeItem('crm_logged_in'); document.getElementById('login-page').style.display = 'flex'; document.getElementById('main-app').classList.add('hidden'); }
+function switchTab(tabName) { const sections = ['ocr','product','kanban','settings']; sections.forEach(s => document.getElementById(`section-${s}`)?.classList.add('hidden')); document.getElementById(`section-${tabName}`)?.classList.remove('hidden'); document.querySelectorAll('.nav-btn').forEach(btn => { btn.classList.remove('bg-blue-100','text-blue-700','active'); btn.classList.add('text-gray-500'); }); const activeBtn = document.querySelector(`.nav-btn[data-tab="${tabName}"]`); if(activeBtn) { activeBtn.classList.remove('text-gray-500'); activeBtn.classList.add('bg-blue-100','text-blue-700','active'); } if(tabName === 'kanban') renderKanban(); if(tabName === 'product') renderProductTable(); }
+
+document.getElementById('btn-login')?.addEventListener('click', doLogin);
+document.getElementById('btn-show-set-password')?.addEventListener('click', () => { document.getElementById('password-login-section').classList.add('hidden'); document.getElementById('set-password-section').classList.remove('hidden'); });
+document.getElementById('btn-back-to-login')?.addEventListener('click', () => { document.getElementById('set-password-section').classList.add('hidden'); document.getElementById('password-login-section').classList.remove('hidden'); });
+document.getElementById('btn-save-password')?.addEventListener('click', doSetPassword);
+document.getElementById('btn-logout')?.addEventListener('click', logout);
+document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+
+window.openWhatsApp = openWhatsApp;
+window.editCustomer = editCustomer;
+window.deleteCustomer = deleteCustomer;
+window.updateStatus = updateStatus;
+window.openLogModal = openLogModal;
+window.deleteProduct = deleteProduct;
+
+checkLogin();
 </script>
 </body>
 </html>
