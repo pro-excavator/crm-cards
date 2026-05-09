@@ -1,257 +1,588 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能识别系统 - 名片与产品管理 (Firebase云同步)</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>EMP PARTS - Digital Business Card</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <style>
-        body{font-family:'Segoe UI',Roboto,sans-serif;background:#f3f4f6}
-        .drop-zone{transition:all 0.3s ease;border:2px dashed #cbd5e1}
-        .drop-zone.active{border-color:#3b82f6;background:#eff6ff}
-        .kanban-col{min-height:400px;max-height:calc(100vh - 280px);overflow-y:auto}
-        .dragging{opacity:0.5;border:2px dashed #3b82f6}
-        #toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px}
-        .toast{min-width:250px;padding:12px 16px;border-radius:6px;color:white;box-shadow:0 4px 6px rgba(0,0,0,0.1);animation:slideIn 0.3s ease-out forwards;display:flex;align-items:center;justify-content:space-between}
-        @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
-        @keyframes fadeOut{to{opacity:0;transform:translateY(-10px)}}
-        .loader{border:3px solid #f3f3f3;border-radius:50%;border-top:3px solid #3498db;width:20px;height:20px;animation:spin 1s linear infinite;display:inline-block}
-        @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-        .debug-area{background:#1e1e1e;color:#d4d4d4;padding:12px;font-family:monospace;font-size:12px;max-height:200px;overflow:auto;white-space:pre-wrap;border-radius:8px;margin-top:16px}
-        .whatsapp-btn{display:inline-flex;align-items:center;gap:4px;background:#25D366;color:white;padding:4px 10px;border-radius:20px;font-size:11px;text-decoration:none;border:none;cursor:pointer}
-        .whatsapp-btn:hover{background:#128C7E}
-        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:50;align-items:center;justify-content:center;padding:20px}
-        .modal-overlay.active{display:flex}
-        .modal-content{background:white;border-radius:12px;width:100%;max-width:800px;max-height:90vh;overflow-y:auto}
-        .login-container{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%)}
-        .login-box{background:white;border-radius:16px;padding:40px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
-        .nav-btn.active{background-color:#dbeafe;color:#1d4ed8}
-        .product-card{cursor:pointer;transition:all 0.2s}
-        .product-card:hover{transform:translateY(-2px);box-shadow:0 10px 20px -5px rgba(0,0,0,0.1)}
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #111;
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 430px;
+            background: #141414;
+            min-height: 100vh;
+        }
+
+        /* ── COVER ── */
+        .cover-area {
+            width: 100%;
+            height: 130px;
+            overflow: hidden;
+            background: #1a2a38;
+            position: relative;
+        }
+        .cover-image {
+            width: 100%; height: 100%;
+            object-fit: cover; object-position: center;
+            display: block;
+        }
+        .cover-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.65));
+        }
+
+        /* ── HEADER AREA ── */
+        .header-area {
+            background: #141414;
+            padding: 0 24px 20px;
+        }
+
+        /* Avatar pulled up over cover with negative margin */
+        .avatar-wrapper {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #ff8c42;
+            background: #2a2a2a;
+            box-shadow: 0 4px 18px rgba(255,140,66,0.38);
+            margin-top: -45px;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 20;
+        }
+        .avatar-wrapper img {
+            width: 100%; height: 100%;
+            object-fit: cover; display: block;
+        }
+        .av-ph {
+            width: 100%; height: 100%;
+            background: #ff8c42;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; color: #fff;
+        }
+
+        .company-badge {
+            display: inline-block;
+            background: rgba(255,140,66,0.12);
+            border: 1px solid rgba(255,140,66,0.35);
+            color: #ff8c42;
+            font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 5px 14px; border-radius: 20px;
+            margin-bottom: 10px;
+        }
+        .person-name {
+            font-size: clamp(1.7rem, 7vw, 2.2rem);
+            font-weight: 900; color: #fff;
+            line-height: 1.1; margin-bottom: 6px;
+        }
+        .person-title {
+            font-size: clamp(0.82rem, 3.2vw, 0.95rem);
+            color: #ff8c42; font-weight: 700; margin-bottom: 8px;
+        }
+        .tagline-text {
+            font-size: clamp(0.75rem, 2.8vw, 0.84rem);
+            color: rgba(255,255,255,0.4);
+            line-height: 1.55; margin-bottom: 12px;
+        }
+
+        /* Address in header */
+        .header-address {
+            display: flex; align-items: flex-start; gap: 8px;
+            margin-bottom: 12px;
+        }
+        .header-address i {
+            color: #ff8c42; font-size: 0.8rem;
+            margin-top: 2px; flex-shrink: 0;
+        }
+        .header-address span {
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.45);
+            line-height: 1.5;
+        }
+
+        .badge-strip { display: flex; gap: 8px; flex-wrap: wrap; }
+        .badge-pill { font-size: 0.65rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
+        .badge-pill.gold { background: rgba(255,180,0,0.1); color: #ffb400; border: 1px solid rgba(255,180,0,0.22); }
+        .badge-pill.blue { background: rgba(33,150,243,0.1); color: #64b5f6; border: 1px solid rgba(33,150,243,0.2); }
+
+        /* ── DIVIDER ── */
+        .divider { height: 1px; background: rgba(255,255,255,0.07); margin: 0 24px; }
+
+        /* ── CONTACT ROWS — no labels, compact ── */
+        .contact-section { padding: 0 24px; }
+
+        .contact-row {
+            display: flex; align-items: center; gap: 14px;
+            padding: 11px 0;   /* tighter than before */
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            text-decoration: none;
+            transition: opacity 0.15s;
+        }
+        .contact-row:last-child { border-bottom: none; }
+        .contact-row:hover { opacity: 0.8; }
+        .contact-row:hover .ci { background: #ff8c42; border-color: #ff8c42; }
+        .contact-row:hover .ci i { color: #fff; }
+
+        .ci {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,140,66,0.1);
+            border: 1px solid rgba(255,140,66,0.22);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all 0.2s;
+        }
+        .ci i { font-size: 0.95rem; color: #ff8c42; transition: color 0.2s; }
+
+        /* Value only — no label */
+        .c-value {
+            flex: 1;
+            font-size: 0.92rem; color: rgba(255,255,255,0.88);
+            font-weight: 600;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .c-arrow { color: rgba(255,255,255,0.16); font-size: 0.7rem; flex-shrink: 0; }
+
+        /* Phone + WhatsApp combined */
+        .phone-wa-row {
+            display: flex; align-items: center; gap: 14px;
+            padding: 11px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .ci-phone {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,140,66,0.1);
+            border: 1px solid rgba(255,140,66,0.22);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .ci-phone i { font-size: 0.95rem; color: #ff8c42; }
+        .phone-wa-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .phone-num {
+            font-size: 0.92rem; color: rgba(255,255,255,0.88);
+            font-weight: 600; text-decoration: none;
+        }
+        .phone-num:hover { color: #ff8c42; }
+        .wa-chip {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(37,211,102,0.12);
+            border: 1px solid rgba(37,211,102,0.28);
+            color: #25d366;
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 0.68rem; font-weight: 700;
+            text-decoration: none; transition: background 0.2s;
+        }
+        .wa-chip:hover { background: rgba(37,211,102,0.22); }
+        .wa-chip i { font-size: 0.75rem; }
+
+        /* ── SECTION BLOCK ── */
+        .sec { padding: 20px 24px 0; }
+        .sec-heading {
+            font-size: 0.6rem; font-weight: 700;
+            letter-spacing: 2.5px; text-transform: uppercase;
+            color: rgba(255,255,255,0.28);
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 14px;
+        }
+        .sec-heading::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.07); }
+
+        /* ── SOCIAL ── */
+        .social-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+        .social-btn {
+            display: flex; align-items: center; gap: 7px;
+            padding: 9px 16px; border-radius: 40px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.09);
+            text-decoration: none; transition: all 0.2s;
+            font-size: 0.78rem; font-weight: 600;
+            color: rgba(255,255,255,0.72);
+        }
+        .social-btn i { font-size: 0.95rem; }
+        .social-btn:hover { background: rgba(255,140,66,0.1); border-color: rgba(255,140,66,0.3); color: #ff8c42; }
+
+        /* ── PRODUCTS — full width each, stacked ── */
+        .products-list { display: flex; flex-direction: column; gap: 12px; }
+        .product-item {
+            background: #1e1e1e;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+        .product-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+            background: #1e1e1e;
+        }
+        .product-item-name {
+            font-size: 0.82rem;
+            padding: 10px 14px 12px;
+            color: rgba(255,255,255,0.75);
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        /* ── PDF ── */
+        .pdf-list { display: flex; flex-direction: column; gap: 10px; }
+        .pdf-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 13px 15px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px; text-decoration: none; transition: all 0.2s;
+        }
+        .pdf-item:hover { background: rgba(255,140,66,0.08); border-color: rgba(255,140,66,0.28); }
+        .pdf-icon {
+            width: 38px; height: 38px; border-radius: 10px;
+            background: rgba(255,140,66,0.12);
+            display: flex; align-items: center; justify-content: center;
+            color: #ff8c42; font-size: 1rem; flex-shrink: 0;
+        }
+        .pdf-name { flex: 1; font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.82); }
+        .pdf-arrow { color: rgba(255,255,255,0.22); font-size: 0.75rem; }
+
+        /* ── CUSTOM ── */
+        .custom-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 13px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .custom-item:last-child { border-bottom: none; }
+        .custom-icon-box {
+            width: 40px; height: 40px; border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; flex-shrink: 0;
+        }
+        .c-ttl { font-size: 0.6rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px; }
+        .c-val { font-size: 0.85rem; color: rgba(255,255,255,0.82); font-weight: 500; word-break: break-all; }
+        a.c-val { color: #ff8c42; text-decoration: none; }
+
+        /* ── QR ── */
+        .qr-box {
+            text-align: center; padding: 22px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 18px;
+        }
+        .qr-label { font-size: 0.62rem; color: rgba(255,255,255,0.28); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px; }
+        #qrcode { display: flex; justify-content: center; }
+        #qrcode canvas, #qrcode img { border-radius: 8px; }
+
+        /* ── BUTTONS ── */
+        .action-buttons { display: flex; gap: 12px; padding: 20px 24px 30px; }
+        .btn {
+            flex: 1; padding: 15px 8px; border-radius: 40px;
+            font-weight: 700; font-size: 0.85rem;
+            cursor: pointer; border: none;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ff8c42, #ff6020);
+            color: #fff; box-shadow: 0 4px 16px rgba(255,140,66,0.38);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(255,140,66,0.5); }
+        .btn-outline {
+            background: rgba(255,255,255,0.05);
+            border: 1.5px solid rgba(255,140,66,0.45);
+            color: #ff8c42;
+        }
+        .btn-outline:hover { background: rgba(255,140,66,0.1); transform: translateY(-2px); }
+
+        /* ── FOOTER ── */
+        .footer {
+            text-align: center; font-size: 0.58rem;
+            color: rgba(255,255,255,0.18);
+            padding: 14px 24px 28px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            line-height: 1.8;
+        }
+        .admin-link { color: rgba(255,255,255,0.18); text-decoration: none; }
+        .admin-link:hover { color: #ff8c42; }
     </style>
 </head>
 <body>
-
-<!-- 登录页面 -->
-<div id="login-page" class="login-container">
-    <div class="login-box">
-        <div class="text-center mb-8">
-            <i class="fas fa-address-card text-5xl text-indigo-600 mb-4"></i>
-            <h1 class="text-2xl font-bold text-gray-900">智能识别系统</h1>
-            <p class="text-gray-500 mt-2">名片 + 产品信息管理 | 云端同步</p>
-        </div>
-        <div id="password-login-section">
-            <div class="space-y-4">
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">访问密码</label><input type="password" id="login-password" class="w-full border p-2.5 rounded-lg" placeholder="请输入访问密码"></div>
-                <button id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium"><i class="fas fa-lock-open mr-2"></i> 登录系统</button>
-                <p class="text-xs text-gray-500 text-center" id="password-hint"></p>
-            </div>
-            <div class="mt-4 text-center"><button id="btn-show-set-password" class="text-sm text-indigo-600 hover:text-indigo-800"><i class="fas fa-cog mr-1"></i> 首次使用？设置密码</button></div>
-        </div>
-        <div id="set-password-section" class="hidden mt-6 border-t pt-4">
-            <h3 class="text-lg font-medium mb-3">设置访问密码</h3>
-            <div class="space-y-3">
-                <div><label class="block text-sm font-medium">新密码（至少6位）</label><input type="password" id="new-password" class="w-full border p-2.5 rounded-lg" minlength="6"></div>
-                <div><label class="block text-sm font-medium">确认密码</label><input type="password" id="confirm-password" class="w-full border p-2.5 rounded-lg"></div>
-                <div><label class="block text-sm font-medium">密码提示（可选）</label><input type="text" id="password-hint-input" class="w-full border p-2.5 rounded-lg" placeholder="例如：公司名称"></div>
-                <button id="btn-save-password" class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-medium">保存密码</button>
-                <button id="btn-back-to-login" class="w-full text-gray-500 hover:text-gray-700 py-2">返回登录</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 主应用 -->
-<div id="main-app" class="hidden h-screen flex flex-col">
-    <div id="toast-container"></div>
-    <header class="bg-white shadow-sm z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3"><i class="fas fa-address-card text-blue-600 text-2xl"></i><h1 class="text-xl font-bold text-gray-900">OCR识别 + 产品信息管理 (Firebase云同步)</h1></div>
-            <nav class="flex gap-4 items-center">
-                <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium bg-blue-100 text-blue-700 active" data-tab="ocr"><i class="fas fa-camera mr-1"></i> 名片识别</button>
-                <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="product"><i class="fas fa-boxes mr-1"></i> 产品识别</button>
-                <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="kanban"><i class="fas fa-columns mr-1"></i> 客户看板</button>
-                <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="settings"><i class="fas fa-cog mr-1"></i> 系统设置</button>
-                <button id="btn-logout" class="px-3 py-2 rounded-md text-sm font-medium text-red-500 hover:bg-red-50"><i class="fas fa-sign-out-alt mr-1"></i> 退出</button>
-            </nav>
-        </div>
-    </header>
-
-    <main class="flex-1 overflow-hidden relative">
-        <!-- 名片识别页面 -->
-        <section class="absolute inset-0 overflow-y-auto p-6 bg-gray-50" id="section-ocr">
-            <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="bg-white p-6 rounded-xl shadow-sm">
-                    <h2 class="text-lg font-semibold mb-4"><i class="fas fa-upload mr-2 text-blue-500"></i> 上传名片</h2>
-                    <div class="mb-4"><label class="block text-sm font-medium mb-2">名片正面 *</label><div class="drop-zone rounded-lg h-40 flex flex-col items-center justify-center cursor-pointer bg-gray-50" id="drop-zone-front"><input accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-input-front" type="file"><div id="upload-placeholder-front"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-1"></i><p class="text-gray-500 text-sm">点击或拖拽正面</p></div><img class="hidden max-h-full max-w-full object-contain p-2" id="image-preview-front"></div><div class="flex justify-between mt-1"><span class="text-xs text-gray-500" id="file-name-front">未选择</span><button class="text-xs text-red-500 hidden" id="btn-clear-front">清除</button></div></div>
-                    <div class="mb-4"><label class="block text-sm font-medium mb-2">名片背面 (可选)</label><div class="drop-zone rounded-lg h-40 flex flex-col items-center justify-center cursor-pointer bg-gray-50" id="drop-zone-back"><input accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-input-back" type="file"><div id="upload-placeholder-back"><i class="fas fa-plus-circle text-3xl text-gray-400 mb-1"></i><p class="text-gray-500 text-sm">点击或拖拽背面</p></div><img class="hidden max-h-full max-w-full object-contain p-2" id="image-preview-back"></div><div class="flex justify-between mt-1"><span class="text-xs text-gray-500" id="file-name-back">未选择</span><button class="text-xs text-red-500 hidden" id="btn-clear-back">清除</button></div></div>
-                    <div class="flex justify-between items-center mb-2"><span class="text-xs text-gray-400">自动压缩至500KB</span><button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50 flex items-center" disabled id="btn-recognize"><span>开始识别</span><div class="loader ml-2 hidden" id="btn-loader"></div></button></div>
-                    <div class="hidden w-full bg-gray-200 rounded-full h-1.5 mb-2" id="ocr-progress"><div class="bg-blue-600 h-1.5 rounded-full" id="progress-bar" style="width:0%"></div></div>
-                    <details><summary class="text-xs text-gray-500 cursor-pointer">🔍 原始识别结果</summary><div class="debug-area mt-2" id="debug-ocr-text">暂无</div></details>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm"><h2 class="text-lg font-semibold mb-4"><i class="fas fa-user-edit mr-2 text-green-500"></i> 客户信息</h2><form id="customer-form"><input type="hidden" id="cust-id"><div class="space-y-3"><div><label>姓名 *</label><input type="text" id="cust-name" class="w-full border p-2 rounded" required></div><div><label>公司</label><input type="text" id="cust-company" class="w-full border p-2 rounded"></div><div><label>职位</label><input type="text" id="cust-position" class="w-full border p-2 rounded"></div><div><label>电话</label><input type="tel" id="cust-phone" class="w-full border p-2 rounded"></div><div><label>邮箱</label><input type="email" id="cust-email" class="w-full border p-2 rounded"></div><div><label>国家</label><input type="text" id="cust-country" list="country-list" class="w-full border p-2 rounded"><datalist id="country-list"><option>中国</option><option>美国</option><option>日本</option><option>德国</option></datalist></div><div><label>备注</label><textarea id="cust-notes" rows="2" class="w-full border p-2 rounded"></textarea></div><button type="submit" class="w-full bg-green-600 text-white py-2 rounded">保存客户 (云端同步)</button></div></form></div>
-            </div>
-        </section>
-
-        <!-- 产品识别页面 (新增核心功能) -->
-        <section class="absolute inset-0 overflow-y-auto p-6 bg-gray-50 hidden" id="section-product">
-            <div class="max-w-7xl mx-auto">
-                <div class="bg-white p-6 rounded-xl shadow-sm mb-6">
-                    <h2 class="text-xl font-bold mb-4"><i class="fas fa-microchip text-purple-500 mr-2"></i> 产品信息智能识别（支持图片拖拽）</h2>
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50 transition" id="product-dropzone">
-                            <input type="file" id="product-image-input" accept="image/*" class="hidden">
-                            <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
-                            <p class="text-gray-600">点击或拖拽产品图片/表格截图</p>
-                            <p class="text-xs text-gray-400 mt-1">支持 PNG, JPG (自动OCR识别品牌、型号、零件号等)</p>
-                            <img id="product-preview" class="hidden mt-3 max-h-40 mx-auto rounded border" alt="预览">
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <div class="flex justify-between items-center mb-3">
-                                <h3 class="font-semibold"><i class="fas fa-list-ul"></i> 识别结果预览</h3>
-                                <button id="clear-product-form" class="text-red-500 text-sm"><i class="fas fa-trash-alt"></i> 清空</button>
-                            </div>
-                            <form id="product-form" class="space-y-3">
-                                <input type="hidden" id="product-id">
-                                <div><label>品牌 (Brand)</label><input type="text" id="product-brand" class="w-full border p-2 rounded" placeholder="如 DOOSAN, HITACHI"></div>
-                                <div><label>产品类型 / 品名</label><input type="text" id="product-type" class="w-full border p-2 rounded" placeholder="回转机构总成 / 主泵"></div>
-                                <div><label>型号 (Model)</label><input type="text" id="product-model" class="w-full border p-2 rounded" placeholder="PC160LC-8"></div>
-                                <div><label>零件号 (Part No.)</label><input type="text" id="product-partno" class="w-full border p-2 rounded" placeholder="401-00356A"></div>
-                                <div><label>序列号 (Serial No.)</label><input type="text" id="product-serial" class="w-full border p-2 rounded" placeholder="830269"></div>
-                                <div><label>备注</label><textarea id="product-notes" rows="2" class="w-full border p-2 rounded" placeholder="额外信息"></textarea></div>
-                                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded"><i class="fas fa-save"></i> 保存产品 (云端)</button>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="mt-6 flex gap-3 justify-end">
-                        <button id="export-products-excel" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"><i class="fas fa-file-excel"></i> 导出产品Excel</button>
-                        <button id="export-products-json" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"><i class="fas fa-download"></i> 导出JSON</button>
-                    </div>
-                </div>
-                <!-- 产品列表表格展示 -->
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div class="px-6 py-3 bg-gray-100 border-b font-semibold">📦 产品信息库 (点击编辑)</div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 text-sm" id="product-table">
-                            <thead class="bg-gray-50"><tr><th class="px-4 py-2">品牌</th><th>品名</th><th>型号</th><th>零件号</th><th>序列号</th><th>操作</th></tr></thead>
-                            <tbody id="product-list-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 客户看板 (略缩保留原有) -->
-        <section class="absolute inset-0 overflow-hidden flex flex-col bg-gray-50 hidden" id="section-kanban"><div class="p-4 bg-white border-b"><div class="flex justify-between"><h2 class="text-lg font-bold">客户沟通进度</h2><div>共 <span id="total-customers">0</span> 位客户</div></div><div class="flex gap-4 mt-2"><input type="text" id="search-input" placeholder="搜索..." class="border p-2 rounded w-64"><input type="text" id="country-filter" placeholder="国家筛选" class="border p-2 rounded w-40"><button id="reset-filter" class="bg-gray-200 px-3 py-2 rounded">重置</button></div></div><div class="flex-1 overflow-x-auto p-4"><div class="flex gap-4 h-full min-w-max"><div class="w-80 bg-gray-100 rounded" data-status="potential"><div class="p-3 bg-gray-200 font-semibold">潜在客户</div><div class="p-3 space-y-3 kanban-col" id="col-potential"></div></div><div class="w-80 bg-yellow-50 rounded" data-status="contacted"><div class="p-3 bg-yellow-100 font-semibold">已联系</div><div class="p-3 space-y-3 kanban-col" id="col-contacted"></div></div><div class="w-80 bg-blue-50 rounded" data-status="followed_up"><div class="p-3 bg-blue-100 font-semibold">已跟进</div><div class="p-3 space-y-3 kanban-col" id="col-followed_up"></div></div><div class="w-80 bg-green-50 rounded" data-status="closed"><div class="p-3 bg-green-100 font-semibold">已成交</div><div class="p-3 space-y-3 kanban-col" id="col-closed"></div></div><div class="w-80 bg-red-50 rounded" data-status="lost"><div class="p-3 bg-red-100 font-semibold">已丢失</div><div class="p-3 space-y-3 kanban-col" id="col-lost"></div></div></div></div></section>
-
-        <!-- 系统设置 (包含 Firebase 配置) -->
-        <section class="absolute inset-0 overflow-y-auto p-6 bg-gray-50 hidden" id="section-settings">
-            <div class="max-w-2xl mx-auto space-y-6">
-                <div class="bg-white p-6 rounded-xl shadow-sm"><h2 class="text-lg font-semibold border-b pb-2"><i class="fas fa-fire text-orange-500 mr-2"></i> Firebase 云同步 (解决跨平台数据问题)</h2><p class="text-sm text-gray-600 mt-2">配置Firebase后，客户/产品数据将自动同步至云端，任何设备只要登录同一账号即可共享，且图片永久保存。</p><div class="mt-3 space-y-3"><div><label>Firebase 项目配置 (JSON)</label><textarea id="firebase-config-area" rows="6" class="w-full border p-2 font-mono text-sm" placeholder='{"apiKey":"xxx","authDomain":"xxx","projectId":"xxx","storageBucket":"xxx","messagingSenderId":"xxx","appId":"xxx"}'></textarea><p class="text-xs text-gray-400">从Firebase控制台获取Web应用配置，需要开启Firestore和Storage。</p></div><button id="init-firebase-btn" class="bg-orange-600 text-white px-4 py-2 rounded"><i class="fas fa-plug"></i> 连接Firebase并启用云同步</button><div id="firebase-status" class="text-sm text-green-600 hidden"><i class="fas fa-check-circle"></i> 已连接云端，数据实时同步</div><button id="force-sync-btn" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hidden">强制同步本地到云端</button></div></div>
-                <div class="bg-white p-6 rounded-xl shadow-sm"><h2 class="text-lg font-semibold border-b pb-2"><i class="fas fa-key mr-2"></i> API & 安全</h2><div><label>通义千问 API Key</label><div class="flex gap-2"><input id="api-key-input" class="flex-1 border p-2 rounded" type="password" placeholder="sk-..."><button id="save-api-key-btn" class="bg-gray-800 text-white px-4 py-2 rounded">保存</button></div></div><div class="mt-4"><label>修改访问密码</label><input type="password" id="change-password-input" class="w-full border p-2 rounded mt-1" placeholder="新密码"><button id="change-password-btn" class="mt-2 bg-indigo-600 text-white px-3 py-1 rounded">修改</button></div></div>
-                <div class="bg-white p-6 rounded-xl shadow-sm"><h2 class="text-lg font-semibold border-b pb-2">数据导入导出</h2><div class="flex gap-4"><button id="export-all-excel" class="bg-green-600 text-white px-3 py-2 rounded">导出客户+产品Excel</button><button id="import-json-btn" class="bg-purple-600 text-white px-3 py-2 rounded">导入JSON备份</button><button id="clear-all-data" class="bg-red-600 text-white px-3 py-2 rounded">清空全部</button></div><input type="file" id="global-import-file" accept=".json" class="hidden"></div>
-            </div>
-        </section>
-    </main>
-</div>
+<div class="card" id="card"></div>
 
 <script>
-// -------------------- 工具函数 --------------------
-const Toast = { show(msg, type='info'){ const c=document.getElementById('toast-container');if(!c)return;const t=document.createElement('div');t.className=`toast ${type==='success'?'bg-green-600':type==='error'?'bg-red-600':'bg-gray-800'}`;t.innerHTML=`<div><i class="fas ${type==='success'?'fa-check-circle':type==='error'?'fa-exclamation-circle':'fa-info-circle'} mr-2"></i>${msg}</div>`;c.appendChild(t);setTimeout(()=>{t.style.animation='fadeOut 0.3s forwards';setTimeout(()=>t.remove(),300);},3000);} };
-function escapeHtml(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-function blobToBase64(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});}
-// 压缩 (简化)
-async function compressImage(file){return new Promise(resolve=>{const img=new Image();const url=URL.createObjectURL(file);img.onload=()=>{const c=document.createElement('canvas');let w=img.width,h=img.height;const max=1200;if(w>max){h=(h*max)/w;w=max;}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);c.toBlob(resolve,'image/jpeg',0.75);URL.revokeObjectURL(url);};img.src=url;});}
+    let cardData = {};
 
-// -------------------- 全局数据 & Firebase --------------------
-let db=null, storageRef=null, firebaseEnabled=false;
-let products = []; // 产品列表
-let customers = [];
+    async function loadData() {
+        try {
+            const r = await fetch('data/config.json?v=' + Date.now());
+            if (r.ok) cardData = await r.json();
+        } catch(e) { console.error(e); }
+        renderCard();
+    }
 
-async function saveToFirestore(collection, id, data){ if(!firebaseEnabled) return false; try{ await db.collection(collection).doc(id).set(data); return true; }catch(e){console.warn(e);return false;} }
-async function loadFromFirestore(){ if(!firebaseEnabled) return; try{ const custSnap=await db.collection('customers').get(); customers=[]; custSnap.forEach(d=>customers.push({...d.data(),id:d.id})); const prodSnap=await db.collection('products').get(); products=[]; prodSnap.forEach(d=>products.push({...d.data(),id:d.id})); renderKanban(); renderProductTable(); Toast.show('云端数据已同步', 'success'); }catch(e){Toast.show('同步失败:'+e.message,'error');} }
+    function esc(s) {
+        if (!s) return '';
+        return String(s).replace(/[&<>"']/g, m =>
+            ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+    }
+    function fmtWeb(u) { return (u||'').replace(/^https?:\/\//,'').replace(/\/$/,''); }
 
-async function syncAllLocalToCloud(){ if(!firebaseEnabled) return; for(let c of customers) await saveToFirestore('customers',c.id,c); for(let p of products) await saveToFirestore('products',p.id,p); Toast.show('已上传至云端','success'); }
+    function renderCard() {
+        const d = cardData;
+        const wechatQrSrc = d.wechatQr || 'images/wechat-qr.jpg';
+        const wechatId = d.wechat || 'empparts';
 
-function initFirebase(configJson){ try{ const config=JSON.parse(configJson); if(!firebase.apps.length) firebase.initializeApp(config); db=firebase.firestore(); storageRef=firebase.storage().ref(); firebaseEnabled=true; localStorage.setItem('crm:firebase_config',configJson); document.getElementById('firebase-status').classList.remove('hidden'); document.getElementById('force-sync-btn').classList.remove('hidden'); loadFromFirestore(); }catch(e){Toast.show('Firebase配置错误:'+e.message,'error');} }
+        /* Cover */
+        const coverHtml = d.coverImage
+            ? `<img class="cover-image" src="${esc(d.coverImage)}" onerror="this.style.display='none'">`
+            : `<div style="width:100%;height:100%;background:linear-gradient(135deg,#1a3a4a,#0a1e2e)"></div>`;
 
-// 产品存储
-function saveProductLocally(p){ const idx=products.findIndex(x=>x.id===p.id); if(idx!==-1) products[idx]=p; else products.push(p); if(firebaseEnabled) saveToFirestore('products',p.id,p); renderProductTable(); }
-function deleteProductLocally(id){ products=products.filter(p=>p.id!==id); if(firebaseEnabled) db.collection('products').doc(id).delete(); renderProductTable(); }
-function renderProductTable(){ const tbody=document.getElementById('product-list-body'); if(!tbody)return; tbody.innerHTML=products.map(p=>`<tr class="border-b hover:bg-gray-50 cursor-pointer" onclick="editProduct('${p.id}')"><td class="px-3 py-2">${escapeHtml(p.brand||'')}</td><td>${escapeHtml(p.type||'')}</td><td>${escapeHtml(p.model||'')}</td><td>${escapeHtml(p.partNo||'')}</td><td>${escapeHtml(p.serial||'')}</td><td><button onclick="event.stopPropagation();deleteProductLocally('${p.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join(''); }
-window.editProduct=function(id){ const p=products.find(x=>x.id===id); if(p){ document.getElementById('product-id').value=p.id; document.getElementById('product-brand').value=p.brand||''; document.getElementById('product-type').value=p.type||''; document.getElementById('product-model').value=p.model||''; document.getElementById('product-partno').value=p.partNo||''; document.getElementById('product-serial').value=p.serial||''; document.getElementById('product-notes').value=p.notes||''; Toast.show('加载产品信息','info'); } };
+        /* Avatar */
+        const avatarHtml = `<div class="avatar-wrapper">
+            ${d.avatar
+                ? `<img src="${esc(d.avatar)}" alt="avatar" onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+                   <div class="av-ph" style="display:none">👤</div>`
+                : `<div class="av-ph">👤</div>`}
+        </div>`;
 
-// 产品OCR识别
-async function recognizeProduct(imageBlob){ if(!CONFIG.apiKey){Toast.show('请配置通义千问API Key','error'); return null;} const base64=await blobToBase64(imageBlob); const payload={ model:CONFIG.apiModel, input:{ messages:[{ role:"user", content:[{ image:base64 },{ text:"请提取这张产品图纸或表格图片中的关键字段：品牌(Brand)、产品类型(Product Type)、型号(Model)、零件号(Part No.)、序列号(Serial No.)。返回格式为JSON，如{\"brand\":\"DOOSAN\",\"type\":\"回转机构总成\",\"model\":\"\",\"partNo\":\"401-00356A\",\"serial\":\"830269\"}" }] } }, parameters:{ result_format:"message" } };
-    try{ const resp=await fetch(CONFIG.apiEndpoint,{ method:'POST', headers:{'Authorization':`Bearer ${CONFIG.apiKey}`,'Content-Type':'application/json'}, body:JSON.stringify(payload)}); if(!resp.ok)throw new Error(await resp.text()); const data=await resp.json(); let txt=data.output.choices[0].message.content[0].text; let match=txt.match(/\{.*\}/s); if(match) txt=match[0]; const obj=JSON.parse(txt); return obj; }catch(e){Toast.show('识别失败:'+e.message,'error'); return null;} }
+        /* Badges */
+        const badgesHtml = (d.badgeText||d.badgeSubText) ? `<div class="badge-strip" style="margin-top:12px;">
+            ${d.badgeText    ? `<span class="badge-pill gold">🏆 ${esc(d.badgeText)}</span>` : ''}
+            ${d.badgeSubText ? `<span class="badge-pill blue">${esc(d.badgeSubText)}</span>` : ''}
+        </div>` : '';
 
-// 产品表单提交
-document.getElementById('product-form')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const pid=document.getElementById('product-id').value||Date.now().toString(); const prod={ id:pid, brand:document.getElementById('product-brand').value, type:document.getElementById('product-type').value, model:document.getElementById('product-model').value, partNo:document.getElementById('product-partno').value, serial:document.getElementById('product-serial').value, notes:document.getElementById('product-notes').value, updateTime:new Date().toISOString() }; saveProductLocally(prod); Toast.show('产品已保存','success'); document.getElementById('product-form').reset(); document.getElementById('product-id').value=''; });
 
-// 导出Excel产品
-document.getElementById('export-products-excel')?.addEventListener('click',()=>{ if(!products.length){Toast.show('无产品数据','error');return;} const sheet=products.map(p=>({品牌:p.brand,品名:p.type,型号:p.model,零件号:p.partNo,序列号:p.serial,备注:p.notes})); const ws=XLSX.utils.json_to_sheet(sheet), wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'产品清单'); XLSX.writeFile(wb,`产品数据_${new Date().toISOString().slice(0,10)}.xlsx`); Toast.show('导出成功','success'); });
-document.getElementById('export-products-json')?.addEventListener('click',()=>{ const data=JSON.stringify(products,null,2); const blob=new Blob([data],{type:'application/json'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`products_${Date.now()}.json`;a.click(); });
 
-// 产品上传区域
-const prodZone=document.getElementById('product-dropzone'), prodInput=document.getElementById('product-image-input');
-prodZone.addEventListener('click',()=>prodInput.click());
-prodZone.addEventListener('dragover',e=>{e.preventDefault();prodZone.classList.add('active');});
-prodZone.addEventListener('dragleave',()=>prodZone.classList.remove('active'));
-prodZone.addEventListener('drop',async e=>{e.preventDefault();prodZone.classList.remove('active');const file=e.dataTransfer.files[0];if(file && file.type.startsWith('image/')){ await handleProductImage(file);}});
-prodInput.addEventListener('change',async e=>{if(e.target.files[0]) await handleProductImage(e.target.files[0]);});
-async function handleProductImage(file){ const compressed=await compressImage(file); const url=URL.createObjectURL(compressed); document.getElementById('product-preview').src=url; document.getElementById('product-preview').classList.remove('hidden'); Toast.show('识别中...','info'); const result=await recognizeProduct(compressed); if(result){ document.getElementById('product-brand').value=result.brand||''; document.getElementById('product-type').value=result.type||''; document.getElementById('product-model').value=result.model||''; document.getElementById('product-partno').value=result.partNo||''; document.getElementById('product-serial').value=result.serial||''; Toast.show('识别完成','success'); }else{Toast.show('识别失败请手动填写','error');} }
-document.getElementById('clear-product-form')?.addEventListener('click',()=>{document.getElementById('product-form').reset();document.getElementById('product-id').value='';document.getElementById('product-preview').classList.add('hidden');});
+        /* Company name row above phone */
+        const companyRowHtml = d.companyName ? `
+        <div class="phone-wa-row" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+            <div class="ci-phone"><i class="fas fa-building"></i></div>
+            <div class="phone-wa-info">
+                <span class="phone-num" style="font-size:1rem;color:rgba(255,255,255,0.95);">${esc(d.companyName)}</span>
+            </div>
+        </div>` : '';
 
-// 现有客户存储兼容Firebase (扩展原有Storage)
-const StorageExt={ saveCustomer(c){ if(firebaseEnabled) saveToFirestore('customers',c.id,c); const idx=customers.findIndex(x=>x.id===c.id); if(idx!==-1) customers[idx]=c; else customers.push(c); renderKanban(); return true; }, getCustomers(){ return customers; }, deleteCustomer(id){ customers=customers.filter(c=>c.id!==id); if(firebaseEnabled) db.collection('customers').doc(id).delete(); renderKanban(); } };
-window.updateCustomerStatus=function(id,st){ let c=customers.find(x=>x.id===id); if(c){c.status=st;StorageExt.saveCustomer(c);renderKanban();}};
-// 为了兼容之前看板render
-function renderKanban(){ const cs=customers.filter(c=>{if(currentSearch&&!c.name?.toLowerCase().includes(currentSearch) && !c.company?.toLowerCase().includes(currentSearch))return false; if(currentCountry && c.country!==currentCountry)return false; return true;}); document.getElementById('total-customers').innerText=cs.length; ['potential','contacted','followed_up','closed','lost'].forEach(s=>{ const col=document.getElementById(`col-${s}`);if(col)col.innerHTML=''; cs.filter(c=>c.status===s).forEach(c=>{const card=createCard(c);document.getElementById(`col-${c.status}`).appendChild(card);});}); }
-function createCard(c){ const div=document.createElement('div');div.className='bg-white p-3 rounded shadow-sm mb-2';div.innerHTML=`<div class="font-bold">${escapeHtml(c.name)}</div><div class="text-xs">${c.company||''}</div><div class="flex gap-2 mt-2"><button onclick="window.openEditModalCustomer('${c.id}')" class="text-xs text-blue-500">编辑</button><button onclick="StorageExt.deleteCustomer('${c.id}')" class="text-xs text-red-500">删除</button><select onchange="updateCustomerStatus('${c.id}',this.value)" class="text-xs border rounded"><option ${c.status==='potential'?'selected':''}>potential</option><option ${c.status==='contacted'?'selected':''}>contacted</option><option ${c.status==='followed_up'?'selected':''}>followed_up</option><option ${c.status==='closed'?'selected':''}>closed</option><option ${c.status==='lost'?'selected':''}>lost</option></select></div>`;return div;}
-window.openEditModalCustomer=function(id){ const c=customers.find(x=>x.id===id); if(c){ document.getElementById('cust-id').value=c.id; document.getElementById('cust-name').value=c.name; document.getElementById('cust-company').value=c.company||''; document.getElementById('cust-position').value=c.position||''; document.getElementById('cust-phone').value=c.phone||''; document.getElementById('cust-email').value=c.email||''; document.getElementById('cust-country').value=c.country||''; document.getElementById('cust-notes').value=c.notes||''; Toast.show('加载编辑','info'); switchTab('ocr'); } };
-document.getElementById('customer-form')?.addEventListener('submit',async(e)=>{ e.preventDefault(); const c={ id:document.getElementById('cust-id').value||Date.now().toString(), name:document.getElementById('cust-name').value, company:document.getElementById('cust-company').value, position:document.getElementById('cust-position').value, phone:document.getElementById('cust-phone').value, email:document.getElementById('cust-email').value, country:document.getElementById('cust-country').value, notes:document.getElementById('cust-notes').value, status:'potential', logs:[], createTime:new Date().toISOString() }; StorageExt.saveCustomer(c); document.getElementById('customer-form').reset(); document.getElementById('cust-id').value=''; Toast.show('已保存并同步云端','success'); });
-let currentSearch='',currentCountry='';
-document.getElementById('search-input')?.addEventListener('input',e=>{currentSearch=e.target.value.toLowerCase();renderKanban();});
-document.getElementById('country-filter')?.addEventListener('input',e=>{currentCountry=e.target.value;renderKanban();});
-document.getElementById('reset-filter')?.addEventListener('click',()=>{currentSearch='';currentCountry='';document.getElementById('search-input').value='';document.getElementById('country-filter').value='';renderKanban();});
 
-// 原OCR名片识别变量
-let frontFile=null,backFile=null,combinedBlob=null;
-function updateRecognizeBtn(){ document.getElementById('btn-recognize').disabled=!frontFile; }
-document.getElementById('btn-recognize').onclick=async()=>{ if(!CONFIG.apiKey){Toast.show('请先配置API Key','error');return;} if(!frontFile)return; const fb=await compressImage(frontFile); let bb=backFile?await compressImage(backFile):null; const comb=bb?await combineImages(fb,bb):fb; combinedBlob=comb; const base64=await blobToBase64(comb); const payload={ model:CONFIG.apiModel, input:{ messages:[{ role:"user", content:[{ image:base64 },{ text:"提取名片所有文字，姓名、公司、职位、电话、邮箱、国家" }] }] }, parameters:{ result_format:"message" } }; const resp=await fetch(CONFIG.apiEndpoint,{ method:'POST', headers:{'Authorization':`Bearer ${CONFIG.apiKey}`,'Content-Type':'application/json'}, body:JSON.stringify(payload)}); const data=await resp.json(); let txt=data.output.choices[0].message.content[0].text; const ex=extractFields(txt); document.getElementById('cust-name').value=ex.name||''; document.getElementById('cust-company').value=ex.company||''; document.getElementById('cust-position').value=ex.position||''; document.getElementById('cust-phone').value=ex.phone||''; document.getElementById('cust-email').value=ex.email||''; document.getElementById('cust-country').value=ex.country||''; Toast.show('识别成功','success'); };
-async function combineImages(f,b){ return new Promise(resolve=>{ const imgF=new Image(),imgB=new Image(); imgF.onload=()=>{ imgB.onload=()=>{ const canvas=document.createElement('canvas');canvas.width=Math.max(imgF.width,imgB.width,800);canvas.height=imgF.height+imgB.height+40; const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(imgF,0,0,canvas.width,imgF.height);ctx.drawImage(imgB,0,imgF.height+20,canvas.width,imgB.height);canvas.toBlob(resolve,'image/jpeg',0.8);}; imgB.src=URL.createObjectURL(b);}; imgF.src=URL.createObjectURL(f);});}
-function extractFields(txt){ let r={};const n=txt.match(/(?:姓名|Name)[:：]\s*([^\n]+)/i);if(n)r.name=n[1];const p=txt.match(/1[3-9]\d{9}/);if(p)r.phone=p[0];const e=txt.match(/\S+@\S+\.\S+/);if(e)r.email=e[0];const c=txt.match(/(?:公司|Company)[:：]\s*([^\n]+)/i);if(c)r.company=c[1];return r;}
-// 简单上传区域
-function setupDrop(zone,fileInput,isFront){ zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('active');}); zone.addEventListener('dragleave',()=>zone.classList.remove('active')); zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('active');if(e.dataTransfer.files[0]) handleImg(e.dataTransfer.files[0],isFront);}); fileInput.addEventListener('change',e=>{if(e.target.files[0]) handleImg(e.target.files[0],isFront);});}
-async function handleImg(file,isFront){ const blob=await compressImage(file); const url=URL.createObjectURL(blob); if(isFront){ frontFile=blob; document.getElementById('image-preview-front').src=url; document.getElementById('image-preview-front').classList.remove('hidden'); document.getElementById('upload-placeholder-front').classList.add('hidden'); document.getElementById('btn-clear-front').classList.remove('hidden'); }else{ backFile=blob; document.getElementById('image-preview-back').src=url; document.getElementById('image-preview-back').classList.remove('hidden'); document.getElementById('upload-placeholder-back').classList.add('hidden'); document.getElementById('btn-clear-back').classList.remove('hidden'); } updateRecognizeBtn();}
-document.getElementById('btn-clear-front')?.addEventListener('click',()=>{frontFile=null;document.getElementById('image-preview-front').classList.add('hidden');document.getElementById('upload-placeholder-front').classList.remove('hidden');updateRecognizeBtn();});
-document.getElementById('btn-clear-back')?.addEventListener('click',()=>{backFile=null;document.getElementById('image-preview-back').classList.add('hidden');document.getElementById('upload-placeholder-back').classList.remove('hidden');});
-setupDrop(document.getElementById('drop-zone-front'),document.getElementById('file-input-front'),true);
-setupDrop(document.getElementById('drop-zone-back'),document.getElementById('file-input-back'),false);
+        const wechatRowHtml = `
+        <div class="contact-row" style="cursor:default;">
+            <div class="ci" style="background:rgba(7,193,96,0.1);border-color:rgba(7,193,96,0.25);">
+                <i class="fab fa-weixin" style="color:#07C160;"></i>
+            </div>
+            <div class="c-value" style="color:rgba(255,255,255,0.88);">${esc(wechatId)}</div>
+        </div>`;
 
-let CONFIG={apiKey:localStorage.getItem('crm:api_key')||'',apiModel:'qwen-vl-ocr',apiEndpoint:'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation'};
-document.getElementById('save-api-key-btn')?.addEventListener('click',()=>{const k=document.getElementById('api-key-input').value;if(k){localStorage.setItem('crm:api_key',k);CONFIG.apiKey=k;Toast.show('API保存','success');}});
-document.getElementById('api-key-input').value=CONFIG.apiKey;
+        /* Phone + WhatsApp row */
+        const phoneWaHtml = (d.phone || d.whatsapp) ? `
+        <div class="phone-wa-row">
+            <div class="ci-phone"><i class="fas fa-phone-alt"></i></div>
+            <div class="phone-wa-info">
+                ${d.phone    ? `<a href="tel:${esc(d.phone)}" class="phone-num">${esc(d.phone)}</a>` : ''}
+                ${d.whatsapp ? `<a href="https://wa.me/${d.whatsapp.replace(/\D/g,'')}" target="_blank" class="wa-chip"><i class="fab fa-whatsapp"></i>WhatsApp</a>` : ''}
+            </div>
+        </div>` : '';
 
-// 登录逻辑
-let Auth={ init(){ const p=localStorage.getItem('crm:pwd'); if(!p){showSet();}else{const h=localStorage.getItem('crm:hint');if(h)document.getElementById('password-hint').innerHTML='提示:'+h;if(sessionStorage.getItem('logged')==='true')this.showApp();} }, login(pwd){ if(pwd===localStorage.getItem('crm:pwd')){sessionStorage.setItem('logged','true');this.showApp();}else Toast.show('密码错误','error');}, showApp(){document.getElementById('login-page').style.display='none';document.getElementById('main-app').classList.remove('hidden');switchTab('ocr');}, logout(){sessionStorage.removeItem('logged');location.reload();} };
-function switchTab(name){ document.querySelectorAll('#main-app section').forEach(s=>s.classList.add('hidden')); document.getElementById(`section-${name}`)?.classList.remove('hidden'); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); document.querySelector(`.nav-btn[data-tab="${name}"]`)?.classList.add('active'); if(name==='kanban') renderKanban(); if(name==='product') renderProductTable(); }
-document.getElementById('btn-login')?.addEventListener('click',()=>Auth.login(document.getElementById('login-password').value));
-document.getElementById('btn-logout')?.addEventListener('click',()=>Auth.logout());
-document.getElementById('btn-show-set-password')?.addEventListener('click',()=>{document.getElementById('password-login-section').classList.add('hidden');document.getElementById('set-password-section').classList.remove('hidden');});
-document.getElementById('btn-save-password')?.addEventListener('click',()=>{const p=document.getElementById('new-password').value;const cp=document.getElementById('confirm-password').value;if(p.length<6||p!==cp)return Toast.show('密码不符或太短','error');localStorage.setItem('crm:pwd',p);if(document.getElementById('password-hint-input').value)localStorage.setItem('crm:hint',document.getElementById('password-hint-input').value);Toast.show('设置成功','success');Auth.login(p);});
-document.getElementById('btn-back-to-login')?.addEventListener('click',()=>{document.getElementById('set-password-section').classList.add('hidden');document.getElementById('password-login-section').classList.remove('hidden');});
-document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
-document.getElementById('init-firebase-btn')?.addEventListener('click',()=>{const cfg=document.getElementById('firebase-config-area').value;if(cfg.trim())initFirebase(cfg.trim());else Toast.show('请输入配置','error');});
-document.getElementById('force-sync-btn')?.addEventListener('click',syncAllLocalToCloud);
-const savedFire=localStorage.getItem('crm:firebase_config'); if(savedFire){document.getElementById('firebase-config-area').value=savedFire;initFirebase(savedFire);}
-Auth.init();
+        /* Email + Website + Address rows — value only, no label */
+        const addrRowHtml = d.address ? `
+            <div class="contact-row" style="cursor:default;">
+                <div class="ci"><i class="fas fa-map-marker-alt"></i></div>
+                <div class="c-value" style="white-space:normal;font-size:0.85rem;font-weight:500;color:rgba(255,255,255,0.65);">${esc(d.address)}</div>
+            </div>` : '';
+
+        const otherContacts = [
+            d.email   && {href:`mailto:${d.email}`, icon:'fas fa-envelope', val:d.email,           ext:false},
+            d.website && {href:d.website,            icon:'fas fa-globe',   val:fmtWeb(d.website), ext:true},
+        ].filter(Boolean).map(c=>`
+            <a href="${esc(c.href)}" class="contact-row" ${c.ext?'target="_blank"':''}>
+                <div class="ci"><i class="${c.icon}"></i></div>
+                <div class="c-value">${esc(c.val)}</div>
+                <i class="fas fa-chevron-right c-arrow"></i>
+            </a>`).join('') + addrRowHtml;
+
+        /* Social */
+        const socList = [
+            d.instagram && {href:d.instagram, icon:'fab fa-instagram', label:'Instagram', clr:'#E1306C'},
+            d.facebook  && {href:d.facebook,  icon:'fab fa-facebook',  label:'Facebook',  clr:'#1877F2'},
+            d.youtube   && {href:d.youtube,   icon:'fab fa-youtube',   label:'YouTube',   clr:'#FF0000'},
+            d.linkedin  && {href:d.linkedin,  icon:'fab fa-linkedin',  label:'LinkedIn',  clr:'#0A66C2'},
+            d.tiktok    && {href:d.tiktok,    icon:'fab fa-tiktok',    label:'TikTok',    clr:'#fff'},
+            d.twitter   && {href:d.twitter,   icon:'fab fa-twitter',   label:'Twitter',   clr:'#1DA1F2'},
+        ].filter(Boolean);
+
+        const socialHtml = socList.length ? `<div class="sec">
+            <div class="sec-heading">Social Media</div>
+            <div class="social-grid">
+                ${socList.map(s=>`<a href="${esc(s.href)}" target="_blank" class="social-btn">
+                    <i class="${s.icon}" style="color:${s.clr}"></i>${s.label}
+                </a>`).join('')}
+            </div></div>` : '';
+
+        /* Products — full width stacked */
+        const vp = (d.products||[]).filter(p=>p&&p.img);
+        const productsHtml = vp.length ? `<div class="sec">
+            <div class="sec-heading">Products &amp; Brands</div>
+            <div class="products-list">
+                ${vp.map(p=>`<div class="product-item">
+                    <img src="${esc(p.img)}" alt="${esc(p.name)}" onerror="this.style.background='#2a2a2a'">
+                    <div class="product-item-name">${esc(p.name)}</div>
+                </div>`).join('')}
+            </div></div>` : '';
+
+        /* PDFs */
+        const pdfHtml = (d.pdfFiles||[]).length ? `<div class="sec">
+            <div class="sec-heading">Company Brochures</div>
+            <div class="pdf-list">
+                ${d.pdfFiles.map(f=>`<a href="${esc(f.url)}" target="_blank" class="pdf-item">
+                    <div class="pdf-icon"><i class="fas fa-file-pdf"></i></div>
+                    <div class="pdf-name">${esc(f.name)}</div>
+                    <i class="fas fa-external-link-alt pdf-arrow"></i>
+                </a>`).join('')}
+            </div></div>` : '';
+
+        /* Custom */
+        const customHtml = (d.customItems||[]).length ? `<div class="sec">
+            <div class="sec-heading">More Info</div>
+            <div>${d.customItems.map(item=>`
+                <div class="custom-item">
+                    <div class="custom-icon-box">${item.icon||'📌'}</div>
+                    <div style="flex:1;min-width:0;">
+                        <div class="c-ttl">${esc(item.title)}</div>
+                        ${item.link
+                            ? `<a href="${esc(item.link)}" target="_blank" class="c-val">${esc(item.value)}&nbsp;<i class="fas fa-external-link-alt" style="font-size:.58rem;"></i></a>`
+                            : `<div class="c-val">${esc(item.value)}</div>`}
+                    </div>
+                </div>`).join('')}
+            </div></div>` : '';
+
+        /* Assemble */
+        document.getElementById('card').innerHTML = `
+            <div class="cover-area">
+                ${coverHtml}
+                <div class="cover-overlay"></div>
+            </div>
+
+            <div class="header-area">
+                ${avatarHtml}
+                <div class="person-name">${esc(d.name||'')}</div>
+                ${d.title   ? `<div class="person-title">${esc(d.title)}</div>` : ''}
+                ${d.tagline ? `<div class="tagline-text">${esc(d.tagline)}</div>` : ''}
+                ${badgesHtml}
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="contact-section">
+                ${companyRowHtml}
+                ${phoneWaHtml}
+                ${otherContacts}
+                ${wechatRowHtml}
+            </div>
+
+            ${socialHtml}
+            ${productsHtml}
+            ${pdfHtml}
+            ${customHtml}
+
+            <div class="sec" style="margin-bottom:22px;">
+                <div class="sec-heading">Scan to Connect</div>
+                <div style="display:flex;gap:12px;">
+                    <div class="qr-box" style="flex:1;">
+                        <div class="qr-label">📱 Digital Card</div>
+                        <div id="qrcode"></div>
+                    </div>
+                    <div class="qr-box" style="flex:1;">
+                        <div class="qr-label" style="color:#07C160;">
+                            <i class="fab fa-weixin" style="font-size:0.9rem;margin-right:4px;"></i>WeChat
+                        </div>
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                            <img src="${wechatQrSrc}" 
+                                 style="width:148px;height:148px;border-radius:8px;object-fit:contain;background:#fff;"
+                                 onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+                            <div style="display:none;width:148px;height:148px;border-radius:8px;background:rgba(7,193,96,0.08);border:1px dashed rgba(7,193,96,0.3);align-items:center;justify-content:center;flex-direction:column;gap:6px;">
+                                <i class="fab fa-weixin" style="font-size:2rem;color:#07C160;"></i>
+                                <span style="font-size:0.62rem;color:rgba(255,255,255,0.4);">Upload QR in Admin</span>
+                            </div>
+                            <div style="font-size:0.72rem;color:#07C160;font-weight:700;">
+                                <i class="fab fa-weixin"></i> empparts
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="saveContactBtn">
+                    <i class="fas fa-user-plus"></i> Save Contact
+                </button>
+                <button class="btn btn-outline" id="shareCardBtn">
+                    <i class="fas fa-share-alt"></i> Share Card
+                </button>
+            </div>
+
+            <div class="footer">
+                EMP PARTS CO., LTD. &nbsp;·&nbsp; Trusted Partner Since 2002<br>
+                <a href="admin.html" class="admin-link">🔐 Admin</a>
+            </div>`;
+
+        /* QR */
+        const qrDiv = document.getElementById('qrcode');
+        if (qrDiv) {
+            qrDiv.innerHTML = '';
+            new QRCode(qrDiv, {
+                text: window.location.href,
+                width: 148, height: 148,
+                colorDark: '#ffffff', colorLight: '#141414'
+            });
+        }
+
+        document.getElementById('saveContactBtn')?.addEventListener('click', saveContact);
+        document.getElementById('shareCardBtn')?.addEventListener('click', shareCard);
+    }
+
+    /* vCard */
+    function saveContact() {
+        const d = cardData;
+        const ln = (d.name||'').split(' ');
+        const lines = [
+            'BEGIN:VCARD','VERSION:3.0',
+            `FN:${d.name||''}`,
+            `N:${ln.slice(1).join(' ')};${ln[0]};;;`,
+            `ORG:${d.companyName||''}`,
+            `TITLE:${d.title||''}`,
+        ];
+        if (d.phone)    lines.push(`TEL;TYPE=WORK,VOICE:${d.phone}`);
+        if (d.whatsapp) lines.push(`TEL;TYPE=CELL:+${d.whatsapp.replace(/\D/g,'')}`);
+        if (d.email)    lines.push(`EMAIL;TYPE=WORK:${d.email}`);
+        if (d.website)  lines.push(`URL:${d.website}`);
+        if (d.address)  lines.push(`ADR;TYPE=WORK:;;${(d.address||'').replace(/\n/g,', ')};;;;`);
+        if (d.instagram) lines.push(`X-SOCIALPROFILE;type=instagram:${d.instagram}`);
+        if (d.linkedin)  lines.push(`X-SOCIALPROFILE;type=linkedin:${d.linkedin}`);
+        if (d.tagline)   lines.push(`NOTE:${d.tagline}`);
+        lines.push('END:VCARD');
+        const blob = new Blob([lines.join('\r\n')], {type:'text/vcard;charset=utf-8'});
+        const url = URL.createObjectURL(blob);
+        const a = Object.assign(document.createElement('a'),
+            {href:url, download:`${(d.name||'contact').replace(/\s+/g,'_')}.vcf`});
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    /* Share */
+    function shareCard() {
+        const d = cardData;
+        if (navigator.share) {
+            navigator.share({title:(d.name||'')+' - Business Card', url:window.location.href});
+        } else {
+            navigator.clipboard.writeText(window.location.href).then(()=>alert('Link copied!'));
+        }
+    }
+
+    loadData();
 </script>
 </body>
 </html>
