@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>智能识别系统 v2.1 · 名片与产品管理</title>
+    <title>智能识别系统 v2.2 · 名片与产品管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -11,7 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <style>
-        :root{--ver:"v2.1"}
+        :root{--ver:"v2.2"}
         body{font-family:'Segoe UI',Roboto,system-ui,sans-serif;background:#f3f4f6}
         .drop-zone{transition:all 0.25s ease;border:2px dashed #cbd5e1;min-height:160px}
         .drop-zone.active{border-color:#2563eb;background:#eff6ff}
@@ -36,7 +36,7 @@
 </head>
 <body class="antialiased">
 
-<div class="version-badge">v2.1 修复版 | 2026-05-10</div>
+<div class="version-badge">v2.2 | 2026-05-10</div>
 
 <!-- 登录页面 -->
 <div id="login-page" class="login-container">
@@ -45,7 +45,7 @@
             <i class="fas fa-address-card text-5xl text-indigo-600 mb-4"></i>
             <h1 class="text-2xl font-bold text-gray-900">智能识别系统</h1>
             <p class="text-gray-500 mt-1 text-sm">名片+产品·云端同步·智能去重</p>
-            <p class="text-gray-400 mt-1 text-xs">v2.1 修复版 | 2026-05-10</p>
+            <p class="text-gray-400 mt-1 text-xs">v2.2 | 2026-05-10</p>
         </div>
         <div id="password-login-section">
             <div class="space-y-4">
@@ -71,7 +71,7 @@
     <div class="toast-container" id="toast-container"></div>
     <header class="bg-white shadow-sm z-10 border-b">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3"><i class="fas fa-address-card text-blue-600 text-2xl"></i><h1 class="text-xl font-bold text-gray-900 hidden sm:block">OCR识别 v2.1</h1></div>
+            <div class="flex items-center gap-3"><i class="fas fa-address-card text-blue-600 text-2xl"></i><h1 class="text-xl font-bold text-gray-900 hidden sm:block">OCR识别 v2.2</h1></div>
             <nav class="flex gap-2 items-center flex-wrap">
                 <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium bg-blue-100 text-blue-700 active" data-tab="ocr">名片</button>
                 <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="product">产品</button>
@@ -83,7 +83,7 @@
     </header>
 
     <main class="flex-1 overflow-hidden relative bg-gray-50">
-        <!-- 名片识别（恢复背面） -->
+        <!-- 名片识别（保留预览） -->
         <section class="absolute inset-0 overflow-y-auto p-4 md:p-6" id="section-ocr">
             <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-white p-5 rounded-xl shadow-sm">
@@ -160,7 +160,7 @@
             </div>
         </section>
 
-        <!-- 看板（切换时自动同步） -->
+        <!-- 看板 -->
         <section class="absolute inset-0 overflow-hidden flex flex-col hidden" id="section-kanban">
             <div class="p-4 bg-white border-b">
                 <div class="flex justify-between items-center mb-3"><h2 class="text-lg font-bold">客户看板</h2><span>共 <span id="total-customers">0</span> 位</span></div>
@@ -187,7 +187,7 @@
         <section class="absolute inset-0 overflow-y-auto p-4 md:p-6 hidden" id="section-settings">
             <div class="max-w-2xl mx-auto space-y-5">
                 <div class="bg-white p-5 rounded-xl shadow-sm">
-                    <h2 class="font-semibold border-b pb-2 mb-3">Firebase 云同步 <span class="text-xs text-gray-400">v2.1</span></h2>
+                    <h2 class="font-semibold border-b pb-2 mb-3">Firebase 云同步 <span class="text-xs text-gray-400">v2.2</span></h2>
                     <textarea id="firebase-config-area" rows="4" class="w-full border p-2 font-mono text-sm rounded" placeholder='{"apiKey":"...","projectId":"...","storageBucket":"..."}'></textarea>
                     <button id="init-firebase-btn" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm">连接并同步</button>
                     <div id="firebase-status" class="text-sm text-green-600 hidden mt-2">未连接</div>
@@ -201,7 +201,7 @@
                     <button id="export-customers-excel" class="bg-green-600 text-white px-4 py-2 rounded text-sm">导出Excel</button>
                     <button id="clear-all-data" class="bg-red-600 text-white px-4 py-2 rounded text-sm">清空数据</button>
                 </div>
-                <p class="text-xs text-center text-gray-400">v2.1 修复版 | 2026-05-10</p>
+                <p class="text-xs text-center text-gray-400">v2.2 | 2026-05-10</p>
             </div>
         </section>
     </main>
@@ -235,7 +235,7 @@
 
 <script>
 (function() {
-    const APP_VERSION = 'v2.1 修复版';
+    const APP_VERSION = 'v2.2';
     const APP_DATE = '2026-05-10';
     console.log(`🚀 智能识别系统 ${APP_VERSION} | ${APP_DATE}`);
 
@@ -246,7 +246,7 @@
     let storage = null;
     let currentImageBlob = null;
     let frontImageFile = null;
-    let backImageFile = null;  // 背面图片
+    let backImageFile = null;
     let draggedCustomerId = null;
     let currentSearchKeyword = '';
     let currentCountryFilter = '';
@@ -283,9 +283,7 @@
         try {
             const config = JSON.parse(configText);
             if (!firebase.apps.length) firebase.initializeApp(config);
-            db = firebase.firestore();
-            storage = firebase.storage();
-            firestoreEnabled = true;
+            db = firebase.firestore(); storage = firebase.storage(); firestoreEnabled = true;
             localStorage.setItem('crm_firebase_config', configText);
             document.getElementById('firebase-status').classList.remove('hidden');
             document.getElementById('firebase-status').innerText = '已连接，正在智能合并...';
@@ -300,15 +298,10 @@
             const cloudCust = []; custSnap.forEach(d => cloudCust.push({ ...d.data(), id: d.id }));
             const prodSnap = await db.collection('products').get();
             const cloudProd = []; prodSnap.forEach(d => cloudProd.push({ ...d.data(), id: d.id }));
-
-            customers = mergeArrays(customers, cloudCust);
-            products = mergeArrays(products, cloudProd);
-            saveLocal();
-            renderKanban(); renderProductTable();
-
+            customers = mergeArrays(customers, cloudCust); products = mergeArrays(products, cloudProd);
+            saveLocal(); renderKanban(); renderProductTable();
             for (let c of customers) await db.collection('customers').doc(c.id).set(c).catch(() => {});
             for (let p of products) await db.collection('products').doc(p.id).set(p).catch(() => {});
-
             document.getElementById('firebase-status').innerText = '已连接 · ' + customers.length + '位客户';
             showToast('同步完成，共' + customers.length + '位客户', 'success');
         } catch (e) { showToast('同步失败: ' + e.message, 'error'); }
@@ -406,11 +399,9 @@
     function updateStatus(id, newStatus) {
         const c = customers.find(x => x.id === id);
         if (c && c.status !== newStatus) {
-            c.status = newStatus;
-            saveLocal();
+            c.status = newStatus; saveLocal();
             if (firestoreEnabled && db) db.collection('customers').doc(id).set(c).then(() => console.log('状态已同步:', c.name, newStatus));
-            renderKanban();
-            showToast('状态已更新并同步', 'success');
+            renderKanban(); showToast('状态已更新并同步', 'success');
         }
     }
 
@@ -422,7 +413,7 @@
         const statusSel = e.target.closest('.status-select'); if (statusSel) { updateStatus(statusSel.dataset.statusid, statusSel.value); return; }
     });
 
-    // ========== 客户操作 ==========
+    // ========== 客户操作（保存后保留图片预览）==========
     function saveCustomer(e) {
         e.preventDefault();
         const id = document.getElementById('cust-id').value || Date.now().toString();
@@ -442,13 +433,11 @@
             if (idx !== -1) { customer.status = customers[idx].status; customer.logs = customers[idx].logs || []; customers[idx] = customer; }
             else customers.push(customer);
             saveLocal(); syncCustomerToFirestore(customer); renderKanban();
-            document.getElementById('customer-form').reset(); document.getElementById('cust-id').value = '';
-            frontImageFile = null; backImageFile = null;
-            document.getElementById('image-preview-front')?.classList.add('hidden');
-            document.getElementById('upload-placeholder-front')?.classList.remove('hidden');
-            document.getElementById('image-preview-back')?.classList.add('hidden');
-            document.getElementById('upload-placeholder-back')?.classList.remove('hidden');
+            // 🔥 只清空表单，保留图片预览
+            document.getElementById('customer-form').reset();
+            document.getElementById('cust-id').value = '';
             document.getElementById('btn-recognize').disabled = true;
+            // 不清除图片！保留预览
             showToast('客户已保存并同步', 'success');
         });
     }
@@ -498,9 +487,7 @@
         document.getElementById('section-' + tab).classList.remove('hidden');
         document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-blue-100','text-blue-700'); b.classList.add('text-gray-500'); });
         const active = document.querySelector(`.nav-btn[data-tab="${tab}"]`); if (active) active.classList.add('bg-blue-100','text-blue-700');
-        if (tab === 'kanban') {
-            if (firestoreEnabled) { smartSync(); } else { renderKanban(); }
-        }
+        if (tab === 'kanban') { if (firestoreEnabled) { smartSync(); } else { renderKanban(); } }
         if (tab === 'product') renderProductTable();
     }
 
@@ -516,8 +503,21 @@
         } else showToast('密码错误', 'error');
     }
 
-    // 查找重复
     function showDuplicates() { const groups = findAllDuplicates(); if (groups.length === 0) { showToast('未发现重复客户', 'info'); return; } showToast(`发现 ${groups.length} 组重复，已高亮`, 'info'); renderKanban(); switchTab('kanban'); }
+
+    // 产品OCR
+    async function recognizeProduct(file) {
+        if (!CONFIG.apiKey) return null;
+        const compressed = await compressImage(file);
+        const base64 = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(compressed); });
+        const res = await fetch(CONFIG.apiEndpoint, { method: 'POST', headers: { 'Authorization': 'Bearer ' + CONFIG.apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen-vl-plus', messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: base64 } }, { type: 'text', text: '提取产品信息，只返回JSON：{"brand":"","type":"","model":"","partNo":"","serial":""}' }] }] }) });
+        if (!res.ok) return null; const data = await res.json(); const text = data.choices[0].message.content; const m = text.match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : null;
+    }
+    function handleProductUpload(file) {
+        if (!file) return;
+        const reader = new FileReader(); reader.onload = e => { document.getElementById('product-preview').src = e.target.result; document.getElementById('product-preview').classList.remove('hidden'); }; reader.readAsDataURL(file);
+        if (CONFIG.apiKey) recognizeProduct(file).then(r => { if (r) { if (r.brand) document.getElementById('product-brand').value = r.brand; if (r.type) document.getElementById('product-type').value = r.type; if (r.model) document.getElementById('product-model').value = r.model; if (r.partNo) document.getElementById('product-partno').value = r.partNo; if (r.serial) document.getElementById('product-serial').value = r.serial; showToast('识别完成', 'success'); } });
+    }
 
     // 初始化
     document.addEventListener('DOMContentLoaded', () => {
@@ -529,7 +529,7 @@
         document.getElementById('btn-logout').addEventListener('click', () => { sessionStorage.removeItem('crm_logged_in'); document.getElementById('login-page').style.display = 'flex'; document.getElementById('main-app').classList.add('hidden'); });
         document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
-        // 名片上传（正面+背面）
+        // 名片上传
         document.getElementById('file-input-front').addEventListener('change', e => { if (e.target.files[0]) { frontImageFile = e.target.files[0]; document.getElementById('image-preview-front').src = URL.createObjectURL(e.target.files[0]); document.getElementById('image-preview-front').classList.remove('hidden'); document.getElementById('upload-placeholder-front').classList.add('hidden'); document.getElementById('btn-recognize').disabled = false; } });
         document.getElementById('file-input-back').addEventListener('change', e => { if (e.target.files[0]) { backImageFile = e.target.files[0]; document.getElementById('image-preview-back').src = URL.createObjectURL(e.target.files[0]); document.getElementById('image-preview-back').classList.remove('hidden'); document.getElementById('upload-placeholder-back').classList.add('hidden'); } });
         document.getElementById('btn-recognize').addEventListener('click', recognizeBusinessCard);
