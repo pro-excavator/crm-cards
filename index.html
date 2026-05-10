@@ -4,17 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>智能识别系统 · 名片与产品管理</title>
-    <script src="https://cdn.tailwindcss.com">
-    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js">
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js">
-    </script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
@@ -52,7 +47,6 @@
             animation: slideIn 0.3s ease-out;
             display: flex;
             align-items: center;
-            backdrop-filter: blur(4px);
         }
         @keyframes slideIn {
             from {
@@ -74,18 +68,14 @@
             display: inline-block;
         }
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
+            0% {transform: rotate(0deg);}
+            100% {transform: rotate(360deg);}
         }
         .debug-area {
             background: #1e1e1e;
             color: #d4d4d4;
             padding: 12px;
-            font-family: 'JetBrains Mono', monospace;
+            font-family: monospace;
             font-size: 13px;
             max-height: 180px;
             overflow: auto;
@@ -102,7 +92,6 @@
         }
         .login-box {
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
             border-radius: 20px;
             padding: 40px;
             width: 100%;
@@ -118,11 +107,9 @@
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 12px;
-            text-decoration: none;
             border: none;
             cursor: pointer;
             font-weight: 500;
-            transition: background 0.2s;
         }
         .whatsapp-btn:hover {
             background: #128C7E;
@@ -153,7 +140,6 @@
             border-radius: 20px;
             font-size: 12px;
             z-index: 100;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
     </style>
 </head>
@@ -165,15 +151,15 @@
             <div class="text-center mb-8">
                 <i class="fas fa-address-card text-5xl text-indigo-600 mb-4"></i>
                 <h1 class="text-2xl font-bold text-gray-900">智能识别系统</h1>
-                <p class="text-gray-500 mt-2 text-sm">名片 + 产品管理 · Firestore 云端同步</p>
+                <p class="text-gray-500 mt-2 text-sm">名片 + 产品管理 · 云端同步</p>
             </div>
             <div id="password-login-section">
                 <div class="space-y-4">
                     <div><label class="block text-sm font-medium text-gray-700 mb-1">访问密码</label><input type="password" id="login-password" class="w-full border p-2.5 rounded-lg" placeholder="输入密码"></div>
-                    <button id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium transition"><i class="fas fa-lock-open mr-2"></i> 登录</button>
+                    <button id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium"><i class="fas fa-lock-open mr-2"></i> 登录</button>
                     <p class="text-xs text-gray-500 text-center" id="password-hint"></p>
                 </div>
-                <div class="mt-4 text-center"><button id="btn-show-set-password" class="text-sm text-indigo-600 hover:text-indigo-800">首次使用？设置密码</button></div>
+                <div class="mt-4 text-center"><button id="btn-show-set-password" class="text-sm text-indigo-600">首次使用？设置密码</button></div>
             </div>
             <div id="set-password-section" class="hidden mt-6 border-t pt-5">
                 <h3 class="text-lg font-medium mb-3">设置访问密码</h3>
@@ -207,44 +193,24 @@
         </header>
 
         <main class="flex-1 overflow-hidden relative bg-gray-50">
-            <!-- 名片识别页面 -->
+            <!-- 名片识别 -->
             <section class="absolute inset-0 overflow-y-auto p-4 md:p-6" id="section-ocr">
                 <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-white p-5 rounded-xl shadow-sm">
-                        <h2 class="text-lg font-semibold mb-4"><i class="fas fa-upload mr-2 text-blue-500"></i> 上传名片</h2>
+                        <h2 class="text-lg font-semibold mb-4">上传名片</h2>
                         <div class="mb-4">
                             <label class="block text-sm font-medium mb-2">正面 *</label>
                             <div class="drop-zone rounded-lg flex flex-col items-center justify-center cursor-pointer bg-gray-50 relative" id="drop-zone-front">
                                 <input accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-input-front" type="file">
-                                <div class="text-center p-4" id="upload-placeholder-front"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-1"></i><p class="text-gray-500 text-sm">点击或拖拽正面图片</p></div>
+                                <div class="text-center p-4" id="upload-placeholder-front"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-1"></i><p class="text-gray-500 text-sm">点击或拖拽</p></div>
                                 <img class="hidden max-h-36 object-contain rounded" id="image-preview-front">
                             </div>
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium mb-2">背面 (可选)</label>
-                            <div class="drop-zone rounded-lg flex flex-col items-center justify-center cursor-pointer bg-gray-50 relative" id="drop-zone-back">
-                                <input accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-input-back" type="file">
-                                <div class="text-center p-4" id="upload-placeholder-back"><i class="fas fa-plus-circle text-3xl text-gray-400 mb-1"></i><p class="text-gray-500 text-sm">点击或拖拽背面图片</p></div>
-                                <img class="hidden max-h-36 object-contain rounded" id="image-preview-back">
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs text-gray-400">自动压缩至500KB</span>
-                            <button class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm disabled:opacity-50 flex items-center gap-2" disabled id="btn-recognize">
-                                <span>开始识别</span><div class="loader hidden" id="btn-loader"></div>
-                            </button>
-                        </div>
-                        <details open class="mt-4">
-                            <summary class="text-xs text-gray-500 cursor-pointer mb-2">原始识别结果</summary>
-                            <div class="debug-area" id="debug-ocr-text">等待识别...</div>
-                        </details>
+                        <button class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm disabled:opacity-50 flex items-center gap-2" disabled id="btn-recognize"><span>开始识别</span><div class="loader hidden" id="btn-loader"></div></button>
+                        <details open class="mt-4"><summary class="text-xs text-gray-500 cursor-pointer mb-2">识别结果</summary><div class="debug-area" id="debug-ocr-text">等待识别...</div></details>
                     </div>
                     <div class="bg-white p-5 rounded-xl shadow-sm">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-lg font-semibold"><i class="fas fa-user-edit mr-2 text-green-500"></i> 客户信息</h2>
-                            <span class="text-xs bg-gray-100 px-2 py-1 rounded" id="edit-mode-indicator">新增模式</span>
-                            <button class="text-xs text-blue-600 hidden" id="btn-cancel-edit">取消编辑</button>
-                        </div>
+                        <h2 class="text-lg font-semibold mb-4">客户信息</h2>
                         <form id="customer-form">
                             <input type="hidden" id="cust-id">
                             <div class="space-y-3">
@@ -265,11 +231,11 @@
                 </div>
             </section>
 
-            <!-- 产品识别页面 -->
+            <!-- 产品 -->
             <section class="absolute inset-0 overflow-y-auto p-4 md:p-6 hidden" id="section-product">
                 <div class="max-w-7xl mx-auto space-y-6">
                     <div class="bg-white p-5 rounded-xl shadow-sm">
-                        <h2 class="text-xl font-bold mb-4"><i class="fas fa-microchip text-purple-500 mr-2"></i> 产品智能识别</h2>
+                        <h2 class="text-xl font-bold mb-4">产品管理</h2>
                         <div class="grid md:grid-cols-2 gap-6">
                             <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50" id="product-dropzone">
                                 <input type="file" id="product-image-input" accept="image/*" class="hidden">
@@ -280,113 +246,79 @@
                             <div class="bg-gray-50 p-4 rounded-lg">
                                 <form id="product-form" class="space-y-3">
                                     <input type="hidden" id="product-id">
-                                    <div><label>品牌</label><input type="text" id="product-brand" class="w-full border p-2 rounded" placeholder="DOOSAN"></div>
-                                    <div><label>品名</label><input type="text" id="product-type" class="w-full border p-2 rounded" placeholder="回转机构总成"></div>
-                                    <div><label>型号</label><input type="text" id="product-model" class="w-full border p-2 rounded" placeholder="PC160LC-8"></div>
-                                    <div><label>零件号</label><input type="text" id="product-partno" class="w-full border p-2 rounded" placeholder="401-00356A"></div>
-                                    <div><label>序列号</label><input type="text" id="product-serial" class="w-full border p-2 rounded" placeholder="830269"></div>
+                                    <div><label>品牌</label><input type="text" id="product-brand" class="w-full border p-2 rounded"></div>
+                                    <div><label>品名</label><input type="text" id="product-type" class="w-full border p-2 rounded"></div>
+                                    <div><label>型号</label><input type="text" id="product-model" class="w-full border p-2 rounded"></div>
+                                    <div><label>零件号</label><input type="text" id="product-partno" class="w-full border p-2 rounded"></div>
+                                    <div><label>序列号</label><input type="text" id="product-serial" class="w-full border p-2 rounded"></div>
                                     <div><label>备注</label><textarea id="product-notes" rows="2" class="w-full border p-2 rounded"></textarea></div>
                                     <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded">保存产品</button>
                                 </form>
                             </div>
                         </div>
-                        <div class="mt-4 flex justify-end">
-                            <button id="export-products-excel" class="bg-green-600 text-white px-4 py-2 rounded"><i class="fas fa-file-excel mr-1"></i> 导出Excel</button>
-                        </div>
+                        <div class="mt-4 flex justify-end"><button id="export-products-excel" class="bg-green-600 text-white px-4 py-2 rounded">导出Excel</button></div>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
                         <div class="px-6 py-3 bg-gray-100 font-semibold">产品库</div>
-                        <div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-gray-50"><tr><th class="px-4 py-2 text-left">品牌</th><th class="px-4 py-2 text-left">品名</th><th class="px-4 py-2 text-left">型号</th><th class="px-4 py-2 text-left">零件号</th><th class="px-4 py-2 text-left">序列号</th><th class="px-4 py-2 text-center">操作</th></tr></thead><tbody id="product-list-body"></tbody></table></div>
+                        <div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-gray-50"><tr><th class="px-4 py-2">品牌</th><th>品名</th><th>型号</th><th>零件号</th><th>序列号</th><th>操作</th></tr></thead><tbody id="product-list-body"></tbody></table></div>
                     </div>
                 </div>
             </section>
 
-            <!-- 客户看板 -->
+            <!-- 看板 -->
             <section class="absolute inset-0 overflow-hidden flex flex-col hidden" id="section-kanban">
                 <div class="p-4 bg-white border-b">
-                    <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
-                        <h2 class="text-lg font-bold">客户沟通进度</h2>
-                        <span class="text-sm text-gray-500">共 <span id="total-customers" class="font-bold text-gray-800">0</span> 位客户</span>
-                    </div>
-                    <div class="flex flex-wrap gap-2">
-                        <input type="text" id="search-input" placeholder="搜索姓名/公司/电话" class="border p-2 rounded w-56 text-sm">
-                        <input type="text" id="country-filter" placeholder="国家筛选" class="border p-2 rounded w-36 text-sm">
-                        <button id="reset-filter" class="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded text-sm">重置</button>
+                    <div class="flex justify-between items-center mb-3"><h2 class="text-lg font-bold">客户看板</h2><span>共 <span id="total-customers">0</span> 位</span></div>
+                    <div class="flex gap-2">
+                        <input type="text" id="search-input" placeholder="搜索" class="border p-2 rounded w-48 text-sm">
+                        <input type="text" id="country-filter" placeholder="国家" class="border p-2 rounded w-28 text-sm">
+                        <button id="reset-filter" class="bg-gray-200 px-3 py-2 rounded text-sm">重置</button>
+                        <button id="sync-now-btn" class="bg-blue-500 text-white px-3 py-2 rounded text-sm">手动同步</button>
                     </div>
                 </div>
                 <div class="flex-1 overflow-x-auto p-4">
                     <div class="flex gap-4 h-full min-w-max">
-                        <div class="w-80 flex flex-col bg-gray-100 rounded-lg" data-status="potential"><div class="p-3 bg-gray-200 rounded-t-lg font-semibold flex justify-between"><span>潜在客户</span><span class="count-badge bg-gray-300 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-potential"></div></div>
-                        <div class="w-80 flex flex-col bg-yellow-50 rounded-lg" data-status="contacted"><div class="p-3 bg-yellow-100 rounded-t-lg font-semibold flex justify-between"><span>已联系</span><span class="count-badge bg-yellow-200 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-contacted"></div></div>
-                        <div class="w-80 flex flex-col bg-blue-50 rounded-lg" data-status="followed_up"><div class="p-3 bg-blue-100 rounded-t-lg font-semibold flex justify-between"><span>已跟进</span><span class="count-badge bg-blue-200 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-followed_up"></div></div>
-                        <div class="w-80 flex flex-col bg-green-50 rounded-lg" data-status="closed"><div class="p-3 bg-green-100 rounded-t-lg font-semibold flex justify-between"><span>已成交</span><span class="count-badge bg-green-200 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-closed"></div></div>
-                        <div class="w-80 flex flex-col bg-red-50 rounded-lg" data-status="lost"><div class="p-3 bg-red-100 rounded-t-lg font-semibold flex justify-between"><span>已丢失</span><span class="count-badge bg-red-200 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-lost"></div></div>
+                        <div class="w-80 flex flex-col bg-gray-100 rounded" data-status="potential"><div class="p-3 bg-gray-200 font-semibold rounded-t">潜在 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-potential"></div></div>
+                        <div class="w-80 flex flex-col bg-yellow-50 rounded" data-status="contacted"><div class="p-3 bg-yellow-100 font-semibold rounded-t">已联系 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-contacted"></div></div>
+                        <div class="w-80 flex flex-col bg-blue-50 rounded" data-status="followed_up"><div class="p-3 bg-blue-100 font-semibold rounded-t">已跟进 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-followed_up"></div></div>
+                        <div class="w-80 flex flex-col bg-green-50 rounded" data-status="closed"><div class="p-3 bg-green-100 font-semibold rounded-t">已成交 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-closed"></div></div>
+                        <div class="w-80 flex flex-col bg-red-50 rounded" data-status="lost"><div class="p-3 bg-red-100 font-semibold rounded-t">已丢失 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-lost"></div></div>
                     </div>
                 </div>
             </section>
 
-            <!-- 设置页面 -->
+            <!-- 设置 -->
             <section class="absolute inset-0 overflow-y-auto p-4 md:p-6 hidden" id="section-settings">
                 <div class="max-w-2xl mx-auto space-y-5">
                     <div class="bg-white p-5 rounded-xl shadow-sm">
-                        <h2 class="font-semibold border-b pb-2 mb-3"><i class="fas fa-database text-blue-500 mr-2"></i> Firestore 云同步</h2>
+                        <h2 class="font-semibold border-b pb-2 mb-3">Firebase 云同步</h2>
                         <textarea id="firebase-config-area" rows="4" class="w-full border p-2 font-mono text-sm rounded" placeholder='{"apiKey":"...","projectId":"...","storageBucket":"..."}'></textarea>
-                        <button id="init-firebase-btn" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm">连接 Firestore + Storage</button>
-                        <div id="firebase-status" class="text-sm text-green-600 hidden mt-2">已连接云端</div>
+                        <button id="init-firebase-btn" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm">连接 Firebase</button>
+                        <button id="sync-from-cloud-btn" class="mt-2 ml-2 bg-green-600 text-white px-4 py-2 rounded text-sm">从云端加载数据</button>
+                        <div id="firebase-status" class="text-sm text-green-600 hidden mt-2">已连接</div>
                     </div>
                     <div class="bg-white p-5 rounded-xl shadow-sm">
-                        <h2 class="font-semibold border-b pb-2 mb-3"><i class="fab fa-github mr-2"></i> GitHub 图片备份</h2>
-                        <div class="flex items-center gap-2 mb-3">
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="github-toggle" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                            </label>
-                            <span class="text-sm" id="github-toggle-label">已禁用</span>
-                        </div>
-                        <div id="github-config-fields" class="hidden space-y-3">
-                            <input type="password" id="github-token" class="w-full border p-2 rounded text-sm" placeholder="Token">
-                            <input type="text" id="github-username" class="w-full border p-2 rounded text-sm" placeholder="用户名">
-                            <input type="text" id="github-repo" class="w-full border p-2 rounded text-sm" placeholder="仓库名">
-                            <button id="save-github-config" class="w-full bg-gray-800 text-white py-2 rounded text-sm">保存</button>
-                            <button id="disable-github" class="w-full bg-red-50 text-red-600 py-2 rounded text-sm">清除并禁用</button>
-                        </div>
-                    </div>
-                    <div class="bg-white p-5 rounded-xl shadow-sm">
-                        <h2 class="font-semibold border-b pb-2 mb-3">API & 安全</h2>
-                        <label class="text-sm">通义千问 API Key</label>
-                        <input id="api-key-input" class="w-full border p-2 rounded mt-1 text-sm" type="password" placeholder="sk-...">
+                        <h2 class="font-semibold border-b pb-2 mb-3">API 设置</h2>
+                        <input id="api-key-input" class="w-full border p-2 rounded text-sm" type="password" placeholder="通义千问 API Key">
                         <button id="save-api-key-btn" class="mt-2 bg-gray-800 text-white px-4 py-2 rounded text-sm">保存</button>
-                        <div class="mt-4 pt-3 border-t">
-                            <label class="text-sm">修改密码</label>
-                            <div class="flex gap-2 mt-1">
-                                <input type="password" id="change-password-input" class="flex-1 border p-2 rounded text-sm" placeholder="新密码">
-                                <button id="change-password-btn" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm">修改</button>
-                            </div>
-                        </div>
                     </div>
-                    <div class="bg-white p-5 rounded-xl shadow-sm flex flex-wrap gap-3">
-                        <button id="export-customers-excel" class="bg-green-600 text-white px-4 py-2 rounded text-sm">导出客户Excel</button>
-                        <button id="clear-all-data" class="bg-red-600 text-white px-4 py-2 rounded text-sm">清空数据</button>
+                    <div class="bg-white p-5 rounded-xl shadow-sm">
+                        <button id="export-customers-excel" class="bg-green-600 text-white px-4 py-2 rounded text-sm">导出Excel</button>
+                        <button id="clear-all-data" class="bg-red-600 text-white px-4 py-2 rounded text-sm ml-2">清空数据</button>
                     </div>
                 </div>
             </section>
         </main>
 
-        <!-- 沟通记录模态框 -->
+        <!-- 沟通记录 -->
         <div class="modal-overlay" id="log-modal">
-            <div class="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col mx-4 shadow-2xl">
-                <div class="p-4 border-b flex justify-between items-center">
-                    <h3 class="text-lg font-bold">沟通记录</h3>
-                    <button id="close-log-modal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-                </div>
+            <div class="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col mx-4">
+                <div class="p-4 border-b flex justify-between"><h3 class="text-lg font-bold">沟通记录</h3><button id="close-log-modal" class="text-gray-400 text-2xl">&times;</button></div>
                 <div class="p-4 flex-1 overflow-y-auto bg-gray-50">
                     <div id="log-history" class="space-y-3 mb-4"></div>
                     <form id="log-form" class="bg-white p-4 rounded border">
                         <input type="hidden" id="log-customer-id">
-                        <div class="grid grid-cols-2 gap-3 mb-3">
-                            <div><label class="text-sm">时间</label><input type="datetime-local" id="log-time" class="w-full border p-2 rounded text-sm"></div>
-                            <div><label class="text-sm">类型</label><select id="log-type" class="w-full border p-2 rounded text-sm"><option value="phone">电话</option><option value="email">邮件</option><option value="online">在线</option><option value="meeting">面谈</option></select></div>
-                        </div>
+                        <div class="grid grid-cols-2 gap-3 mb-3"><div><label class="text-sm">时间</label><input type="datetime-local" id="log-time" class="w-full border p-2 rounded text-sm"></div><div><label class="text-sm">类型</label><select id="log-type" class="w-full border p-2 rounded text-sm"><option value="phone">电话</option><option value="email">邮件</option><option value="online">在线</option><option value="meeting">面谈</option></select></div></div>
                         <div class="mb-3"><label class="text-sm">内容</label><textarea id="log-content" rows="2" class="w-full border p-2 rounded text-sm" required></textarea></div>
                         <div class="mb-3"><label class="text-sm">下一步</label><input type="text" id="log-next" class="w-full border p-2 rounded text-sm"></div>
                         <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded">添加记录</button>
@@ -394,12 +326,11 @@
                 </div>
             </div>
         </div>
-        <div id="github-status-badge" class="github-status-badge hidden"><i class="fab fa-github"></i> GitHub已启用</div>
     </div>
 
     <script>
         (function() {
-            // ==================== 全局状态 ====================
+            // ==================== 全局 ====================
             let customers = [];
             let products = [];
             let firestoreEnabled = false;
@@ -410,13 +341,11 @@
             let draggedCustomerId = null;
             let currentSearchKeyword = '';
             let currentCountryFilter = '';
-            let githubConfig = { enabled: false, token: '', username: '', repo: '' };
             const CONFIG = {
                 apiKey: localStorage.getItem('crm_api_key') || '',
                 apiEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
             };
 
-            // ==================== 工具函数 ====================
             const showToast = (msg, type = 'info') => {
                 const container = document.getElementById('toast-container');
                 if (!container) return;
@@ -431,14 +360,10 @@
             const escapeHtml = (s) => s ? String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;',
                 '"': '&quot;', "'": '&#39;' })[m]) : '';
 
-            const saveLocal = () => {
-                localStorage.setItem('crm_customers', JSON.stringify(customers));
-                localStorage.setItem('crm_products', JSON.stringify(products));
-            };
-
+            const saveLocal = () => { localStorage.setItem('crm_customers', JSON.stringify(customers));
+                localStorage.setItem('crm_products', JSON.stringify(products)); };
             const loadLocal = () => {
-                try { customers = JSON.parse(localStorage.getItem('crm_customers') || '[]'); } catch (e) { customers =
-                    []; }
+                try { customers = JSON.parse(localStorage.getItem('crm_customers') || '[]'); } catch (e) { customers = []; }
                 try { products = JSON.parse(localStorage.getItem('crm_products') || '[]'); } catch (e) { products = []; }
             };
 
@@ -454,63 +379,57 @@
                     firestoreEnabled = true;
                     localStorage.setItem('crm_firebase_config', configText);
                     document.getElementById('firebase-status').classList.remove('hidden');
-                    showToast('Firebase已连接', 'success');
-                } catch (e) { showToast('配置错误', 'error'); }
+                    document.getElementById('firebase-status').innerText = '已连接，正在同步...';
+                    // 连接后立即同步
+                    loadFromFirestore();
+                    showToast('Firebase已连接并同步', 'success');
+                } catch (e) { showToast('配置错误: ' + e.message, 'error'); }
             };
 
-            // ==================== GitHub ====================
-            const loadGithubConfig = () => {
-                const saved = localStorage.getItem('crm_github_config');
-                if (saved) {
-                    try { githubConfig = JSON.parse(saved); } catch (e) { githubConfig = { enabled: false }; }
-                }
-                updateGithubUI();
+            const syncCustomerToFirestore = async (customer) => {
+                if (!firestoreEnabled || !db) return;
+                try { await db.collection('customers').doc(customer.id).set(customer); } catch (e) { console.warn(e); }
             };
 
-            const updateGithubUI = () => {
-                const toggle = document.getElementById('github-toggle');
-                const fields = document.getElementById('github-config-fields');
-                const label = document.getElementById('github-toggle-label');
-                const badge = document.getElementById('github-status-badge');
-                if (githubConfig.enabled) {
-                    if (toggle) toggle.checked = true;
-                    if (fields) fields.classList.remove('hidden');
-                    if (label) label.textContent = '已启用';
-                    if (badge) badge.classList.remove('hidden');
-                    document.getElementById('github-token').value = githubConfig.token || '';
-                    document.getElementById('github-username').value = githubConfig.username || '';
-                    document.getElementById('github-repo').value = githubConfig.repo || '';
-                } else {
-                    if (toggle) toggle.checked = false;
-                    if (fields) fields.classList.add('hidden');
-                    if (label) label.textContent = '已禁用';
-                    if (badge) badge.classList.add('hidden');
-                }
+            const syncProductToFirestore = async (product) => {
+                if (!firestoreEnabled || !db) return;
+                try { await db.collection('products').doc(product.id).set(product); } catch (e) { console.warn(e); }
             };
 
-            // ==================== 看板渲染 ====================
+            const loadFromFirestore = async () => {
+                if (!firestoreEnabled || !db) return;
+                try {
+                    const custSnap = await db.collection('customers').get();
+                    customers = [];
+                    custSnap.forEach(d => customers.push({ ...d.data(), id: d.id }));
+                    const prodSnap = await db.collection('products').get();
+                    products = [];
+                    prodSnap.forEach(d => products.push({ ...d.data(), id: d.id }));
+                    saveLocal();
+                    renderKanban();
+                    renderProductTable();
+                    document.getElementById('firebase-status').innerText = '已连接 · 客户数: ' + customers.length;
+                    showToast('同步完成，共' + customers.length + '位客户', 'success');
+                } catch (e) { showToast('同步失败: ' + e.message, 'error'); }
+            };
+
+            // ==================== 看板 ====================
             function renderKanban() {
                 let filtered = [...customers];
                 if (currentSearchKeyword) {
                     const kw = currentSearchKeyword.toLowerCase();
-                    filtered = filtered.filter(c =>
-                        (c.name && c.name.toLowerCase().includes(kw)) ||
-                        (c.company && c.company.toLowerCase().includes(kw)) ||
-                        (c.phone && c.phone.includes(kw))
-                    );
+                    filtered = filtered.filter(c => (c.name && c.name.toLowerCase().includes(kw)) || (c.company && c
+                        .company.toLowerCase().includes(kw)) || (c.phone && c.phone.includes(kw)));
                 }
-                if (currentCountryFilter) {
-                    filtered = filtered.filter(c => c.country === currentCountryFilter);
-                }
+                if (currentCountryFilter) filtered = filtered.filter(c => c.country === currentCountryFilter);
 
                 document.getElementById('total-customers').innerText = filtered.length;
-
-                ['potential', 'contacted', 'followed_up', 'closed', 'lost'].forEach(status => {
-                    const col = document.getElementById(`col-${status}`);
+                ['potential', 'contacted', 'followed_up', 'closed', 'lost'].forEach(s => {
+                    const col = document.getElementById(`col-${s}`);
                     if (col) col.innerHTML = '';
-                    const count = filtered.filter(c => c.status === status).length;
-                    const badge = document.querySelector(`[data-status="${status}"] .count-badge`);
-                    if (badge) badge.innerText = count;
+                    const cnt = filtered.filter(c => c.status === s).length;
+                    const badge = document.querySelector(`[data-status="${s}"] .count-badge`);
+                    if (badge) badge.innerText = cnt;
                 });
 
                 filtered.forEach(c => {
@@ -519,21 +438,13 @@
                         'bg-white p-3 rounded shadow border border-gray-200 cursor-pointer hover:shadow-md group mb-3';
                     card.draggable = true;
                     card.setAttribute('data-id', c.id);
-                    card.addEventListener('dragstart', e => {
-                        draggedCustomerId = c.id;
-                        setTimeout(() => card.classList.add('card-dragging'), 0);
-                    });
+                    card.addEventListener('dragstart', e => { draggedCustomerId = c.id;
+                        card.classList.add('card-dragging'); });
                     card.addEventListener('dragend', () => card.classList.remove('card-dragging'));
-
-                    const imgHtml = c.cardImage ?
-                        `<div class="mb-2"><img src="${c.cardImage}" class="w-full h-20 object-cover rounded"></div>` :
-                        '';
                     const logsCount = (c.logs || []).length;
-
                     card.innerHTML = `
-                        ${imgHtml}
                         <div class="flex justify-between items-start mb-2">
-                            <h4 class="font-bold truncate cursor-pointer" data-edit="${c.id}">${escapeHtml(c.name || '未命名')}</h4>
+                            <h4 class="font-bold truncate cursor-pointer" data-edit="${c.id}">${escapeHtml(c.name||'未命名')}</h4>
                             <div class="flex gap-1 opacity-0 group-hover:opacity-100">
                                 <button data-edit="${c.id}" class="text-blue-500"><i class="fas fa-edit text-xs"></i></button>
                                 <button data-log="${c.id}" class="text-green-500"><i class="far fa-comment-dots text-xs"></i>${logsCount||''}</button>
@@ -541,14 +452,13 @@
                             </div>
                         </div>
                         <div class="text-xs text-gray-500 space-y-1 cursor-pointer" data-edit="${c.id}">
-                            ${c.company?`<div><i class="far fa-building mr-1"></i>${escapeHtml(c.company)}</div>`:''}
-                            ${c.phone?`<div><i class="fas fa-phone mr-1"></i>${escapeHtml(c.phone)}</div>`:''}
-                            ${c.email?`<div><i class="fas fa-envelope mr-1"></i>${escapeHtml(c.email)}</div>`:''}
+                            ${c.company?`<div>${escapeHtml(c.company)}</div>`:''}
+                            ${c.phone?`<div>📞 ${escapeHtml(c.phone)}</div>`:''}
                         </div>
                         <div class="mt-2 pt-2 border-t flex justify-between items-center">
                             <span class="text-xs text-gray-400">${new Date(c.createTime).toLocaleDateString()}</span>
                             <div class="flex gap-2 items-center">
-                                ${c.phone ? `<button class="whatsapp-btn text-xs wa-btn" data-phone="${c.phone.replace(/'/g,"\\'")}"><i class="fab fa-whatsapp"></i> WhatsApp</button>` : ''}
+                                ${c.phone?`<button class="whatsapp-btn text-xs wa-btn" data-phone="${c.phone.replace(/'/g,"\\'")}">WhatsApp</button>`:''}
                                 <select class="text-xs border rounded p-1 status-select" data-statusid="${c.id}">
                                     <option value="potential" ${c.status==='potential'?'selected':''}>潜在</option>
                                     <option value="contacted" ${c.status==='contacted'?'selected':''}>已联系</option>
@@ -557,9 +467,8 @@
                                     <option value="lost" ${c.status==='lost'?'selected':''}>已丢失</option>
                                 </select>
                             </div>
-                        </div>
-                    `;
-                    const col = document.getElementById(`col-${c.status || 'potential'}`);
+                        </div>`;
+                    const col = document.getElementById(`col-${c.status||'potential'}`);
                     if (col) col.appendChild(card);
                 });
 
@@ -567,23 +476,20 @@
                     col.addEventListener('dragover', e => e.preventDefault());
                     col.addEventListener('drop', e => {
                         e.preventDefault();
-                        const newStatus = col.closest('[data-status]')?.dataset.status;
-                        if (draggedCustomerId && newStatus) updateStatus(draggedCustomerId,
-                        newStatus);
+                        const ns = col.closest('[data-status]')?.dataset.status;
+                        if (draggedCustomerId && ns) updateStatus(draggedCustomerId, ns);
                     });
                 });
             }
 
             function updateStatus(id, newStatus) {
                 const c = customers.find(x => x.id === id);
-                if (c && c.status !== newStatus) {
-                    c.status = newStatus;
+                if (c && c.status !== newStatus) { c.status = newStatus;
                     saveLocal();
-                    renderKanban();
-                }
+                    syncCustomerToFirestore(c);
+                    renderKanban(); }
             }
 
-            // ==================== 事件委托 ====================
             document.body.addEventListener('click', e => {
                 const editBtn = e.target.closest('[data-edit]');
                 if (editBtn) { editCustomer(editBtn.dataset.edit); return; }
@@ -597,11 +503,12 @@
                 if (statusSel) { updateStatus(statusSel.dataset.statusid, statusSel.value); return; }
             });
 
-            // ==================== 客户操作 ====================
+            // ==================== 客户 ====================
             function saveCustomer(e) {
                 e.preventDefault();
+                const id = document.getElementById('cust-id').value || Date.now().toString();
                 const customer = {
-                    id: document.getElementById('cust-id').value || Date.now().toString(),
+                    id,
                     name: document.getElementById('cust-name').value,
                     company: document.getElementById('cust-company').value,
                     position: document.getElementById('cust-position').value,
@@ -613,40 +520,20 @@
                     logs: [],
                     createTime: new Date().toISOString()
                 };
-
-                const idx = customers.findIndex(c => c.id === customer.id);
-                if (idx !== -1) {
-                    customer.status = customers[idx].status;
+                const idx = customers.findIndex(c => c.id === id);
+                if (idx !== -1) { customer.status = customers[idx].status;
                     customer.logs = customers[idx].logs || [];
-                    customers[idx] = customer;
-                } else {
-                    customers.push(customer);
-                }
-
+                    customers[idx] = customer; } else customers.push(customer);
                 saveLocal();
-                // 异步上传图片
-                if (currentImageBlob && firestoreEnabled && storage) {
-                    const blob = currentImageBlob;
-                    const cid = customer.id;
-                    currentImageBlob = null;
-                    storage.ref().child(`cards/${cid}.jpg`).put(blob).then(s => s.ref.getDownloadURL()).then(url => {
-                        const c = customers.find(x => x.id === cid);
-                        if (c) { c.cardImage = url;
-                            saveLocal();
-                            renderKanban(); }
-                    }).catch(() => {});
-                }
-
+                syncCustomerToFirestore(customer);
                 renderKanban();
                 document.getElementById('customer-form').reset();
                 document.getElementById('cust-id').value = '';
-                document.getElementById('edit-mode-indicator').innerText = '新增模式';
-                document.getElementById('btn-cancel-edit').classList.add('hidden');
                 frontImageFile = null;
                 document.getElementById('image-preview-front')?.classList.add('hidden');
                 document.getElementById('upload-placeholder-front')?.classList.remove('hidden');
                 document.getElementById('btn-recognize').disabled = true;
-                showToast('客户已保存', 'success');
+                showToast('客户已保存并同步', 'success');
             }
 
             function editCustomer(id) {
@@ -660,8 +547,6 @@
                 document.getElementById('cust-email').value = c.email || '';
                 document.getElementById('cust-country').value = c.country || '';
                 document.getElementById('cust-notes').value = c.notes || '';
-                document.getElementById('edit-mode-indicator').innerText = '编辑模式';
-                document.getElementById('btn-cancel-edit').classList.remove('hidden');
                 switchTab('ocr');
             }
 
@@ -669,6 +554,7 @@
                 if (confirm('确定删除？')) {
                     customers = customers.filter(c => c.id !== id);
                     saveLocal();
+                    if (firestoreEnabled && db) db.collection('customers').doc(id).delete();
                     renderKanban();
                     showToast('已删除', 'success');
                 }
@@ -690,13 +576,8 @@
                 now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                 document.getElementById('log-time').value = now.toISOString().slice(0, 16);
                 const logs = c.logs || [];
-                document.getElementById('log-history').innerHTML = logs.length ? logs.sort((a, b) => new Date(b
-                    .timestamp) - new Date(a.timestamp)).map(l => `
-                    <div class="bg-white p-3 rounded border text-sm">
-                        <div class="font-bold">${new Date(l.timestamp).toLocaleString()}</div>
-                        <p>${escapeHtml(l.content)}</p>
-                        ${l.nextStep?`<div class="text-xs bg-yellow-50 p-1 rounded mt-1">→ ${escapeHtml(l.nextStep)}</div>`:''}
-                    </div>`).join('') : '<p class="text-gray-400 text-center py-4">暂无记录</p>';
+                document.getElementById('log-history').innerHTML = logs.length ? logs.sort((a, b) => new Date(b.timestamp) -
+                    new Date(a.timestamp)).map(l => `<div class="bg-white p-3 rounded border text-sm"><div class="font-bold">${new Date(l.timestamp).toLocaleString()}</div><p>${escapeHtml(l.content)}</p>${l.nextStep?`<div class="text-xs bg-yellow-50 p-1 rounded mt-1">→ ${escapeHtml(l.nextStep)}</div>`:''}</div>`).join('') : '<p class="text-gray-400 text-center py-4">暂无记录</p>';
                 document.getElementById('log-modal').classList.add('active');
             }
 
@@ -706,20 +587,18 @@
                 const c = customers.find(x => x.id === id);
                 if (!c) return;
                 c.logs = c.logs || [];
-                c.logs.push({
-                    timestamp: document.getElementById('log-time').value || new Date().toISOString(),
-                    type: document.getElementById('log-type').value,
-                    content: document.getElementById('log-content').value.trim(),
-                    nextStep: document.getElementById('log-next').value.trim()
-                });
+                c.logs.push({ timestamp: document.getElementById('log-time').value || new Date().toISOString(), type: document
+                        .getElementById('log-type').value, content: document.getElementById('log-content').value.trim(),
+                    nextStep: document.getElementById('log-next').value.trim() });
                 saveLocal();
+                syncCustomerToFirestore(c);
                 openLogModal(id);
                 document.getElementById('log-content').value = '';
                 document.getElementById('log-next').value = '';
                 showToast('记录已添加', 'success');
             }
 
-            // ==================== 产品操作 ====================
+            // ==================== 产品 ====================
             function saveProduct(e) {
                 e.preventDefault();
                 const id = document.getElementById('product-id').value || Date.now().toString();
@@ -737,56 +616,45 @@
                 if (idx !== -1) products[idx] = product;
                 else products.push(product);
                 saveLocal();
+                syncProductToFirestore(product);
                 renderProductTable();
                 document.getElementById('product-form').reset();
-                document.getElementById('product-id').value = '';
                 showToast('产品已保存', 'success');
             }
 
             function deleteProduct(id) {
-                if (confirm('删除产品？')) {
-                    products = products.filter(p => p.id !== id);
-                    saveLocal();
-                    renderProductTable();
-                    showToast('已删除', 'success');
-                }
+                if (confirm('删除？')) { products = products.filter(p => p.id !== id);
+                    saveLocal(); if (firestoreEnabled && db) db.collection('products').doc(id).delete();
+                    renderProductTable(); }
             }
 
             function renderProductTable() {
                 const tbody = document.getElementById('product-list-body');
                 if (!tbody) return;
-                tbody.innerHTML = products.length ? products.map(p => `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="px-3 py-2">${escapeHtml(p.brand||'-')}</td>
-                        <td class="px-3 py-2">${escapeHtml(p.type||'-')}</td>
-                        <td class="px-3 py-2">${escapeHtml(p.model||'-')}</td>
-                        <td class="px-3 py-2">${escapeHtml(p.partNo||'-')}</td>
-                        <td class="px-3 py-2">${escapeHtml(p.serial||'-')}</td>
-                        <td class="px-3 py-2 text-center"><button class="text-red-500" onclick="window.deleteProduct('${p.id}')"><i class="fas fa-trash"></i></button></td>
-                    </tr>`).join('') : '<tr><td colspan="6" class="text-center py-8 text-gray-400">暂无产品</td></tr>';
+                tbody.innerHTML = products.length ? products.map(p => `<tr class="border-b"><td class="px-3 py-2">${escapeHtml(p.brand||'-')}</td><td>${escapeHtml(p.type||'-')}</td><td>${escapeHtml(p.model||'-')}</td><td>${escapeHtml(p.partNo||'-')}</td><td>${escapeHtml(p.serial||'-')}</td><td><button class="text-red-500" onclick="window.delProd('${p.id}')">删除</button></td></tr>`).join('') : '<tr><td colspan="6" class="text-center py-8 text-gray-400">暂无产品</td></tr>';
             }
 
-            // ==================== OCR识别 ====================
+            // ==================== OCR ====================
             async function compressImage(file) {
                 return new Promise(resolve => {
                     const img = new Image();
                     img.onload = () => {
-                        const canvas = document.createElement('canvas');
+                        const c = document.createElement('canvas');
                         let w = img.width,
                             h = img.height;
                         if (w > 1200) { h = (h * 1200) / w;
                             w = 1200; }
-                        canvas.width = w;
-                        canvas.height = h;
-                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        canvas.toBlob(resolve, 'image/jpeg', 0.8);
+                        c.width = w;
+                        c.height = h;
+                        c.getContext('2d').drawImage(img, 0, 0, w, h);
+                        c.toBlob(resolve, 'image/jpeg', 0.8);
                     };
                     img.src = URL.createObjectURL(file);
                 });
             }
 
             async function recognizeBusinessCard() {
-                if (!CONFIG.apiKey) { showToast('请先配置API Key', 'error');
+                if (!CONFIG.apiKey) { showToast('请配置API Key', 'error');
                     switchTab('settings'); return; }
                 if (!frontImageFile) { showToast('请上传图片', 'error'); return; }
                 const btn = document.getElementById('btn-recognize');
@@ -797,23 +665,20 @@
                     const base64 = await new Promise(r => { const reader = new FileReader();
                         reader.onload = () => r(reader.result);
                         reader.readAsDataURL(currentImageBlob); });
-                    const response = await fetch(CONFIG.apiEndpoint, {
+                    const res = await fetch(CONFIG.apiEndpoint, {
                         method: 'POST',
                         headers: { 'Authorization': 'Bearer ' + CONFIG.apiKey, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            model: 'qwen-vl-plus',
-                            messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: base64 } },
-                                { type: 'text', text: '提取名片信息，只返回JSON：{"name":"","company":"","position":"","phone":"","email":"","country":""}' }
-                            ] }]
-                        })
+                        body: JSON.stringify({ model: 'qwen-vl-plus', messages: [{ role: 'user', content: [{ type: 'image_url',
+                                image_url: { url: base64 } }, { type: 'text',
+                                text: '提取名片信息，只返回JSON：{"name":"","company":"","position":"","phone":"","email":"","country":""}' }] }] })
                     });
-                    if (!response.ok) throw new Error('API错误: ' + response.status);
-                    const data = await response.json();
+                    if (!res.ok) throw new Error('API错误');
+                    const data = await res.json();
                     const text = data.choices[0].message.content;
                     document.getElementById('debug-ocr-text').innerText = text;
-                    const match = text.match(/\{[\s\S]*\}/);
-                    if (match) {
-                        const ex = JSON.parse(match[0]);
+                    const m = text.match(/\{[\s\S]*\}/);
+                    if (m) {
+                        const ex = JSON.parse(m[0]);
                         if (ex.name) document.getElementById('cust-name').value = ex.name;
                         if (ex.company) document.getElementById('cust-company').value = ex.company;
                         if (ex.position) document.getElementById('cust-position').value = ex.position;
@@ -822,7 +687,7 @@
                         if (ex.country) document.getElementById('cust-country').value = ex.country;
                         showToast('识别成功', 'success');
                     } else showToast('请手动填写', 'info');
-                } catch (e) { showToast('识别失败: ' + e.message, 'error'); } finally { btn.disabled = false;
+                } catch (e) { showToast('识别失败', 'error'); } finally { btn.disabled = false;
                     document.getElementById('btn-loader').classList.add('hidden'); }
             }
 
@@ -832,51 +697,38 @@
                 const base64 = await new Promise(r => { const reader = new FileReader();
                     reader.onload = () => r(reader.result);
                     reader.readAsDataURL(compressed); });
-                try {
-                    const response = await fetch(CONFIG.apiEndpoint, {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Bearer ' + CONFIG.apiKey, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            model: 'qwen-vl-plus',
-                            messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: base64 } },
-                                { type: 'text', text: '提取产品信息，只返回JSON：{"brand":"","type":"","model":"","partNo":"","serial":""}' }
-                            ] }]
-                        })
-                    });
-                    if (!response.ok) return null;
-                    const data = await response.json();
-                    const text = data.choices[0].message.content;
-                    const match = text.match(/\{[\s\S]*\}/);
-                    return match ? JSON.parse(match[0]) : null;
-                } catch (e) { return null; }
+                const res = await fetch(CONFIG.apiEndpoint, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + CONFIG.apiKey, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: 'qwen-vl-plus', messages: [{ role: 'user', content: [{ type: 'image_url',
+                            image_url: { url: base64 } }, { type: 'text',
+                            text: '提取产品信息，只返回JSON：{"brand":"","type":"","model":"","partNo":"","serial":""}' }] }] })
+                });
+                if (!res.ok) return null;
+                const data = await res.json();
+                const text = data.choices[0].message.content;
+                const m = text.match(/\{[\s\S]*\}/);
+                return m ? JSON.parse(m[0]) : null;
             }
 
             function handleProductUpload(file) {
                 if (!file) return;
                 const reader = new FileReader();
-                reader.onload = e => {
-                    document.getElementById('product-preview').src = e.target.result;
-                    document.getElementById('product-preview').classList.remove('hidden');
-                };
+                reader.onload = e => { document.getElementById('product-preview').src = e.target.result;
+                    document.getElementById('product-preview').classList.remove('hidden'); };
                 reader.readAsDataURL(file);
-                if (CONFIG.apiKey) {
-                    recognizeProduct(file).then(r => {
-                        if (r) {
-                            if (r.brand) document.getElementById('product-brand').value = r.brand;
-                            if (r.type) document.getElementById('product-type').value = r.type;
-                            if (r.model) document.getElementById('product-model').value = r.model;
-                            if (r.partNo) document.getElementById('product-partno').value = r.partNo;
-                            if (r.serial) document.getElementById('product-serial').value = r.serial;
-                            showToast('识别完成', 'success');
-                        }
-                    });
-                }
+                if (CONFIG.apiKey) recognizeProduct(file).then(r => { if (r) { if (r.brand) document.getElementById(
+                            'product-brand').value = r.brand; if (r.type) document.getElementById('product-type')
+                        .value = r.type; if (r.model) document.getElementById('product-model').value = r.model; if (r
+                        .partNo) document.getElementById('product-partno').value = r.partNo; if (r.serial) document
+                        .getElementById('product-serial').value = r.serial;
+                        showToast('识别完成', 'success'); } });
             }
 
             // ==================== 页面切换 ====================
             function switchTab(tab) {
-                ['ocr', 'product', 'kanban', 'settings'].forEach(s => document.getElementById('section-' + s).classList
-                    .add('hidden'));
+                ['ocr', 'product', 'kanban', 'settings'].forEach(s => document.getElementById('section-' + s).classList.add(
+                    'hidden'));
                 document.getElementById('section-' + tab).classList.remove('hidden');
                 document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-blue-100', 'text-blue-700');
                     b.classList.add('text-gray-500'); });
@@ -886,55 +738,43 @@
                 if (tab === 'product') renderProductTable();
             }
 
-            // ==================== 登录逻辑 ====================
-            function checkLogin() {
-                const pwd = localStorage.getItem('crm_password');
-                if (!pwd) {
-                    document.getElementById('password-login-section').classList.add('hidden');
-                    document.getElementById('set-password-section').classList.remove('hidden');
-                    return false;
-                }
-                if (sessionStorage.getItem('crm_logged_in') === 'true') {
+            // ==================== 登录 ====================
+            function doLogin() {
+                if (document.getElementById('login-password').value === localStorage.getItem('crm_password')) {
+                    sessionStorage.setItem('crm_logged_in', 'true');
                     document.getElementById('login-page').style.display = 'none';
                     document.getElementById('main-app').classList.remove('hidden');
                     loadLocal();
-                    loadGithubConfig();
-                    const fb = localStorage.getItem('crm_firebase_config');
-                    if (fb) {
-                        document.getElementById('firebase-config-area').value = fb;
-                        try { if (!firebase.apps.length) firebase.initializeApp(JSON.parse(fb));
+                    // 尝试自动连接Firebase并从云端加载
+                    const fbConfig = localStorage.getItem('crm_firebase_config');
+                    if (fbConfig) {
+                        try {
+                            document.getElementById('firebase-config-area').value = fbConfig;
+                            const config = JSON.parse(fbConfig);
+                            if (!firebase.apps.length) firebase.initializeApp(config);
                             db = firebase.firestore();
                             storage = firebase.storage();
-                            firestoreEnabled = true; } catch (e) {}
+                            firestoreEnabled = true;
+                            document.getElementById('firebase-status').classList.remove('hidden');
+                            document.getElementById('firebase-status').innerText = '已连接，正在同步...';
+                            loadFromFirestore();
+                        } catch (e) { console.warn('Firebase auto-init failed:', e); }
+                    } else {
+                        renderKanban();
+                        renderProductTable();
                     }
-                    document.getElementById('api-key-input').value = CONFIG.apiKey;
-                    renderKanban();
-                    renderProductTable();
-                    return true;
-                }
-                return false;
+                } else showToast('密码错误', 'error');
             }
 
             // ==================== 初始化 ====================
             document.addEventListener('DOMContentLoaded', () => {
-                // 登录
-                document.getElementById('btn-login').addEventListener('click', () => {
-                    if (document.getElementById('login-password').value === localStorage.getItem(
-                            'crm_password')) {
-                        sessionStorage.setItem('crm_logged_in', 'true');
-                        document.getElementById('login-page').style.display = 'none';
-                        document.getElementById('main-app').classList.remove('hidden');
-                        loadLocal();
-                        loadGithubConfig();
-                        renderKanban();
-                        renderProductTable();
-                    } else showToast('密码错误', 'error');
-                });
+                document.getElementById('btn-login').addEventListener('click', doLogin);
+                document.getElementById('login-password').addEventListener('keypress', e => { if (e.key === 'Enter')
+                        doLogin(); });
                 document.getElementById('btn-save-password').addEventListener('click', () => {
                     const p = document.getElementById('new-password').value;
                     if (p.length < 6) return showToast('至少6位', 'error');
-                    if (p !== document.getElementById('confirm-password').value) return showToast('不一致',
-                        'error');
+                    if (p !== document.getElementById('confirm-password').value) return showToast('不一致', 'error');
                     localStorage.setItem('crm_password', p);
                     showToast('密码已设置', 'success');
                     document.getElementById('set-password-section').classList.add('hidden');
@@ -953,99 +793,56 @@
                     document.getElementById('login-page').style.display = 'flex';
                     document.getElementById('main-app').classList.add('hidden');
                 });
-
-                // 导航
-                document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => switchTab(b
-                    .dataset.tab)));
-
-                // 名片识别
+                document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset
+                    .tab)));
                 document.getElementById('file-input-front').addEventListener('change', e => {
-                    if (e.target.files[0]) {
-                        frontImageFile = e.target.files[0];
-                        document.getElementById('image-preview-front').src = URL.createObjectURL(e.target
-                            .files[0]);
+                    if (e.target.files[0]) { frontImageFile = e.target.files[0];
+                        document.getElementById('image-preview-front').src = URL.createObjectURL(e.target.files[
+                            0]);
                         document.getElementById('image-preview-front').classList.remove('hidden');
                         document.getElementById('upload-placeholder-front').classList.add('hidden');
-                        document.getElementById('btn-recognize').disabled = false;
-                    }
+                        document.getElementById('btn-recognize').disabled = false; }
                 });
                 document.getElementById('btn-recognize').addEventListener('click', recognizeBusinessCard);
                 document.getElementById('customer-form').addEventListener('submit', saveCustomer);
-                document.getElementById('btn-whatsapp-from-form').addEventListener('click', () => openWhatsApp(
-                    document.getElementById('cust-phone').value));
-                document.getElementById('btn-cancel-edit').addEventListener('click', () => {
-                    document.getElementById('customer-form').reset();
-                    document.getElementById('cust-id').value = '';
-                    document.getElementById('edit-mode-indicator').innerText = '新增模式';
-                    document.getElementById('btn-cancel-edit').classList.add('hidden');
-                });
-
-                // 产品
+                document.getElementById('btn-whatsapp-from-form').addEventListener('click', () => openWhatsApp(document
+                    .getElementById('cust-phone').value));
                 document.getElementById('product-form').addEventListener('submit', saveProduct);
                 const pdz = document.getElementById('product-dropzone');
                 const pdi = document.getElementById('product-image-input');
                 pdz.addEventListener('click', () => pdi.click());
-                pdi.addEventListener('change', e => { if (e.target.files[0]) handleProductUpload(e.target.files[
-                        0]); });
+                pdi.addEventListener('change', e => { if (e.target.files[0]) handleProductUpload(e.target.files[0]); });
                 pdz.addEventListener('dragover', e => { e.preventDefault();
                     pdz.classList.add('active'); });
                 pdz.addEventListener('dragleave', () => pdz.classList.remove('active'));
                 pdz.addEventListener('drop', e => { e.preventDefault();
-                    pdz.classList.remove('active'); if (e.dataTransfer.files[0]) handleProductUpload(e
-                        .dataTransfer.files[0]); });
-
-                // 沟通记录
+                    pdz.classList.remove('active'); if (e.dataTransfer.files[0]) handleProductUpload(e.dataTransfer
+                        .files[0]); });
                 document.getElementById('log-form').addEventListener('submit', saveLog);
-                document.getElementById('close-log-modal').addEventListener('click', () => document.getElementById(
-                    'log-modal').classList.remove('active'));
-
-                // 设置
+                document.getElementById('close-log-modal').addEventListener('click', () => document.getElementById('log-modal')
+                    .classList.remove('active'));
                 document.getElementById('init-firebase-btn').addEventListener('click', initFirestore);
+                document.getElementById('sync-from-cloud-btn').addEventListener('click', () => {
+                    if (!firestoreEnabled) return showToast('请先连接Firebase', 'error');
+                    loadFromFirestore();
+                });
+                document.getElementById('sync-now-btn').addEventListener('click', () => {
+                    if (!firestoreEnabled) return showToast('请先在设置中连接Firebase', 'error');
+                    loadFromFirestore();
+                });
                 document.getElementById('save-api-key-btn').addEventListener('click', () => {
-                    const key = document.getElementById('api-key-input').value.trim();
-                    localStorage.setItem('crm_api_key', key);
-                    CONFIG.apiKey = key;
+                    CONFIG.apiKey = document.getElementById('api-key-input').value.trim();
+                    localStorage.setItem('crm_api_key', CONFIG.apiKey);
                     showToast('API Key已保存', 'success');
                 });
-                document.getElementById('change-password-btn').addEventListener('click', () => {
-                    const p = document.getElementById('change-password-input').value;
-                    if (p.length >= 6) { localStorage.setItem('crm_password', p);
-                        showToast('密码已修改', 'success'); } else showToast('至少6位', 'error');
-                });
-
-                // GitHub
-                document.getElementById('github-toggle').addEventListener('change', e => {
-                    githubConfig.enabled = e.target.checked;
-                    updateGithubUI();
-                    localStorage.setItem('crm_github_config', JSON.stringify(githubConfig));
-                });
-                document.getElementById('save-github-config').addEventListener('click', () => {
-                    githubConfig.token = document.getElementById('github-token').value.trim();
-                    githubConfig.username = document.getElementById('github-username').value.trim();
-                    githubConfig.repo = document.getElementById('github-repo').value.trim();
-                    githubConfig.enabled = true;
-                    localStorage.setItem('crm_github_config', JSON.stringify(githubConfig));
-                    updateGithubUI();
-                    showToast('GitHub配置已保存', 'success');
-                });
-                document.getElementById('disable-github').addEventListener('click', () => {
-                    githubConfig = { enabled: false, token: '', username: '', repo: '' };
-                    localStorage.removeItem('crm_github_config');
-                    updateGithubUI();
-                    showToast('GitHub已禁用', 'info');
-                });
-
-                // 导出
                 document.getElementById('export-customers-excel').addEventListener('click', () => {
                     if (!customers.length) return showToast('无数据', 'error');
-                    XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.json_to_sheet(customers), '客户'),
-                        '客户数据.xlsx');
+                    XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.json_to_sheet(customers), '客户'), '客户数据.xlsx');
                     showToast('导出成功', 'success');
                 });
                 document.getElementById('export-products-excel').addEventListener('click', () => {
                     if (!products.length) return showToast('无数据', 'error');
-                    XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.json_to_sheet(products), '产品'),
-                        '产品数据.xlsx');
+                    XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.json_to_sheet(products), '产品'), '产品数据.xlsx');
                     showToast('导出成功', 'success');
                 });
                 document.getElementById('clear-all-data').addEventListener('click', () => {
@@ -1056,13 +853,11 @@
                         renderProductTable();
                         showToast('已清空', 'success'); }
                 });
-
-                // 筛选
-                document.getElementById('search-input').addEventListener('input', e => { currentSearchKeyword = e
-                        .target.value;
+                document.getElementById('search-input').addEventListener('input', e => { currentSearchKeyword = e.target
+                        .value;
                     renderKanban(); });
-                document.getElementById('country-filter').addEventListener('input', e => { currentCountryFilter = e
-                        .target.value;
+                document.getElementById('country-filter').addEventListener('input', e => { currentCountryFilter = e.target
+                        .value;
                     renderKanban(); });
                 document.getElementById('reset-filter').addEventListener('click', () => {
                     document.getElementById('search-input').value = '';
@@ -1071,14 +866,34 @@
                     currentCountryFilter = '';
                     renderKanban();
                 });
-
-                // 初始化
                 document.getElementById('api-key-input').value = CONFIG.apiKey;
-                if (!checkLogin()) document.getElementById('login-page').style.display = 'flex';
+                if (!localStorage.getItem('crm_password')) {
+                    document.getElementById('password-login-section').classList.add('hidden');
+                    document.getElementById('set-password-section').classList.remove('hidden');
+                }
+                if (sessionStorage.getItem('crm_logged_in') === 'true') {
+                    document.getElementById('login-page').style.display = 'none';
+                    document.getElementById('main-app').classList.remove('hidden');
+                    loadLocal();
+                    const fbConfig = localStorage.getItem('crm_firebase_config');
+                    if (fbConfig) {
+                        document.getElementById('firebase-config-area').value = fbConfig;
+                        try {
+                            const config = JSON.parse(fbConfig);
+                            if (!firebase.apps.length) firebase.initializeApp(config);
+                            db = firebase.firestore();
+                            storage = firebase.storage();
+                            firestoreEnabled = true;
+                            document.getElementById('firebase-status').classList.remove('hidden');
+                            document.getElementById('firebase-status').innerText = '已连接，正在同步...';
+                            loadFromFirestore();
+                        } catch (e) {}
+                    } else { renderKanban();
+                        renderProductTable(); }
+                }
             });
 
-            window.deleteProduct = deleteProduct;
-            window.openWhatsApp = openWhatsApp;
+            window.delProd = deleteProduct;
         })();
     </script>
 </body>
