@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
     </script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js">
@@ -156,6 +155,14 @@
             z-index: 100;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
+        /* 开关样式 */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6;
+        }
+        .toggle-checkbox:checked+.toggle-label {
+            background-color: #3b82f6;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -218,7 +225,7 @@
                             <label class="block text-sm font-medium mb-2">正面 *</label>
                             <div class="drop-zone rounded-lg flex flex-col items-center justify-center cursor-pointer bg-gray-50 relative" id="drop-zone-front">
                                 <input accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-input-front" type="file">
-                                <div class="text-center p-4" id="upload-placeholder-front"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-1"></i><p class="text-gray-500 text-sm">点击或拖拽</p></div>
+                                <div class="text-center p-4" id="upload-placeholder-front"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-1"></i><p class="text-gray-500 text-sm">点击或拖拽正面图片</p></div>
                                 <img class="hidden max-h-36 object-contain rounded" id="image-preview-front">
                             </div>
                             <div class="flex justify-between mt-1"><span class="text-xs text-gray-500" id="file-name-front">未选择</span><button class="text-xs text-red-500 hidden" id="btn-clear-front">清除</button></div>
@@ -227,7 +234,7 @@
                             <label class="block text-sm font-medium mb-2">背面 (可选)</label>
                             <div class="drop-zone rounded-lg flex flex-col items-center justify-center cursor-pointer bg-gray-50 relative" id="drop-zone-back">
                                 <input accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-input-back" type="file">
-                                <div class="text-center p-4" id="upload-placeholder-back"><i class="fas fa-plus-circle text-3xl text-gray-400 mb-1"></i><p class="text-gray-500 text-sm">点击或拖拽</p></div>
+                                <div class="text-center p-4" id="upload-placeholder-back"><i class="fas fa-plus-circle text-3xl text-gray-400 mb-1"></i><p class="text-gray-500 text-sm">点击或拖拽背面图片</p></div>
                                 <img class="hidden max-h-36 object-contain rounded" id="image-preview-back">
                             </div>
                             <div class="flex justify-between mt-1"><span class="text-xs text-gray-500" id="file-name-back">未选择</span><button class="text-xs text-red-500 hidden" id="btn-clear-back">清除</button></div>
@@ -246,8 +253,10 @@
                     <div class="bg-white p-5 rounded-xl shadow-sm">
                         <div class="flex justify-between items-center mb-4">
                             <h2 class="text-lg font-semibold"><i class="fas fa-user-edit mr-2 text-green-500"></i> 客户信息</h2>
-                            <span class="text-xs bg-gray-100 px-2 py-1 rounded" id="edit-mode-indicator">新增模式</span>
-                            <button class="text-xs text-blue-600 hidden" id="btn-cancel-edit">取消编辑</button>
+                            <div class="flex gap-2 items-center">
+                                <span class="text-xs bg-gray-100 px-2 py-1 rounded" id="edit-mode-indicator">新增模式</span>
+                                <button class="text-xs text-blue-600 hidden" id="btn-cancel-edit">取消编辑</button>
+                            </div>
                         </div>
                         <form id="customer-form">
                             <input type="hidden" id="cust-id">
@@ -260,7 +269,7 @@
                                 <div><label>国家</label><input type="text" id="cust-country" list="country-list" class="w-full border p-2 rounded"><datalist id="country-list"><option>中国</option><option>美国</option><option>日本</option><option>德国</option></datalist></div>
                                 <div><label>备注</label><textarea id="cust-notes" rows="2" class="w-full border p-2 rounded"></textarea></div>
                                 <div class="flex gap-2">
-                                    <button type="submit" class="flex-1 bg-green-600 text-white py-2 rounded">保存客户</button>
+                                    <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded font-medium">保存客户</button>
                                     <button type="button" id="btn-whatsapp-from-form" class="bg-green-500 text-white px-4 py-2 rounded whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp</button>
                                 </div>
                             </div>
@@ -275,32 +284,42 @@
                     <div class="bg-white p-5 rounded-xl shadow-sm">
                         <h2 class="text-xl font-bold mb-4"><i class="fas fa-microchip text-purple-500 mr-2"></i> 产品智能识别</h2>
                         <div class="grid md:grid-cols-2 gap-6">
-                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:bg-gray-50" id="product-dropzone">
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition" id="product-dropzone">
                                 <input type="file" id="product-image-input" accept="image/*" class="hidden">
                                 <i class="fas fa-image text-4xl text-gray-400 mb-2"></i>
-                                <p class="text-gray-600">点击或拖拽产品图片</p>
+                                <p class="text-gray-600 font-medium">点击或拖拽产品图片</p>
+                                <p class="text-xs text-gray-400 mt-1">支持识别品牌、型号、零件号等</p>
                                 <img id="product-preview" class="hidden mt-3 max-h-40 mx-auto rounded border">
                             </div>
                             <div class="bg-gray-50 p-4 rounded-lg">
+                                <div class="flex justify-between items-center mb-3">
+                                    <h3 class="font-semibold"><i class="fas fa-list-ul mr-1"></i> 识别结果</h3>
+                                    <button id="clear-product-form" class="text-red-500 text-sm hover:text-red-700">清空</button>
+                                </div>
                                 <form id="product-form" class="space-y-3">
                                     <input type="hidden" id="product-id">
-                                    <div><label>品牌</label><input type="text" id="product-brand" class="w-full border p-2 rounded"></div>
-                                    <div><label>品名</label><input type="text" id="product-type" class="w-full border p-2 rounded"></div>
-                                    <div><label>型号</label><input type="text" id="product-model" class="w-full border p-2 rounded"></div>
-                                    <div><label>零件号</label><input type="text" id="product-partno" class="w-full border p-2 rounded"></div>
-                                    <div><label>序列号</label><input type="text" id="product-serial" class="w-full border p-2 rounded"></div>
+                                    <div><label>品牌</label><input type="text" id="product-brand" class="w-full border p-2 rounded" placeholder="如 DOOSAN, HITACHI"></div>
+                                    <div><label>品名 / 产品类型</label><input type="text" id="product-type" class="w-full border p-2 rounded" placeholder="回转机构总成"></div>
+                                    <div><label>型号</label><input type="text" id="product-model" class="w-full border p-2 rounded" placeholder="PC160LC-8"></div>
+                                    <div><label>零件号</label><input type="text" id="product-partno" class="w-full border p-2 rounded" placeholder="401-00356A"></div>
+                                    <div><label>序列号</label><input type="text" id="product-serial" class="w-full border p-2 rounded" placeholder="830269"></div>
                                     <div><label>备注</label><textarea id="product-notes" rows="2" class="w-full border p-2 rounded"></textarea></div>
-                                    <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded">保存产品</button>
+                                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded font-medium">保存产品</button>
                                 </form>
                             </div>
                         </div>
                         <div class="mt-4 flex justify-end">
-                            <button id="export-products-excel" class="bg-green-600 text-white px-4 py-2 rounded"><i class="fas fa-file-excel"></i> 导出Excel</button>
+                            <button id="export-products-excel" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"><i class="fas fa-file-excel mr-1"></i> 导出产品 Excel</button>
                         </div>
                     </div>
                     <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                        <div class="px-6 py-3 bg-gray-100 font-semibold">📦 产品库</div>
-                        <div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-gray-50"><tr><th class="px-4 py-2">品牌</th><th>品名</th><th>型号</th><th>零件号</th><th>序列号</th><th>操作</th></tr></thead><tbody id="product-list-body"></tbody></table></div>
+                        <div class="px-6 py-3 bg-gray-100 border-b font-semibold">📦 产品信息库</div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead class="bg-gray-50"><tr><th class="px-4 py-2 text-left">品牌</th><th class="px-4 py-2 text-left">品名</th><th class="px-4 py-2 text-left">型号</th><th class="px-4 py-2 text-left">零件号</th><th class="px-4 py-2 text-left">序列号</th><th class="px-4 py-2 text-center">操作</th></tr></thead>
+                                <tbody id="product-list-body"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -308,20 +327,23 @@
             <!-- 客户看板 -->
             <section class="absolute inset-0 overflow-hidden flex flex-col hidden" id="section-kanban">
                 <div class="p-4 bg-white border-b">
-                    <div class="flex justify-between items-center mb-3"><h2 class="text-lg font-bold">客户沟通进度</h2><span>共 <span id="total-customers">0</span> 位</span></div>
+                    <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
+                        <h2 class="text-lg font-bold">客户沟通进度</h2>
+                        <span class="text-sm text-gray-500">共 <span id="total-customers" class="font-bold text-gray-800">0</span> 位客户</span>
+                    </div>
                     <div class="flex flex-wrap gap-2">
-                        <input type="text" id="search-input" placeholder="🔍 搜索姓名/公司" class="border p-2 rounded w-56">
-                        <input type="text" id="country-filter" placeholder="国家" class="border p-2 rounded w-32">
-                        <button id="reset-filter" class="bg-gray-200 px-3 py-2 rounded">重置</button>
+                        <input type="text" id="search-input" placeholder="🔍 搜索姓名/公司/电话..." class="border p-2 rounded w-56 text-sm">
+                        <input type="text" id="country-filter" placeholder="🌍 国家筛选" class="border p-2 rounded w-36 text-sm">
+                        <button id="reset-filter" class="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded text-sm">重置</button>
                     </div>
                 </div>
                 <div class="flex-1 overflow-x-auto p-4">
                     <div class="flex gap-4 h-full min-w-max">
-                        <div class="w-80 flex flex-col bg-gray-100 rounded" data-status="potential"><div class="p-3 bg-gray-200 font-semibold">潜在 <span class="count-badge">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-potential"></div></div>
-                        <div class="w-80 flex flex-col bg-yellow-50 rounded" data-status="contacted"><div class="p-3 bg-yellow-100 font-semibold">已联系 <span class="count-badge">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-contacted"></div></div>
-                        <div class="w-80 flex flex-col bg-blue-50 rounded" data-status="followed_up"><div class="p-3 bg-blue-100 font-semibold">已跟进 <span class="count-badge">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-followed_up"></div></div>
-                        <div class="w-80 flex flex-col bg-green-50 rounded" data-status="closed"><div class="p-3 bg-green-100 font-semibold">已成交 <span class="count-badge">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-closed"></div></div>
-                        <div class="w-80 flex flex-col bg-red-50 rounded" data-status="lost"><div class="p-3 bg-red-100 font-semibold">已丢失 <span class="count-badge">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-lost"></div></div>
+                        <div class="w-80 flex flex-col bg-gray-100 rounded-lg" data-status="potential"><div class="p-3 bg-gray-200 rounded-t-lg font-semibold flex justify-between"><span>潜在客户</span><span class="count-badge bg-gray-300 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-potential"></div></div>
+                        <div class="w-80 flex flex-col bg-yellow-50 rounded-lg" data-status="contacted"><div class="p-3 bg-yellow-100 rounded-t-lg font-semibold flex justify-between"><span>已联系</span><span class="count-badge bg-yellow-200 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-contacted"></div></div>
+                        <div class="w-80 flex flex-col bg-blue-50 rounded-lg" data-status="followed_up"><div class="p-3 bg-blue-100 rounded-t-lg font-semibold flex justify-between"><span>已跟进</span><span class="count-badge bg-blue-200 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-followed_up"></div></div>
+                        <div class="w-80 flex flex-col bg-green-50 rounded-lg" data-status="closed"><div class="p-3 bg-green-100 rounded-t-lg font-semibold flex justify-between"><span>已成交</span><span class="count-badge bg-green-200 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-closed"></div></div>
+                        <div class="w-80 flex flex-col bg-red-50 rounded-lg" data-status="lost"><div class="p-3 bg-red-100 rounded-t-lg font-semibold flex justify-between"><span>已丢失</span><span class="count-badge bg-red-200 text-xs px-2 py-0.5 rounded-full">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-lost"></div></div>
                     </div>
                 </div>
             </section>
@@ -329,27 +351,63 @@
             <!-- 设置页面 -->
             <section class="absolute inset-0 overflow-y-auto p-4 md:p-6 hidden" id="section-settings">
                 <div class="max-w-2xl mx-auto space-y-5">
+                    <!-- Firestore 设置 -->
                     <div class="bg-white p-5 rounded-xl shadow-sm">
-                        <h2 class="font-semibold border-b pb-2"><i class="fas fa-database text-blue-500 mr-2"></i> Firestore 同步（含图片存储）</h2>
-                        <p class="text-xs text-gray-500 mt-1">配置 Firebase 后，客户名片图片将自动上传到 Firebase Storage，实现多设备同步。</p>
-                        <textarea id="firebase-config-area" rows="4" class="w-full border p-2 font-mono text-sm mt-2" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
-                        <button id="init-firebase-btn" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded">连接 Firestore + Storage</button>
+                        <h2 class="font-semibold border-b pb-2 mb-3"><i class="fas fa-database text-blue-500 mr-2"></i> Firestore 云同步（含图片存储）</h2>
+                        <p class="text-xs text-gray-500 mb-2">配置 Firebase 后，名片图片自动上传到 Firebase Storage，实现多设备同步。</p>
+                        <textarea id="firebase-config-area" rows="4" class="w-full border p-2 font-mono text-sm rounded" placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'></textarea>
+                        <button id="init-firebase-btn" class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"><i class="fas fa-cloud-upload-alt mr-1"></i> 连接 Firestore + Storage</button>
                         <div id="firebase-status" class="text-sm text-green-600 hidden mt-2"><i class="fas fa-check-circle"></i> 已连接云端（含图片存储）</div>
                     </div>
+
+                    <!-- GitHub 设置（带开关） -->
                     <div class="bg-white p-5 rounded-xl shadow-sm">
-                        <h2 class="font-semibold border-b pb-2"><i class="fab fa-github mr-2"></i> GitHub 图片备份（可选）</h2>
-                        <div class="space-y-2 mt-2"><input type="password" id="github-token" class="w-full border p-2 rounded" placeholder="Token"><input type="text" id="github-username" class="w-full border p-2 rounded" placeholder="用户名"><input type="text" id="github-repo" class="w-full border p-2 rounded" placeholder="仓库名"></div>
-                        <button id="save-github-config" class="w-full bg-gray-800 text-white py-2 rounded mt-2">启用 GitHub 备份</button>
+                        <div class="flex justify-between items-center border-b pb-2 mb-3">
+                            <h2 class="font-semibold"><i class="fab fa-github text-gray-800 mr-2"></i> GitHub 图片备份</h2>
+                            <!-- 开关 -->
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="github-toggle" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                <span class="ml-2 text-sm text-gray-600" id="github-toggle-label">已禁用</span>
+                            </label>
+                        </div>
+                        <div id="github-config-fields" class="hidden">
+                            <p class="text-xs text-gray-500 mb-3">备用图片存储，Firebase 不可用时自动切换。</p>
+                            <div class="space-y-3">
+                                <div><label class="text-sm">GitHub Token</label><input type="password" id="github-token" class="w-full border p-2 rounded text-sm" placeholder="ghp_xxxxxx"></div>
+                                <div><label class="text-sm">GitHub 用户名</label><input type="text" id="github-username" class="w-full border p-2 rounded text-sm" placeholder="your-username"></div>
+                                <div><label class="text-sm">仓库名</label><input type="text" id="github-repo" class="w-full border p-2 rounded text-sm" placeholder="crm-images"></div>
+                                <button id="save-github-config" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-2 rounded text-sm"><i class="fab fa-github mr-1"></i> 保存 GitHub 配置</button>
+                            </div>
+                            <button id="disable-github" class="w-full bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded mt-2 text-sm"><i class="fas fa-trash mr-1"></i> 清除配置并禁用</button>
+                        </div>
+                        <div id="github-status" class="text-xs text-center mt-2"></div>
                     </div>
+
+                    <!-- API & 安全 -->
                     <div class="bg-white p-5 rounded-xl shadow-sm">
-                        <h2 class="font-semibold border-b pb-2">API & 安全</h2>
-                        <input id="api-key-input" class="w-full border p-2 rounded mt-2" type="password" placeholder="通义千问 API Key">
-                        <button id="save-api-key-btn" class="mt-2 bg-gray-800 text-white px-4 py-2 rounded">保存</button>
-                        <div class="mt-3"><input type="password" id="change-password-input" class="w-full border p-2 rounded" placeholder="新密码"><button id="change-password-btn" class="mt-2 bg-indigo-600 text-white px-3 py-1 rounded">修改密码</button></div>
+                        <h2 class="font-semibold border-b pb-2 mb-3"><i class="fas fa-key mr-2"></i> API & 安全设置</h2>
+                        <div class="mb-3">
+                            <label class="text-sm">通义千问 API Key</label>
+                            <input id="api-key-input" class="w-full border p-2 rounded mt-1 text-sm" type="password" placeholder="sk-...">
+                        </div>
+                        <button id="save-api-key-btn" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm">保存 API Key</button>
+                        <div class="mt-4 pt-3 border-t">
+                            <label class="text-sm">修改访问密码</label>
+                            <div class="flex gap-2 mt-1">
+                                <input type="password" id="change-password-input" class="flex-1 border p-2 rounded text-sm" placeholder="输入新密码（至少6位）">
+                                <button id="change-password-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm whitespace-nowrap">修改密码</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="bg-white p-5 rounded-xl shadow-sm flex gap-4">
-                        <button id="export-customers-excel" class="bg-green-600 text-white px-4 py-2 rounded">导出客户 Excel</button>
-                        <button id="clear-all-data" class="bg-red-600 text-white px-4 py-2 rounded">清空数据</button>
+
+                    <!-- 数据管理 -->
+                    <div class="bg-white p-5 rounded-xl shadow-sm">
+                        <h2 class="font-semibold border-b pb-2 mb-3"><i class="fas fa-tools mr-2"></i> 数据管理</h2>
+                        <div class="flex flex-wrap gap-3">
+                            <button id="export-customers-excel" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm"><i class="fas fa-file-excel mr-1"></i> 导出客户 Excel</button>
+                            <button id="clear-all-data" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm"><i class="fas fa-trash-alt mr-1"></i> 清空所有数据</button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -357,26 +415,31 @@
 
         <!-- 沟通记录模态框 -->
         <div class="modal-overlay" id="log-modal">
-            <div class="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col mx-4">
-                <div class="p-4 border-b flex justify-between"><h3 class="text-lg font-bold">沟通记录</h3><button id="close-log-modal" class="text-gray-400 text-2xl">&times;</button></div>
+            <div class="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col mx-4 shadow-2xl">
+                <div class="p-4 border-b flex justify-between items-center">
+                    <h3 class="text-lg font-bold">沟通记录</h3>
+                    <button id="close-log-modal" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                </div>
                 <div class="p-4 flex-1 overflow-y-auto bg-gray-50">
-                    <div id="log-history" class="space-y-3"></div>
-                    <form id="log-form" class="bg-white p-4 rounded border mt-4">
+                    <div id="log-history" class="space-y-3 mb-4"></div>
+                    <form id="log-form" class="bg-white p-4 rounded border">
                         <input type="hidden" id="log-customer-id">
-                        <div class="grid grid-cols-2 gap-3"><div><label>时间</label><input type="datetime-local" id="log-time" class="w-full border p-2 rounded"></div><div><label>类型</label><select id="log-type" class="w-full border p-2 rounded"><option value="phone">电话</option><option value="email">邮件</option><option value="online">在线</option><option value="meeting">面谈</option></select></div></div>
-                        <div class="mt-3"><label>内容</label><textarea id="log-content" rows="2" class="w-full border p-2 rounded" required></textarea></div>
-                        <div class="mt-2"><label>下一步</label><input type="text" id="log-next" class="w-full border p-2 rounded"></div>
-                        <button type="submit" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded">添加记录</button>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div><label class="text-sm">时间</label><input type="datetime-local" id="log-time" class="w-full border p-2 rounded text-sm"></div>
+                            <div><label class="text-sm">类型</label><select id="log-type" class="w-full border p-2 rounded text-sm"><option value="phone">📞 电话沟通</option><option value="email">📧 邮件沟通</option><option value="online">💬 在线沟通</option><option value="meeting">🤝 面谈</option></select></div>
+                        </div>
+                        <div class="mb-3"><label class="text-sm">沟通内容</label><textarea id="log-content" rows="2" class="w-full border p-2 rounded text-sm" required placeholder="请输入沟通内容..."></textarea></div>
+                        <div class="mb-3"><label class="text-sm">下一步计划</label><input type="text" id="log-next" class="w-full border p-2 rounded text-sm" placeholder="后续跟进计划..."></div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-medium">添加记录</button>
                     </form>
                 </div>
             </div>
         </div>
-        <div id="github-status-badge" class="github-status-badge hidden"><i class="fab fa-github"></i> GitHub 备份已启用</div>
     </div>
 
     <script>
         (function() {
-            // ---------- 全局状态 ----------
+            // ==================== 全局状态 ====================
             let customers = [];
             let products = [];
             let firestoreEnabled = false;
@@ -384,36 +447,46 @@
             let storage = null;
             let currentImageBlob = null;
             let frontImageFile = null;
+            let backImageFile = null;
+            let draggedCustomerId = null;
             let githubConfig = { enabled: false, token: '', username: '', repo: '' };
-            const CONFIG = { apiKey: localStorage.getItem('crm_api_key') || '', apiModel: 'qwen-vl-ocr',
-                apiEndpoint: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation' };
+            const CONFIG = {
+                apiKey: localStorage.getItem('crm_api_key') || '',
+                apiModel: 'qwen-vl-ocr',
+                apiEndpoint: 'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation'
+            };
 
-            // ---------- 工具函数 ----------
+            // ==================== 工具函数 ====================
             const showToast = (msg, type = 'info') => {
                 const container = document.getElementById('toast-container');
                 if (!container) return;
                 const toast = document.createElement('div');
-                const bg = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' :
-                    'bg-gray-800';
+                const bg = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-gray-800';
                 toast.className = `toast ${bg}`;
-                toast.innerHTML =
-                    `<i class="fas ${type==='success'?'fa-check-circle':type==='error'?'fa-exclamation-circle':'fa-info-circle'} mr-2"></i>${msg}`;
+                const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' :
+                    'fa-info-circle';
+                toast.innerHTML = `<i class="fas ${icon} mr-2"></i>${msg}`;
                 container.appendChild(toast);
-                setTimeout(() => toast.remove(), 3500);
+                setTimeout(() => { toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.3s';
+                    setTimeout(() => toast.remove(), 300); }, 3000);
             };
 
-            const escapeHtml = (s) => s ? s.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[m]) :
-                '';
+            const escapeHtml = (s) => s ? String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;',
+                '"': '&quot;', "'": '&#39;' })[m]) : '';
 
-            const saveLocal = () => { localStorage.setItem('crm_customers', JSON.stringify(customers));
-                localStorage.setItem('crm_products', JSON.stringify(products)); };
+            const saveLocal = () => {
+                localStorage.setItem('crm_customers', JSON.stringify(customers));
+                localStorage.setItem('crm_products', JSON.stringify(products));
+            };
+
             const loadLocal = () => {
                 try { customers = JSON.parse(localStorage.getItem('crm_customers') || '[]'); } catch (e) { customers =
-                        []; }
+                    []; }
                 try { products = JSON.parse(localStorage.getItem('crm_products') || '[]'); } catch (e) { products = []; }
             };
 
-            // Firestore 初始化 (含 Storage)
+            // ==================== Firebase ====================
             const initFirestore = () => {
                 const configText = document.getElementById('firebase-config-area').value.trim();
                 if (!configText) return showToast('请输入 Firebase 配置', 'error');
@@ -428,7 +501,9 @@
                     firestoreEnabled = true;
                     localStorage.setItem('crm_firebase_config', configText);
                     document.getElementById('firebase-status').classList.remove('hidden');
-                    loadFromFirestore().then(() => showToast('Firebase 连接成功（含图片存储）', 'success'));
+                    document.getElementById('firebase-status').innerHTML =
+                        '<i class="fas fa-check-circle"></i> 已连接云端（含图片存储）';
+                    loadFromFirestore().then(() => showToast('Firebase 连接成功', 'success'));
                 } catch (e) {
                     showToast('配置错误: ' + e.message, 'error');
                 }
@@ -437,8 +512,9 @@
             const syncCustomerToFirestore = async (customer) => {
                 if (!firestoreEnabled || !db) return;
                 try { await db.collection('customers').doc(customer.id).set(customer); } catch (e) { console.warn(
-                        'sync err', e); }
+                    'Firestore sync error:', e); }
             };
+
             const syncProductToFirestore = async (product) => {
                 if (!firestoreEnabled || !db) return;
                 try { await db.collection('products').doc(product.id).set(product); } catch (e) { console.warn(e); }
@@ -456,45 +532,88 @@
                     saveLocal();
                     renderKanban();
                     renderProductTable();
+                    showToast('已从云端同步数据', 'success');
                 } catch (e) { showToast('同步失败: ' + e.message, 'error'); }
             };
 
-            // Firebase Storage 上传图片
+            // Firebase Storage 上传
             async function uploadToFirebaseStorage(customerId, blob) {
                 if (!firestoreEnabled || !storage) return null;
                 try {
-                    const storageRef = storage.ref();
-                    const imageRef = storageRef.child(`cards/${customerId}.jpg`);
+                    const imageRef = storage.ref().child(`cards/${customerId}.jpg`);
                     await imageRef.put(blob);
-                    const url = await imageRef.getDownloadURL();
-                    return url;
+                    return await imageRef.getDownloadURL();
                 } catch (e) {
                     console.error('Firebase Storage 上传失败:', e);
                     return null;
                 }
             }
 
-            // GitHub 上传 (备用)
+            // ==================== GitHub 存储（带开关） ====================
             const loadGithubConfig = () => {
                 const saved = localStorage.getItem('crm_github_config');
                 if (saved) {
-                    try { githubConfig = JSON.parse(saved);
-                        githubConfig.enabled = true; } catch (e) {}
+                    try {
+                        githubConfig = JSON.parse(saved);
+                        if (githubConfig.token && githubConfig.username && githubConfig.repo) {
+                            githubConfig.enabled = true;
+                        } else {
+                            githubConfig.enabled = false;
+                        }
+                    } catch (e) { githubConfig = { enabled: false, token: '', username: '', repo: '' }; }
+                }
+                updateGithubUI();
+            };
+
+            const updateGithubUI = () => {
+                const toggle = document.getElementById('github-toggle');
+                const fields = document.getElementById('github-config-fields');
+                const label = document.getElementById('github-toggle-label');
+                const status = document.getElementById('github-status');
+                const badge = document.getElementById('github-status-badge');
+
+                if (githubConfig.enabled) {
+                    if (toggle) toggle.checked = true;
+                    if (fields) fields.classList.remove('hidden');
+                    if (label) label.textContent = '已启用';
+                    if (badge) badge.classList.remove('hidden');
+                    if (status) status.innerHTML = '<span class="text-green-600">✓ GitHub 备份已启用</span>';
                     document.getElementById('github-token').value = githubConfig.token || '';
                     document.getElementById('github-username').value = githubConfig.username || '';
                     document.getElementById('github-repo').value = githubConfig.repo || '';
-                    document.getElementById('github-status-badge').classList.remove('hidden');
+                } else {
+                    if (toggle) toggle.checked = false;
+                    if (fields) fields.classList.add('hidden');
+                    if (label) label.textContent = '已禁用';
+                    if (badge) badge.classList.add('hidden');
+                    if (status) status.innerHTML = '<span class="text-gray-400">GitHub 备份已禁用</span>';
                 }
             };
+
             const saveGithubConfig = () => {
                 const token = document.getElementById('github-token').value.trim();
                 const username = document.getElementById('github-username').value.trim();
                 const repo = document.getElementById('github-repo').value.trim();
-                if (!token || !username || !repo) return showToast('请完整填写 GitHub 信息', 'error');
+                if (!token || !username || !repo) {
+                    showToast('请填写完整的 GitHub 信息，或关闭开关禁用', 'error');
+                    return;
+                }
                 githubConfig = { token, username, repo, enabled: true };
                 localStorage.setItem('crm_github_config', JSON.stringify(githubConfig));
-                document.getElementById('github-status-badge').classList.remove('hidden');
+                updateGithubUI();
                 showToast('GitHub 配置已保存', 'success');
+            };
+
+            const disableGithub = () => {
+                if (confirm('确定清除 GitHub 配置并禁用吗？')) {
+                    document.getElementById('github-token').value = '';
+                    document.getElementById('github-username').value = '';
+                    document.getElementById('github-repo').value = '';
+                    githubConfig = { enabled: false, token: '', username: '', repo: '' };
+                    localStorage.removeItem('crm_github_config');
+                    updateGithubUI();
+                    showToast('GitHub 配置已清除', 'success');
+                }
             };
 
             async function uploadToGitHub(customerId, blob) {
@@ -516,37 +635,44 @@
                     if (!res.ok) throw new Error('上传失败');
                     const data = await res.json();
                     return data.content.download_url;
-                } catch (e) { console.warn('github upload err', e); return null; }
+                } catch (e) { console.warn('GitHub upload err', e); return null; }
             }
 
-            // WhatsApp
+            // ==================== WhatsApp ====================
             function openWhatsApp(phone) {
-                if (!phone) return showToast('无电话号码', 'error');
-                let clean = phone.replace(/[^\d+]/g, '');
-                if (!clean.startsWith('+')) clean = '+' + clean;
+                if (!phone) return showToast('请先填写手机号', 'error');
+                let clean = String(phone).replace(/[^\d+]/g, '');
+                if (!clean.startsWith('+')) {
+                    if (clean.startsWith('1') && clean.length === 11) clean = '+86' + clean;
+                    else if (clean.length > 0) clean = '+' + clean;
+                }
                 window.open(`https://wa.me/${clean}`, '_blank');
             }
 
-            // ---------- 客户操作 ----------
+            // ==================== 客户操作 ====================
             async function saveCustomer(e) {
                 e.preventDefault();
                 const id = document.getElementById('cust-id').value || Date.now().toString();
                 let cardImageUrl = null;
+
+                // 上传图片（优先 Firebase，备用 GitHub）
                 if (currentImageBlob) {
-                    // 优先使用 Firebase Storage
                     if (firestoreEnabled && storage) {
                         showToast('正在上传图片到 Firebase...', 'info');
                         cardImageUrl = await uploadToFirebaseStorage(id, currentImageBlob);
+                        if (cardImageUrl) showToast('图片已上传到 Firebase', 'success');
                     }
-                    // 备用 GitHub
                     if (!cardImageUrl && githubConfig.enabled) {
-                        showToast('Firebase 不可用，尝试 GitHub...', 'info');
+                        showToast('正在上传到 GitHub 备份...', 'info');
                         cardImageUrl = await uploadToGitHub(id, currentImageBlob);
+                        if (cardImageUrl) showToast('图片已上传到 GitHub', 'success');
                     }
+                    if (!cardImageUrl) showToast('图片上传失败，仅保存文本信息', 'error');
                     currentImageBlob = null;
                 }
+
                 const customer = {
-                    id,
+                    id: id,
                     name: document.getElementById('cust-name').value,
                     company: document.getElementById('cust-company').value,
                     position: document.getElementById('cust-position').value,
@@ -559,16 +685,45 @@
                     logs: [],
                     createTime: new Date().toISOString()
                 };
-                const idx = customers.findIndex(c => c.id === id);
-                if (idx !== -1) customers[idx] = customer;
-                else customers.push(customer);
+
+                const existingIndex = customers.findIndex(c => c.id === id);
+                if (existingIndex !== -1) {
+                    // 编辑模式：保留原有状态和日志
+                    customer.status = customers[existingIndex].status || 'potential';
+                    customer.logs = customers[existingIndex].logs || [];
+                    customer.createTime = customers[existingIndex].createTime;
+                    if (!customer.cardImage) customer.cardImage = customers[existingIndex].cardImage;
+                    customers[existingIndex] = customer;
+                } else {
+                    customers.push(customer);
+                }
+
                 saveLocal();
                 await syncCustomerToFirestore(customer);
+
+                // 重置筛选条件，确保新客户在看板中可见
+                const searchInput = document.getElementById('search-input');
+                const countryFilter = document.getElementById('country-filter');
+                if (searchInput) searchInput.value = '';
+                if (countryFilter) countryFilter.value = '';
+                currentSearchKeyword = '';
+                currentCountryFilter = '';
+
                 renderKanban();
+
+                // 重置表单
                 document.getElementById('customer-form').reset();
                 document.getElementById('cust-id').value = '';
-                document.getElementById('edit-mode-indicator').innerText = '新增模式';
+                document.getElementById('edit-mode-indicator').innerHTML = '新增模式';
                 document.getElementById('btn-cancel-edit').classList.add('hidden');
+
+                // 清除图片预览
+                frontImageFile = null;
+                document.getElementById('image-preview-front').classList.add('hidden');
+                document.getElementById('upload-placeholder-front').classList.remove('hidden');
+                document.getElementById('btn-recognize').disabled = true;
+                document.getElementById('debug-ocr-text').innerText = '等待识别...';
+
                 showToast('客户已保存', 'success');
             }
 
@@ -583,18 +738,31 @@
                 document.getElementById('cust-email').value = c.email || '';
                 document.getElementById('cust-country').value = c.country || '';
                 document.getElementById('cust-notes').value = c.notes || '';
-                document.getElementById('edit-mode-indicator').innerText = '编辑模式';
+                document.getElementById('edit-mode-indicator').innerHTML = '编辑模式';
                 document.getElementById('btn-cancel-edit').classList.remove('hidden');
                 switchTab('ocr');
+                showToast('已加载客户信息，可进行编辑', 'info');
+            }
+
+            function cancelEdit() {
+                document.getElementById('customer-form').reset();
+                document.getElementById('cust-id').value = '';
+                document.getElementById('edit-mode-indicator').innerHTML = '新增模式';
+                document.getElementById('btn-cancel-edit').classList.add('hidden');
+                frontImageFile = null;
+                document.getElementById('image-preview-front').classList.add('hidden');
+                document.getElementById('upload-placeholder-front').classList.remove('hidden');
+                document.getElementById('btn-recognize').disabled = true;
+                document.getElementById('debug-ocr-text').innerText = '等待识别...';
             }
 
             function deleteCustomer(id) {
-                if (confirm('确定删除该客户？')) {
+                if (confirm('确定删除该客户吗？此操作不可恢复。')) {
                     customers = customers.filter(c => c.id !== id);
                     saveLocal();
-                    if (firestoreEnabled && db) db.collection('customers').doc(id).delete();
+                    if (firestoreEnabled && db) db.collection('customers').doc(id).delete().catch(e => console.warn(e));
                     renderKanban();
-                    showToast('已删除', 'success');
+                    showToast('客户已删除', 'success');
                 }
             }
 
@@ -603,12 +771,13 @@
                 if (c && c.status !== newStatus) {
                     c.status = newStatus;
                     saveLocal();
-                    if (firestoreEnabled && db) db.collection('customers').doc(id).set(c);
+                    if (firestoreEnabled && db) db.collection('customers').doc(id).set(c).catch(e => console.warn(e));
                     renderKanban();
+                    showToast('状态已更新', 'success');
                 }
             }
 
-            // 沟通记录
+            // ==================== 沟通记录 ====================
             function openLogModal(id) {
                 const c = customers.find(c => c.id === id);
                 if (!c) return;
@@ -616,16 +785,32 @@
                 const now = new Date();
                 now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                 document.getElementById('log-time').value = now.toISOString().slice(0, 16);
-                const historyDiv = document.getElementById('log-history');
-                const logs = c.logs || [];
-                historyDiv.innerHTML = logs.length ? logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                    .map(l =>
-                        `<div class="bg-white p-3 rounded border text-sm"><div class="font-bold"><i class="fas fa-${l.type==='email'?'envelope':l.type==='meeting'?'users':'phone'} mr-1"></i>${new Date(l.timestamp).toLocaleString()}</div><p>${escapeHtml(l.content)}</p>${l.nextStep?`<div class="mt-1 text-xs bg-yellow-50 p-1 rounded">→ ${escapeHtml(l.nextStep)}</div>`:''}</div>`
-                        ).join('') : '<p class="text-gray-400 text-center py-4">暂无记录</p>';
+                renderLogHistory(c.logs || []);
                 document.getElementById('log-modal').classList.add('active');
             }
 
-            function closeLogModal() { document.getElementById('log-modal').classList.remove('active'); }
+            function closeLogModal() {
+                document.getElementById('log-modal').classList.remove('active');
+            }
+
+            function renderLogHistory(logs) {
+                const container = document.getElementById('log-history');
+                if (!logs || !logs.length) {
+                    container.innerHTML = '<p class="text-center text-gray-400 py-4">暂无沟通记录</p>';
+                    return;
+                }
+                const icons = { phone: 'fa-phone', email: 'fa-envelope', online: 'fa-headset', meeting: 'fa-users' };
+                container.innerHTML = logs.slice().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).map(l => `
+                    <div class="bg-white p-3 rounded border text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold"><i class="fas ${icons[l.type] || 'fa-phone'} text-blue-500 mr-1"></i> ${new Date(l.timestamp).toLocaleString('zh-CN')}</span>
+                            <span class="text-xs bg-gray-100 px-2 py-0.5 rounded">${l.type === 'phone' ? '电话' : l.type === 'email' ? '邮件' : l.type === 'online' ? '在线' : '面谈'}</span>
+                        </div>
+                        <p class="mt-2 text-gray-700">${escapeHtml(l.content)}</p>
+                        ${l.nextStep ? `<div class="mt-2 bg-yellow-50 p-2 rounded text-xs"><i class="fas fa-forward text-yellow-600 mr-1"></i> 下一步: ${escapeHtml(l.nextStep)}</div>` : ''}
+                    </div>
+                `).join('');
+            }
 
             function saveLog(e) {
                 e.preventDefault();
@@ -638,23 +823,23 @@
                     content: document.getElementById('log-content').value.trim(),
                     nextStep: document.getElementById('log-next').value.trim()
                 };
-                if (!newLog.content) return showToast('请输入内容', 'error');
+                if (!newLog.content) return showToast('请输入沟通内容', 'error');
                 c.logs = c.logs || [];
                 c.logs.push(newLog);
                 saveLocal();
-                if (firestoreEnabled && db) db.collection('customers').doc(id).set(c);
-                openLogModal(id);
+                if (firestoreEnabled && db) db.collection('customers').doc(id).set(c).catch(e => console.warn(e));
+                renderLogHistory(c.logs);
                 document.getElementById('log-content').value = '';
                 document.getElementById('log-next').value = '';
-                showToast('记录已添加', 'success');
+                showToast('沟通记录已添加', 'success');
             }
 
-            // ---------- 产品操作 ----------
+            // ==================== 产品操作 ====================
             async function saveProduct(e) {
                 e.preventDefault();
                 const id = document.getElementById('product-id').value || Date.now().toString();
                 const product = {
-                    id,
+                    id: id,
                     brand: document.getElementById('product-brand').value,
                     type: document.getElementById('product-type').value,
                     model: document.getElementById('product-model').value,
@@ -671,194 +856,251 @@
                 renderProductTable();
                 document.getElementById('product-form').reset();
                 document.getElementById('product-id').value = '';
+                document.getElementById('product-preview').classList.add('hidden');
                 showToast('产品已保存', 'success');
             }
 
             function deleteProduct(id) {
-                if (confirm('删除产品？')) {
+                if (confirm('确定删除该产品吗？')) {
                     products = products.filter(p => p.id !== id);
                     saveLocal();
-                    if (firestoreEnabled && db) db.collection('products').doc(id).delete();
+                    if (firestoreEnabled && db) db.collection('products').doc(id).delete().catch(e => console.warn(e));
                     renderProductTable();
-                    showToast('已删除', 'success');
+                    showToast('产品已删除', 'success');
                 }
             }
 
             function renderProductTable() {
                 const tbody = document.getElementById('product-list-body');
                 if (!tbody) return;
-                tbody.innerHTML = products.map(p =>
-                    `<tr class="border-b"><td class="px-3 py-2">${escapeHtml(p.brand)}</td><td>${escapeHtml(p.type)}</td><td>${escapeHtml(p.model)}</td><td>${escapeHtml(p.partNo)}</td><td>${escapeHtml(p.serial)}</td><td><button class="text-red-500" data-delprod="${p.id}"><i class="fas fa-trash"></i></button></td></tr>`
-                ).join('');
+                if (products.length === 0) {
+                    tbody.innerHTML =
+                        '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">暂无产品数据</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = products.map(p => `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-3 py-2">${escapeHtml(p.brand || '-')}</td>
+                        <td class="px-3 py-2">${escapeHtml(p.type || '-')}</td>
+                        <td class="px-3 py-2">${escapeHtml(p.model || '-')}</td>
+                        <td class="px-3 py-2">${escapeHtml(p.partNo || '-')}</td>
+                        <td class="px-3 py-2">${escapeHtml(p.serial || '-')}</td>
+                        <td class="px-3 py-2 text-center"><button class="text-red-500 hover:text-red-700" data-delprod="${p.id}"><i class="fas fa-trash"></i></button></td>
+                    </tr>
+                `).join('');
             }
 
-            // ---------- 看板渲染 (含 WhatsApp 按钮) ----------
-            let currentSearch = '',
-                currentCountry = '';
+            // ==================== 看板渲染 ====================
+            let currentSearchKeyword = '';
+            let currentCountryFilter = '';
 
             function renderKanban() {
-                let filtered = customers.filter(c => {
-                    if (currentSearch && !`${c.name}${c.company}${c.phone}`.toLowerCase().includes(
-                            currentSearch.toLowerCase())) return false;
-                    if (currentCountry && c.country !== currentCountry) return false;
-                    return true;
-                });
-                document.getElementById('total-customers').innerText = filtered.length;
-                ['potential', 'contacted', 'followed_up', 'closed', 'lost'].forEach(s => {
+                let filtered = [...customers];
+                if (currentSearchKeyword) {
+                    const kw = currentSearchKeyword.toLowerCase();
+                    filtered = filtered.filter(c =>
+                        (c.name && c.name.toLowerCase().includes(kw)) ||
+                        (c.company && c.company.toLowerCase().includes(kw)) ||
+                        (c.phone && c.phone.includes(kw))
+                    );
+                }
+                if (currentCountryFilter) {
+                    filtered = filtered.filter(c => c.country === currentCountryFilter);
+                }
+
+                document.getElementById('total-customers').innerHTML = filtered.length;
+
+                const statuses = ['potential', 'contacted', 'followed_up', 'closed', 'lost'];
+                statuses.forEach(s => {
                     const col = document.getElementById(`col-${s}`);
                     if (col) col.innerHTML = '';
-                    const cnt = filtered.filter(c => c.status === s).length;
+                    const count = filtered.filter(c => c.status === s).length;
                     const badge = document.querySelector(`[data-status="${s}"] .count-badge`);
-                    if (badge) badge.innerText = cnt;
+                    if (badge) badge.innerText = count;
                 });
+
                 filtered.forEach(c => {
                     const card = document.createElement('div');
                     card.className =
-                        'bg-white p-3 rounded shadow border border-gray-200 cursor-pointer hover:shadow-md group';
+                        'bg-white p-3 rounded shadow-sm border border-gray-200 cursor-pointer hover:shadow-md group mb-3';
                     card.draggable = true;
                     card.setAttribute('data-id', c.id);
-                    card.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', c.id);
-                        card.classList.add('card-dragging'); });
-                    card.addEventListener('dragend', () => card.classList.remove('card-dragging'));
+                    card.addEventListener('dragstart', e => {
+                        draggedCustomerId = c.id;
+                        e.dataTransfer.effectAllowed = 'move';
+                        setTimeout(() => card.classList.add('card-dragging'), 0);
+                    });
+                    card.addEventListener('dragend', () => {
+                        card.classList.remove('card-dragging');
+                        draggedCustomerId = null;
+                    });
+
                     const imgHtml = c.cardImage ?
-                        `<div class="mb-2"><img src="${c.cardImage}" class="w-full h-20 object-cover rounded" onclick="window.open('${c.cardImage}')"></div>` :
+                        `<div class="mb-2"><img src="${c.cardImage}" class="w-full h-20 object-cover rounded cursor-pointer" onclick="window.open('${c.cardImage.replace(/'/g, "\\'")}','_blank')" onerror="this.style.display='none'"></div>` :
                         '';
                     const logsCount = (c.logs || []).length;
+
                     card.innerHTML = `
-                    ${imgHtml}
-                    <div class="flex justify-between items-start mb-2">
-                        <h4 class="font-bold truncate">${escapeHtml(c.name)}</h4>
-                        <div class="flex gap-1 opacity-0 group-hover:opacity-100">
-                            <button class="text-blue-500 edit-btn" data-edit="${c.id}"><i class="fas fa-edit"></i></button>
-                            <button class="text-green-500 log-btn" data-log="${c.id}"><i class="far fa-comment-dots"></i>${logsCount||''}</button>
-                            <button class="text-red-400 del-btn" data-del="${c.id}"><i class="fas fa-trash"></i></button>
+                        ${imgHtml}
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold truncate text-gray-900 cursor-pointer hover:text-blue-600" data-edit="${c.id}">${escapeHtml(c.name || '未命名')}</h4>
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button title="编辑" data-edit="${c.id}" class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit text-xs"></i></button>
+                                <button title="沟通记录 (${logsCount})" data-log="${c.id}" class="text-green-500 hover:text-green-700"><i class="far fa-comment-dots text-xs"></i></button>
+                                <button title="删除" data-del="${c.id}" class="text-red-400 hover:text-red-600"><i class="fas fa-trash-alt text-xs"></i></button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="text-xs text-gray-500 space-y-1">
-                        ${c.company?`<div><i class="far fa-building"></i> ${escapeHtml(c.company)}</div>`:''}
-                        ${c.phone?`<div><i class="fas fa-phone"></i> ${escapeHtml(c.phone)}</div>`:''}
-                        ${c.email?`<div><i class="fas fa-envelope"></i> ${escapeHtml(c.email)}</div>`:''}
-                    </div>
-                    <div class="mt-2 pt-2 border-t flex justify-between items-center">
-                        <span class="text-xs text-gray-400">${new Date(c.createTime).toLocaleDateString()}</span>
-                        <div class="flex gap-2 items-center">
-                            ${c.phone ? `<button class="whatsapp-btn text-xs wa-btn" data-phone="${c.phone.replace(/'/g,"\\'")}"><i class="fab fa-whatsapp"></i> WhatsApp</button>` : ''}
-                            <select class="text-xs border rounded p-1 status-select" data-statusid="${c.id}">
-                                <option value="potential" ${c.status==='potential'?'selected':''}>潜在</option>
-                                <option value="contacted" ${c.status==='contacted'?'selected':''}>已联系</option>
-                                <option value="followed_up" ${c.status==='followed_up'?'selected':''}>已跟进</option>
-                                <option value="closed" ${c.status==='closed'?'selected':''}>已成交</option>
-                                <option value="lost" ${c.status==='lost'?'selected':''}>已丢失</option>
-                            </select>
+                        <div class="text-xs text-gray-500 space-y-1 cursor-pointer" data-edit="${c.id}">
+                            ${c.company ? `<div><i class="far fa-building mr-1"></i>${escapeHtml(c.company)}</div>` : ''}
+                            ${c.position ? `<div><i class="far fa-id-badge mr-1"></i>${escapeHtml(c.position)}</div>` : ''}
+                            ${c.phone ? `<div><i class="fas fa-phone mr-1"></i>${escapeHtml(c.phone)}</div>` : ''}
+                            ${c.email ? `<div><i class="fas fa-envelope mr-1"></i>${escapeHtml(c.email)}</div>` : ''}
+                            ${c.country ? `<div><i class="fas fa-globe mr-1"></i>${escapeHtml(c.country)}</div>` : ''}
                         </div>
-                    </div>`;
-                    document.getElementById(`col-${c.status}`).appendChild(card);
+                        <div class="mt-2 pt-2 border-t flex justify-between items-center">
+                            <span class="text-[10px] text-gray-400">${new Date(c.createTime).toLocaleDateString('zh-CN')}</span>
+                            <div class="flex gap-2 items-center">
+                                ${c.phone ? `<button class="whatsapp-btn text-xs wa-btn" data-phone="${c.phone.replace(/'/g, "\\'")}"><i class="fab fa-whatsapp"></i> WhatsApp</button>` : ''}
+                                <select class="text-xs border rounded p-1 bg-white status-select" data-statusid="${c.id}">
+                                    <option value="potential" ${c.status === 'potential' ? 'selected' : ''}>潜在</option>
+                                    <option value="contacted" ${c.status === 'contacted' ? 'selected' : ''}>已联系</option>
+                                    <option value="followed_up" ${c.status === 'followed_up' ? 'selected' : ''}>已跟进</option>
+                                    <option value="closed" ${c.status === 'closed' ? 'selected' : ''}>已成交</option>
+                                    <option value="lost" ${c.status === 'lost' ? 'selected' : ''}>已丢失</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                    const col = document.getElementById(`col-${c.status}`);
+                    if (col) col.appendChild(card);
                 });
+
+                // 设置拖放区域
                 document.querySelectorAll('.kanban-col').forEach(col => {
-                    col.ondragover = e => e.preventDefault();
-                    col.ondrop = e => {
+                    const parent = col.closest('[data-status]');
+                    if (!parent) return;
+                    col.addEventListener('dragover', e => { e.preventDefault();
+                        col.classList.add('bg-blue-50'); });
+                    col.addEventListener('dragleave', () => col.classList.remove('bg-blue-50'));
+                    col.addEventListener('drop', e => {
                         e.preventDefault();
-                        const id = e.dataTransfer.getData('text/plain');
-                        const newStatus = col.closest('[data-status]')?.dataset.status;
-                        if (id && newStatus) updateStatus(id, newStatus);
-                    };
+                        col.classList.remove('bg-blue-50');
+                        const newStatus = parent.getAttribute('data-status');
+                        if (draggedCustomerId && newStatus) updateStatus(draggedCustomerId, newStatus);
+                    });
                 });
             }
 
-            // 看板按钮事件委托
+            // ==================== 全局事件委托 ====================
             document.body.addEventListener('click', e => {
                 const editBtn = e.target.closest('[data-edit]');
                 if (editBtn) { e.stopPropagation();
-                    editCustomer(editBtn.dataset.edit); }
+                    editCustomer(editBtn.dataset.edit); return; }
                 const logBtn = e.target.closest('[data-log]');
                 if (logBtn) { e.stopPropagation();
-                    openLogModal(logBtn.dataset.log); }
+                    openLogModal(logBtn.dataset.log); return; }
                 const delBtn = e.target.closest('[data-del]');
                 if (delBtn) { e.stopPropagation();
-                    deleteCustomer(delBtn.dataset.del); }
+                    deleteCustomer(delBtn.dataset.del); return; }
                 const waBtn = e.target.closest('.wa-btn');
                 if (waBtn) { e.stopPropagation();
-                    openWhatsApp(waBtn.dataset.phone); }
+                    openWhatsApp(waBtn.dataset.phone); return; }
                 const statusSel = e.target.closest('.status-select');
                 if (statusSel) { e.stopPropagation();
-                    updateStatus(statusSel.dataset.statusid, statusSel.value); }
+                    updateStatus(statusSel.dataset.statusid, statusSel.value); return; }
                 const delProd = e.target.closest('[data-delprod]');
-                if (delProd) { deleteProduct(delProd.dataset.delprod); }
+                if (delProd) { deleteProduct(delProd.dataset.delprod); return; }
             });
 
-            // OCR 识别
+            // ==================== OCR 识别 ====================
             async function compressImage(file) {
                 return new Promise(resolve => {
                     const img = new Image();
+                    const url = URL.createObjectURL(file);
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
                         let w = img.width,
                             h = img.height;
-                        if (w > 1200) { h = (h * 1200) / w;
-                            w = 1200; }
+                        const max = 1200;
+                        if (w > max) { h = (h * max) / w;
+                            w = max; }
                         canvas.width = w;
                         canvas.height = h;
                         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                         canvas.toBlob(resolve, 'image/jpeg', 0.8);
+                        URL.revokeObjectURL(url);
                     };
-                    img.src = URL.createObjectURL(file);
+                    img.src = url;
                 });
             }
+
             async function recognizeBusinessCard() {
-                if (!CONFIG.apiKey) return showToast('请先配置 API Key', 'error');
-                if (!frontImageFile) return showToast('请上传名片正面', 'error');
+                if (!CONFIG.apiKey) { showToast('请先在设置中配置通义千问 API Key', 'error');
+                    switchTab('settings'); return; }
+                if (!frontImageFile) { showToast('请上传名片正面图片', 'error'); return; }
                 const btn = document.getElementById('btn-recognize');
+                const loader = document.getElementById('btn-loader');
                 btn.disabled = true;
-                document.getElementById('btn-loader').classList.remove('hidden');
+                loader.classList.remove('hidden');
                 try {
                     currentImageBlob = await compressImage(frontImageFile);
                     const base64 = await new Promise(r => { const reader = new FileReader();
                         reader.onload = () => r(reader.result);
                         reader.readAsDataURL(currentImageBlob); });
                     const payload = { model: CONFIG.apiModel, input: { messages: [{ role: "user", content: [{ image: base64 },
-                                { text: "提取名片信息，返回JSON：{\"name\":\"\",\"company\":\"\",\"position\":\"\",\"phone\":\"\",\"email\":\"\",\"country\":\"\"}" }
+                                { text: "请识别这张名片上的信息，提取姓名、公司、职位、电话、邮箱、国家。返回JSON格式如{\"name\":\"张三\",\"company\":\"某某公司\",\"position\":\"经理\",\"phone\":\"13800138000\",\"email\":\"test@test.com\",\"country\":\"中国\"}" }
                             ] }] }, parameters: { result_format: "message" } };
-                    const res = await fetch(CONFIG.apiEndpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${CONFIG.apiKey}`,
+                    const response = await fetch(CONFIG.apiEndpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${CONFIG.apiKey}`,
                             'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (!res.ok) throw new Error('API错误 ' + res.status);
-                    const data = await res.json();
+                    if (!response.ok) throw new Error('API请求失败: ' + response.status);
+                    const data = await response.json();
                     const text = data.output.choices[0].message.content[0].text;
                     document.getElementById('debug-ocr-text').innerText = text;
-                    const m = text.match(/\{.*\}/s);
-                    if (m) {
-                        const ex = JSON.parse(m[0]);
-                        if (ex.name) document.getElementById('cust-name').value = ex.name;
-                        if (ex.company) document.getElementById('cust-company').value = ex.company;
-                        if (ex.position) document.getElementById('cust-position').value = ex.position;
-                        if (ex.phone) document.getElementById('cust-phone').value = ex.phone;
-                        if (ex.email) document.getElementById('cust-email').value = ex.email;
-                        if (ex.country) document.getElementById('cust-country').value = ex.country;
-                        showToast('识别成功', 'success');
-                    } else showToast('请手动填写', 'info');
-                } catch (e) { showToast('识别失败: ' + e.message, 'error'); } finally { btn.disabled = false;
-                    document.getElementById('btn-loader').classList.add('hidden'); }
+                    const match = text.match(/\{.*\}/s);
+                    if (match) {
+                        const extracted = JSON.parse(match[0]);
+                        if (extracted.name) document.getElementById('cust-name').value = extracted.name;
+                        if (extracted.company) document.getElementById('cust-company').value = extracted.company;
+                        if (extracted.position) document.getElementById('cust-position').value = extracted.position;
+                        if (extracted.phone) document.getElementById('cust-phone').value = extracted.phone;
+                        if (extracted.email) document.getElementById('cust-email').value = extracted.email;
+                        if (extracted.country) document.getElementById('cust-country').value = extracted.country;
+                        showToast('识别成功！请检查并保存', 'success');
+                    } else {
+                        showToast('识别完成，请手动填写信息', 'info');
+                    }
+                } catch (err) {
+                    showToast('识别失败: ' + err.message, 'error');
+                    document.getElementById('debug-ocr-text').innerText = '错误: ' + err.message;
+                } finally {
+                    btn.disabled = false;
+                    loader.classList.add('hidden');
+                }
             }
 
-            // 产品 OCR
             async function recognizeProduct(file) {
-                if (!CONFIG.apiKey) return showToast('配置 API Key', 'error');
-                const compressed = await compressImage(file);
-                const base64 = await new Promise(r => { const reader = new FileReader();
-                    reader.onload = () => r(reader.result);
-                    reader.readAsDataURL(compressed); });
-                const payload = { model: CONFIG.apiModel, input: { messages: [{ role: "user", content: [{ image: base64 },
-                            { text: "提取产品信息返回JSON：{\"brand\":\"\",\"type\":\"\",\"model\":\"\",\"partNo\":\"\",\"serial\":\"\"}" }
-                        ] }] }, parameters: { result_format: "message" } };
-                const res = await fetch(CONFIG.apiEndpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${CONFIG.apiKey}`,
-                        'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!res.ok) throw new Error('API错误');
-                const data = await res.json();
-                const text = data.output.choices[0].message.content[0].text;
-                const m = text.match(/\{.*\}/s);
-                return m ? JSON.parse(m[0]) : null;
+                if (!CONFIG.apiKey) { showToast('请先配置 API Key', 'error'); return null; }
+                try {
+                    const compressed = await compressImage(file);
+                    const base64 = await new Promise(r => { const reader = new FileReader();
+                        reader.onload = () => r(reader.result);
+                        reader.readAsDataURL(compressed); });
+                    const payload = { model: CONFIG.apiModel, input: { messages: [{ role: "user", content: [{ image: base64 },
+                                { text: "提取产品信息：品牌、产品类型、型号、零件号、序列号。返回JSON如{\"brand\":\"DOOSAN\",\"type\":\"回转机构总成\",\"model\":\"PC160LC-8\",\"partNo\":\"401-00356A\",\"serial\":\"830269\"}" }
+                            ] }] }, parameters: { result_format: "message" } };
+                    const response = await fetch(CONFIG.apiEndpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${CONFIG.apiKey}`,
+                            'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error('API请求失败');
+                    const data = await response.json();
+                    const text = data.output.choices[0].message.content[0].text;
+                    const match = text.match(/\{.*\}/s);
+                    return match ? JSON.parse(match[0]) : null;
+                } catch (e) {
+                    showToast('产品识别失败: ' + e.message, 'error');
+                    return null;
+                }
             }
 
-            // 产品图片上传处理
             function handleProductImageUpload(file) {
                 if (!file) return;
                 const reader = new FileReader();
@@ -868,35 +1110,44 @@
                     preview.classList.remove('hidden');
                 };
                 reader.readAsDataURL(file);
-                recognizeProduct(file).then(result => {
-                    if (result) {
-                        document.getElementById('product-brand').value = result.brand || '';
-                        document.getElementById('product-type').value = result.type || '';
-                        document.getElementById('product-model').value = result.model || '';
-                        document.getElementById('product-partno').value = result.partNo || '';
-                        document.getElementById('product-serial').value = result.serial || '';
-                        showToast('识别完成', 'success');
-                    }
-                }).catch(() => {});
+                if (CONFIG.apiKey) {
+                    recognizeProduct(file).then(result => {
+                        if (result) {
+                            if (result.brand) document.getElementById('product-brand').value = result.brand;
+                            if (result.type) document.getElementById('product-type').value = result.type;
+                            if (result.model) document.getElementById('product-model').value = result.model;
+                            if (result.partNo) document.getElementById('product-partno').value = result.partNo;
+                            if (result.serial) document.getElementById('product-serial').value = result.serial;
+                            showToast('产品识别完成', 'success');
+                        }
+                    });
+                } else {
+                    showToast('未配置 API Key，请手动填写产品信息', 'info');
+                }
             }
 
-            // 页面切换
-            function switchTab(tab) {
-                ['ocr', 'product', 'kanban', 'settings'].forEach(s => document.getElementById(`section-${s}`)?.classList
-                    .add('hidden'));
-                document.getElementById(`section-${tab}`)?.classList.remove('hidden');
-                document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-blue-100', 'text-blue-700');
-                    b.classList.add('text-gray-500'); });
-                const active = document.querySelector(`.nav-btn[data-tab="${tab}"]`);
-                if (active) { active.classList.add('bg-blue-100', 'text-blue-700'); }
-                if (tab === 'kanban') renderKanban();
-                if (tab === 'product') renderProductTable();
+            // ==================== 页面切换 ====================
+            function switchTab(tabName) {
+                const sections = ['ocr', 'product', 'kanban', 'settings'];
+                sections.forEach(s => document.getElementById(`section-${s}`)?.classList.add('hidden'));
+                document.getElementById(`section-${tabName}`)?.classList.remove('hidden');
+                document.querySelectorAll('.nav-btn').forEach(btn => {
+                    btn.classList.remove('bg-blue-100', 'text-blue-700', 'active');
+                    btn.classList.add('text-gray-500');
+                });
+                const activeBtn = document.querySelector(`.nav-btn[data-tab="${tabName}"]`);
+                if (activeBtn) {
+                    activeBtn.classList.remove('text-gray-500');
+                    activeBtn.classList.add('bg-blue-100', 'text-blue-700', 'active');
+                }
+                if (tabName === 'kanban') renderKanban();
+                if (tabName === 'product') renderProductTable();
             }
 
-            // 登录逻辑
+            // ==================== 登录逻辑 ====================
             function checkLogin() {
-                const pwd = localStorage.getItem('crm_password');
-                if (!pwd) {
+                const savedPwd = localStorage.getItem('crm_password');
+                if (!savedPwd) {
                     document.getElementById('password-login-section').classList.add('hidden');
                     document.getElementById('set-password-section').classList.remove('hidden');
                     return false;
@@ -906,72 +1157,74 @@
                     document.getElementById('main-app').classList.remove('hidden');
                     loadLocal();
                     loadGithubConfig();
-                    const fbConfig = localStorage.getItem('crm_firebase_config');
-                    if (fbConfig) {
-                        document.getElementById('firebase-config-area').value = fbConfig;
+                    const savedFire = localStorage.getItem('crm_firebase_config');
+                    if (savedFire) {
+                        document.getElementById('firebase-config-area').value = savedFire;
                         try {
-                            if (!firebase.apps.length) firebase.initializeApp(JSON.parse(fbConfig));
+                            const config = JSON.parse(savedFire);
+                            if (!firebase.apps.length) firebase.initializeApp(config);
                             db = firebase.firestore();
                             storage = firebase.storage();
                             firestoreEnabled = true;
                             document.getElementById('firebase-status').classList.remove('hidden');
+                            document.getElementById('firebase-status').innerHTML =
+                                '<i class="fas fa-check-circle"></i> 已连接云端（含图片存储）';
                             loadFromFirestore();
-                        } catch (e) {}
+                        } catch (e) { console.warn('Firebase auto-init failed:', e); }
                     }
+                    // 初始化 API Key 输入框
+                    document.getElementById('api-key-input').value = CONFIG.apiKey;
+                    renderKanban();
+                    renderProductTable();
                     return true;
                 }
                 const hint = localStorage.getItem('crm_password_hint');
-                if (hint) document.getElementById('password-hint').innerText = '提示: ' + hint;
+                if (hint) document.getElementById('password-hint').innerHTML = '提示: ' + hint;
                 return false;
             }
 
-            // ---------- 事件绑定 ----------
-            document.addEventListener('DOMContentLoaded', function() {
-                // 产品图片上传
-                const productDropzone = document.getElementById('product-dropzone');
-                const productInput = document.getElementById('product-image-input');
-                if (productDropzone && productInput) {
-                    productDropzone.addEventListener('click', () => productInput.click());
-                    productInput.addEventListener('change', function(e) {
-                        if (e.target.files && e.target.files[0]) handleProductImageUpload(e.target.files[
-                            0]);
-                    });
-                    productDropzone.addEventListener('dragover', function(e) { e.preventDefault();
-                        productDropzone.classList.add('active'); });
-                    productDropzone.addEventListener('dragleave', function() { productDropzone.classList
-                            .remove('active'); });
-                    productDropzone.addEventListener('drop', function(e) {
-                        e.preventDefault();
-                        productDropzone.classList.remove('active');
-                        if (e.dataTransfer.files && e.dataTransfer.files[0]) handleProductImageUpload(e
-                            .dataTransfer.files[0]);
-                    });
-                }
+            function doLogin() {
+                const inputPwd = document.getElementById('login-password').value;
+                const savedPwd = localStorage.getItem('crm_password');
+                if (!savedPwd) { showToast('请先设置密码', 'error');
+                    document.getElementById('btn-show-set-password').click(); return; }
+                if (inputPwd === savedPwd) {
+                    sessionStorage.setItem('crm_logged_in', 'true');
+                    document.getElementById('login-page').style.display = 'none';
+                    document.getElementById('main-app').classList.remove('hidden');
+                    loadLocal();
+                    loadGithubConfig();
+                    document.getElementById('api-key-input').value = CONFIG.apiKey;
+                    renderKanban();
+                    renderProductTable();
+                    showToast('登录成功', 'success');
+                } else { showToast('密码错误', 'error');
+                    document.getElementById('login-password').value = ''; }
+            }
 
-                // 登录相关
-                document.getElementById('btn-login').addEventListener('click', () => {
-                    const input = document.getElementById('login-password').value;
-                    if (input === localStorage.getItem('crm_password')) {
-                        sessionStorage.setItem('crm_logged_in', 'true');
-                        document.getElementById('login-page').style.display = 'none';
-                        document.getElementById('main-app').classList.remove('hidden');
-                        loadLocal();
-                        loadGithubConfig();
-                        showToast('登录成功', 'success');
-                    } else showToast('密码错误', 'error');
-                });
-                document.getElementById('btn-save-password').addEventListener('click', () => {
-                    const p = document.getElementById('new-password').value;
-                    if (p.length < 6) return showToast('至少6位', 'error');
-                    if (p !== document.getElementById('confirm-password').value) return showToast('不一致',
-                        'error');
-                    localStorage.setItem('crm_password', p);
-                    const hint = document.getElementById('password-hint-input').value.trim();
-                    if (hint) localStorage.setItem('crm_password_hint', hint);
-                    showToast('密码已设置', 'success');
-                    document.getElementById('set-password-section').classList.add('hidden');
-                    document.getElementById('password-login-section').classList.remove('hidden');
-                });
+            function doSetPassword() {
+                const newPwd = document.getElementById('new-password').value;
+                const confirmPwd = document.getElementById('confirm-password').value;
+                if (newPwd.length < 6) { showToast('密码至少6位', 'error'); return; }
+                if (newPwd !== confirmPwd) { showToast('两次密码不一致', 'error'); return; }
+                localStorage.setItem('crm_password', newPwd);
+                const hint = document.getElementById('password-hint-input').value.trim();
+                if (hint) localStorage.setItem('crm_password_hint', hint);
+                showToast('密码设置成功，请登录', 'success');
+                document.getElementById('set-password-section').classList.add('hidden');
+                document.getElementById('password-login-section').classList.remove('hidden');
+            }
+
+            function logout() {
+                sessionStorage.removeItem('crm_logged_in');
+                document.getElementById('login-page').style.display = 'flex';
+                document.getElementById('main-app').classList.add('hidden');
+            }
+
+            // ==================== 初始化事件绑定 ====================
+            document.addEventListener('DOMContentLoaded', function() {
+                // 登录
+                document.getElementById('btn-login').addEventListener('click', doLogin);
                 document.getElementById('btn-show-set-password').addEventListener('click', () => {
                     document.getElementById('password-login-section').classList.add('hidden');
                     document.getElementById('set-password-section').classList.remove('hidden');
@@ -980,111 +1233,195 @@
                     document.getElementById('set-password-section').classList.add('hidden');
                     document.getElementById('password-login-section').classList.remove('hidden');
                 });
-                document.getElementById('btn-logout').addEventListener('click', () => {
-                    sessionStorage.removeItem('crm_logged_in');
-                    document.getElementById('login-page').style.display = 'flex';
-                    document.getElementById('main-app').classList.add('hidden');
-                });
+                document.getElementById('btn-save-password').addEventListener('click', doSetPassword);
+                document.getElementById('btn-logout').addEventListener('click', logout);
+                document.getElementById('login-password').addEventListener('keypress', e => { if (e.key === 'Enter')
+                        doLogin(); });
 
-                // 导航切换
-                document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => switchTab(b
+                // 导航
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn
                     .dataset.tab)));
 
                 // 名片识别
-                document.getElementById('btn-recognize').addEventListener('click', recognizeBusinessCard);
-                document.getElementById('customer-form').addEventListener('submit', saveCustomer);
-                document.getElementById('btn-whatsapp-from-form').addEventListener('click', () => openWhatsApp(
-                    document.getElementById('cust-phone').value));
-                document.getElementById('btn-cancel-edit').addEventListener('click', () => {
-                    document.getElementById('customer-form').reset();
-                    document.getElementById('cust-id').value = '';
-                    document.getElementById('edit-mode-indicator').innerText = '新增模式';
-                    document.getElementById('btn-cancel-edit').classList.add('hidden');
+                document.getElementById('file-input-front').addEventListener('change', e => {
+                    if (e.target.files[0]) {
+                        frontImageFile = e.target.files[0];
+                        const url = URL.createObjectURL(e.target.files[0]);
+                        document.getElementById('image-preview-front').src = url;
+                        document.getElementById('image-preview-front').classList.remove('hidden');
+                        document.getElementById('upload-placeholder-front').classList.add('hidden');
+                        document.getElementById('file-name-front').textContent = e.target.files[0].name;
+                        document.getElementById('btn-clear-front').classList.remove('hidden');
+                        document.getElementById('btn-recognize').disabled = false;
+                    }
                 });
+                document.getElementById('file-input-back').addEventListener('change', e => {
+                    if (e.target.files[0]) {
+                        backImageFile = e.target.files[0];
+                        const url = URL.createObjectURL(e.target.files[0]);
+                        document.getElementById('image-preview-back').src = url;
+                        document.getElementById('image-preview-back').classList.remove('hidden');
+                        document.getElementById('upload-placeholder-back').classList.add('hidden');
+                        document.getElementById('file-name-back').textContent = e.target.files[0].name;
+                        document.getElementById('btn-clear-back').classList.remove('hidden');
+                    }
+                });
+                document.getElementById('btn-clear-front').addEventListener('click', () => {
+                    frontImageFile = null;
+                    document.getElementById('image-preview-front').classList.add('hidden');
+                    document.getElementById('upload-placeholder-front').classList.remove('hidden');
+                    document.getElementById('file-name-front').textContent = '未选择';
+                    document.getElementById('btn-clear-front').classList.add('hidden');
+                    document.getElementById('btn-recognize').disabled = true;
+                    document.getElementById('file-input-front').value = '';
+                });
+                document.getElementById('btn-clear-back').addEventListener('click', () => {
+                    backImageFile = null;
+                    document.getElementById('image-preview-back').classList.add('hidden');
+                    document.getElementById('upload-placeholder-back').classList.remove('hidden');
+                    document.getElementById('file-name-back').textContent = '未选择';
+                    document.getElementById('btn-clear-back').classList.add('hidden');
+                    document.getElementById('file-input-back').value = '';
+                });
+                document.getElementById('btn-recognize').addEventListener('click', recognizeBusinessCard);
+                document.getElementById('btn-whatsapp-from-form').addEventListener('click', () => openWhatsApp(document
+                    .getElementById('cust-phone').value));
+                document.getElementById('btn-cancel-edit').addEventListener('click', cancelEdit);
+                document.getElementById('customer-form').addEventListener('submit', saveCustomer);
 
-                // 产品
+                // 产品识别
+                const productDropzone = document.getElementById('product-dropzone');
+                const productInput = document.getElementById('product-image-input');
+                if (productDropzone && productInput) {
+                    productDropzone.addEventListener('click', () => productInput.click());
+                    productInput.addEventListener('change', function(e) {
+                        if (e.target.files && e.target.files[0]) handleProductImageUpload(e.target.files[0]);
+                    });
+                    productDropzone.addEventListener('dragover', function(e) { e.preventDefault();
+                        productDropzone.classList.add('active'); });
+                    productDropzone.addEventListener('dragleave', function() { productDropzone.classList.remove(
+                            'active'); });
+                    productDropzone.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        productDropzone.classList.remove('active');
+                        if (e.dataTransfer.files && e.dataTransfer.files[0]) handleProductImageUpload(e.dataTransfer
+                            .files[0]);
+                    });
+                }
                 document.getElementById('product-form').addEventListener('submit', saveProduct);
-                document.getElementById('clear-product-form')?.addEventListener('click', () => {
+                document.getElementById('clear-product-form').addEventListener('click', () => {
                     document.getElementById('product-form').reset();
+                    document.getElementById('product-id').value = '';
                     document.getElementById('product-preview').classList.add('hidden');
                 });
 
                 // 沟通记录
                 document.getElementById('log-form').addEventListener('submit', saveLog);
                 document.getElementById('close-log-modal').addEventListener('click', closeLogModal);
+                document.getElementById('log-modal').addEventListener('click', e => { if (e.target === document
+                        .getElementById('log-modal')) closeLogModal(); });
 
                 // 设置
                 document.getElementById('init-firebase-btn').addEventListener('click', initFirestore);
                 document.getElementById('save-github-config').addEventListener('click', saveGithubConfig);
+                document.getElementById('disable-github').addEventListener('click', disableGithub);
+                document.getElementById('github-toggle').addEventListener('change', function(e) {
+                    if (e.target.checked) {
+                        githubConfig.enabled = true;
+                        document.getElementById('github-config-fields').classList.remove('hidden');
+                        document.getElementById('github-toggle-label').textContent = '已启用';
+                    } else {
+                        githubConfig.enabled = false;
+                        document.getElementById('github-config-fields').classList.add('hidden');
+                        document.getElementById('github-toggle-label').textContent = '已禁用';
+                        document.getElementById('github-status-badge').classList.add('hidden');
+                        localStorage.setItem('crm_github_config', JSON.stringify({ ...githubConfig,
+                            enabled: false }));
+                    }
+                });
                 document.getElementById('save-api-key-btn').addEventListener('click', () => {
                     const key = document.getElementById('api-key-input').value.trim();
-                    localStorage.setItem('crm_api_key', key);
-                    CONFIG.apiKey = key;
-                    showToast('API Key 已保存', 'success');
+                    if (key) {
+                        localStorage.setItem('crm_api_key', key);
+                        CONFIG.apiKey = key;
+                        showToast('API Key 已保存', 'success');
+                    } else {
+                        localStorage.removeItem('crm_api_key');
+                        CONFIG.apiKey = '';
+                        showToast('API Key 已清除', 'info');
+                    }
                 });
                 document.getElementById('change-password-btn').addEventListener('click', () => {
-                    const p = document.getElementById('change-password-input').value;
-                    if (p.length >= 6) { localStorage.setItem('crm_password', p);
-                        showToast('密码已修改', 'success'); } else showToast('至少6位', 'error');
+                    const pwd = document.getElementById('change-password-input').value;
+                    if (pwd.length >= 6) {
+                        localStorage.setItem('crm_password', pwd);
+                        showToast('密码已修改', 'success');
+                        document.getElementById('change-password-input').value = '';
+                    } else showToast('密码至少6位', 'error');
                 });
 
                 // 导出
                 document.getElementById('export-customers-excel').addEventListener('click', () => {
-                    if (!customers.length) return showToast('无数据', 'error');
+                    if (!customers.length) return showToast('无客户数据', 'error');
                     const ws = XLSX.utils.json_to_sheet(customers.map(c => ({ 姓名: c.name, 公司: c.company,
-                        电话: c.phone, 状态: c.status })));
+                        职位: c.position, 电话: c.phone, 邮箱: c.email, 国家: c.country, 备注: c.notes,
+                        状态: c.status, 创建时间: new Date(c.createTime).toLocaleDateString(
+                            'zh-CN') })));
                     const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, '客户');
-                    XLSX.writeFile(wb, `客户_${new Date().toISOString().slice(0,10)}.xlsx`);
+                    XLSX.utils.book_append_sheet(wb, ws, '客户列表');
+                    XLSX.writeFile(wb, `客户数据_${new Date().toISOString().slice(0,10)}.xlsx`);
+                    showToast('导出成功', 'success');
                 });
                 document.getElementById('export-products-excel').addEventListener('click', () => {
-                    if (!products.length) return showToast('无数据', 'error');
-                    const ws = XLSX.utils.json_to_sheet(products);
+                    if (!products.length) return showToast('无产品数据', 'error');
+                    const ws = XLSX.utils.json_to_sheet(products.map(p => ({ 品牌: p.brand, 品名: p.type,
+                        型号: p.model, 零件号: p.partNo, 序列号: p.serial, 备注: p.notes })));
                     const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, '产品');
-                    XLSX.writeFile(wb, `产品_${new Date().toISOString().slice(0,10)}.xlsx`);
+                    XLSX.utils.book_append_sheet(wb, ws, '产品清单');
+                    XLSX.writeFile(wb, `产品数据_${new Date().toISOString().slice(0,10)}.xlsx`);
+                    showToast('导出成功', 'success');
                 });
                 document.getElementById('clear-all-data').addEventListener('click', () => {
-                    if (confirm('清空所有数据？')) { customers = [];
+                    if (confirm('确定清空所有数据吗？此操作不可恢复！')) {
+                        customers = [];
                         products = [];
                         saveLocal();
+                        if (firestoreEnabled && db) {
+                            db.collection('customers').get().then(snap => snap.forEach(d => d.ref.delete()))
+                                .catch(e => console.warn(e));
+                            db.collection('products').get().then(snap => snap.forEach(d => d.ref.delete()))
+                                .catch(e => console.warn(e));
+                        }
                         renderKanban();
                         renderProductTable();
-                        showToast('已清空', 'success'); }
+                        showToast('所有数据已清空', 'success');
+                    }
                 });
 
                 // 筛选
-                document.getElementById('search-input').addEventListener('input', e => { currentSearch = e.target
+                document.getElementById('search-input').addEventListener('input', e => { currentSearchKeyword = e.target
                         .value;
                     renderKanban(); });
-                document.getElementById('country-filter').addEventListener('input', e => { currentCountry = e.target
+                document.getElementById('country-filter').addEventListener('input', e => { currentCountryFilter = e.target
                         .value;
                     renderKanban(); });
                 document.getElementById('reset-filter').addEventListener('click', () => {
                     document.getElementById('search-input').value = '';
                     document.getElementById('country-filter').value = '';
-                    currentSearch = '';
-                    currentCountry = '';
+                    currentSearchKeyword = '';
+                    currentCountryFilter = '';
                     renderKanban();
+                    showToast('筛选已重置', 'info');
                 });
 
-                // 名片图片上传
-                document.getElementById('file-input-front').addEventListener('change', e => {
-                    if (e.target.files[0]) { frontImageFile = e.target.files[0];
-                        document.getElementById('image-preview-front').src = URL.createObjectURL(e.target
-                            .files[0]);
-                        document.getElementById('image-preview-front').classList.remove('hidden');
-                        document.getElementById('upload-placeholder-front').classList.add('hidden');
-                        document.getElementById('btn-recognize').disabled = false; }
-                });
-
-                // 初始检查登录
+                // 初始化
+                document.getElementById('api-key-input').value = CONFIG.apiKey;
                 if (!checkLogin()) {
                     document.getElementById('login-page').style.display = 'flex';
                 }
             });
 
-            // 全局函数暴露
+            // ==================== 暴露全局函数 ====================
             window.openWhatsApp = openWhatsApp;
             window.editCustomer = editCustomer;
             window.deleteCustomer = deleteCustomer;
