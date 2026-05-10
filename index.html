@@ -3,591 +3,940 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>智能识别系统 · 名片与产品管理</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>智能识别系统 v2.0 · 名片与产品管理</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js">
+    </script>
     <style>
-        body{font-family:'Segoe UI',Roboto,system-ui,sans-serif;background:#f3f4f6}
-        .drop-zone{transition:all 0.25s ease;border:2px dashed #cbd5e1;min-height:160px}
-        .drop-zone.active{border-color:#2563eb;background:#eff6ff}
-        .kanban-col{min-height:400px;max-height:calc(100vh - 260px);overflow-y:auto}
-        .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px}
-        .toast{min-width:260px;padding:12px 18px;border-radius:8px;color:white;box-shadow:0 8px 20px rgba(0,0,0,0.15);animation:slideIn 0.3s ease-out}
-        @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
-        .loader{border:3px solid #e5e7eb;border-radius:50%;border-top:3px solid #2563eb;width:20px;height:20px;animation:spin 0.8s linear infinite;display:inline-block}
-        @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-        .debug-area{background:#1e1e1e;color:#d4d4d4;padding:12px;font-family:monospace;font-size:13px;max-height:180px;overflow:auto;white-space:pre-wrap;border-radius:8px;margin-top:12px}
-        .login-container{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%)}
-        .login-box{background:rgba(255,255,255,0.95);border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:0 25px 50px rgba(0,0,0,0.25)}
-        .whatsapp-btn{display:inline-flex;align-items:center;gap:4px;background:#25D366;color:white;padding:4px 12px;border-radius:20px;font-size:12px;border:none;cursor:pointer;font-weight:500}
-        .whatsapp-btn:hover{background:#128C7E}
-        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:50;align-items:center;justify-content:center;padding:20px}
-        .modal-overlay.active{display:flex}
-        .card-dragging{opacity:0.4}
+        :root {
+            --ver: "v2.0";
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            background: #f3f4f6;
+        }
+        .drop-zone {
+            transition: all 0.25s ease;
+            border: 2px dashed #cbd5e1;
+            min-height: 160px;
+        }
+        .drop-zone.active {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+        .kanban-col {
+            min-height: 400px;
+            max-height: calc(100vh - 260px);
+            overflow-y: auto;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            min-width: 260px;
+            padding: 12px 18px;
+            border-radius: 8px;
+            color: white;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease-out;
+            display: flex;
+            align-items: center;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .loader {
+            border: 3px solid #e5e7eb;
+            border-radius: 50%;
+            border-top: 3px solid #2563eb;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        .debug-area {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 180px;
+            overflow: auto;
+            white-space: pre-wrap;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        }
+        .login-box {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+        }
+        .whatsapp-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #25D366;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .whatsapp-btn:hover {
+            background: #128C7E;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .card-dragging {
+            opacity: 0.4;
+        }
+        .version-badge {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: #1f2937;
+            color: #9ca3af;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            z-index: 100;
+            font-family: monospace;
+        }
+        .duplicate-highlight {
+            border: 2px solid #f59e0b !important;
+            background: #fffbeb !important;
+        }
+        .dup-badge {
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 4px;
+        }
     </style>
 </head>
 <body class="antialiased">
 
-<!-- 登录页面 -->
-<div id="login-page" class="login-container">
-    <div class="login-box">
-        <div class="text-center mb-8">
-            <i class="fas fa-address-card text-5xl text-indigo-600 mb-4"></i>
-            <h1 class="text-2xl font-bold text-gray-900">智能识别系统</h1>
-            <p class="text-gray-500 mt-2 text-sm">名片 + 产品管理 · 云端同步</p>
-        </div>
-        <div id="password-login-section">
-            <div class="space-y-4">
-                <div><label class="block text-sm font-medium text-gray-700 mb-1">访问密码</label><input type="password" id="login-password" class="w-full border p-2.5 rounded-lg" placeholder="输入密码"></div>
-                <button id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium"><i class="fas fa-lock-open mr-2"></i> 登录</button>
+    <!-- 版本号 -->
+    <div class="version-badge" id="version-badge">v2.0 最终版 | 2026-05-10</div>
+
+    <!-- 登录页面 -->
+    <div id="login-page" class="login-container">
+        <div class="login-box">
+            <div class="text-center mb-8">
+                <i class="fas fa-address-card text-5xl text-indigo-600 mb-4"></i>
+                <h1 class="text-2xl font-bold text-gray-900">智能识别系统</h1>
+                <p class="text-gray-500 mt-1 text-sm">名片 + 产品管理 · 云端同步 · 智能去重</p>
+                <p class="text-gray-400 mt-1 text-xs">v2.0 最终版 | 2026-05-10</p>
             </div>
-            <div class="mt-4 text-center"><button id="btn-show-set-password" class="text-sm text-indigo-600">首次使用？设置密码</button></div>
-        </div>
-        <div id="set-password-section" class="hidden mt-6 border-t pt-5">
-            <h3 class="text-lg font-medium mb-3">设置访问密码</h3>
-            <div class="space-y-3">
-                <div><label class="text-sm">新密码（至少6位）</label><input type="password" id="new-password" class="w-full border p-2.5 rounded-lg"></div>
-                <div><label class="text-sm">确认密码</label><input type="password" id="confirm-password" class="w-full border p-2.5 rounded-lg"></div>
-                <button id="btn-save-password" class="w-full bg-emerald-600 text-white py-2.5 rounded-lg">保存密码</button>
-                <button id="btn-back-to-login" class="w-full text-gray-500 py-2">返回登录</button>
+            <div id="password-login-section">
+                <div class="space-y-4">
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">访问密码</label><input type="password" id="login-password" class="w-full border p-2.5 rounded-lg" placeholder="输入密码"></div>
+                    <button id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg font-medium"><i class="fas fa-lock-open mr-2"></i> 登录</button>
+                </div>
+                <div class="mt-4 text-center"><button id="btn-show-set-password" class="text-sm text-indigo-600">首次使用？设置密码</button></div>
+            </div>
+            <div id="set-password-section" class="hidden mt-6 border-t pt-5">
+                <h3 class="text-lg font-medium mb-3">设置访问密码</h3>
+                <div class="space-y-3">
+                    <div><label class="text-sm">新密码（至少6位）</label><input type="password" id="new-password" class="w-full border p-2.5 rounded-lg"></div>
+                    <div><label class="text-sm">确认密码</label><input type="password" id="confirm-password" class="w-full border p-2.5 rounded-lg"></div>
+                    <button id="btn-save-password" class="w-full bg-emerald-600 text-white py-2.5 rounded-lg">保存密码</button>
+                    <button id="btn-back-to-login" class="w-full text-gray-500 py-2">返回登录</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- 主应用 -->
-<div id="main-app" class="hidden h-screen flex flex-col">
-    <div class="toast-container" id="toast-container"></div>
-    <header class="bg-white shadow-sm z-10 border-b">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3"><i class="fas fa-address-card text-blue-600 text-2xl"></i><h1 class="text-xl font-bold text-gray-900 hidden sm:block">OCR识别 + 产品管理</h1></div>
-            <nav class="flex gap-2 items-center flex-wrap">
-                <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium bg-blue-100 text-blue-700 active" data-tab="ocr">名片</button>
-                <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="product">产品</button>
-                <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="kanban">看板</button>
-                <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="settings">设置</button>
-                <button id="btn-logout" class="px-3 py-2 rounded-md text-sm font-medium text-red-500 hover:bg-red-50">退出</button>
-            </nav>
-        </div>
-    </header>
-
-    <main class="flex-1 overflow-hidden relative bg-gray-50">
-        <!-- 名片识别 -->
-        <section class="absolute inset-0 overflow-y-auto p-4 md:p-6" id="section-ocr">
-            <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white p-5 rounded-xl shadow-sm">
-                    <h2 class="text-lg font-semibold mb-4">上传名片</h2>
-                    <div class="mb-4"><label class="block text-sm font-medium mb-2">正面 *</label>
-                        <div class="drop-zone rounded-lg flex flex-col items-center justify-center cursor-pointer bg-gray-50 relative" id="drop-zone-front">
-                            <input accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-input-front" type="file">
-                            <div class="text-center p-4" id="upload-placeholder-front"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-1"></i><p class="text-gray-500 text-sm">点击或拖拽</p></div>
-                            <img class="hidden max-h-36 object-contain rounded" id="image-preview-front">
-                        </div>
-                    </div>
-                    <button class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm disabled:opacity-50 flex items-center gap-2" disabled id="btn-recognize"><span>开始识别</span><div class="loader hidden" id="btn-loader"></div></button>
-                    <details open class="mt-4"><summary class="text-xs text-gray-500 cursor-pointer mb-2">识别结果</summary><div class="debug-area" id="debug-ocr-text">等待识别...</div></details>
+    <!-- 主应用 -->
+    <div id="main-app" class="hidden h-screen flex flex-col">
+        <div class="toast-container" id="toast-container"></div>
+        <header class="bg-white shadow-sm z-10 border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-3"><i class="fas fa-address-card text-blue-600 text-2xl"></i>
+                    <h1 class="text-xl font-bold text-gray-900 hidden sm:block">OCR识别 v2.0</h1>
                 </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm">
-                    <h2 class="text-lg font-semibold mb-4">客户信息</h2>
-                    <form id="customer-form">
-                        <input type="hidden" id="cust-id">
-                        <div class="space-y-3">
-                            <div><label>姓名 *</label><input type="text" id="cust-name" class="w-full border p-2 rounded" required></div>
-                            <div><label>公司</label><input type="text" id="cust-company" class="w-full border p-2 rounded"></div>
-                            <div><label>职位</label><input type="text" id="cust-position" class="w-full border p-2 rounded"></div>
-                            <div><label>电话</label><input type="tel" id="cust-phone" class="w-full border p-2 rounded"></div>
-                            <div><label>邮箱</label><input type="email" id="cust-email" class="w-full border p-2 rounded"></div>
-                            <div><label>国家</label><input type="text" id="cust-country" list="country-list" class="w-full border p-2 rounded"><datalist id="country-list"><option>中国</option><option>美国</option><option>日本</option><option>德国</option></datalist></div>
-                            <div><label>备注</label><textarea id="cust-notes" rows="2" class="w-full border p-2 rounded"></textarea></div>
-                            <div class="flex gap-2">
-                                <button type="submit" class="flex-1 bg-green-600 text-white py-2 rounded">保存客户</button>
-                                <button type="button" id="btn-whatsapp-from-form" class="bg-green-500 text-white px-4 py-2 rounded whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                <nav class="flex gap-2 items-center flex-wrap">
+                    <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium bg-blue-100 text-blue-700 active" data-tab="ocr">名片</button>
+                    <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="product">产品</button>
+                    <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="kanban">看板</button>
+                    <button class="nav-btn px-3 py-2 rounded-md text-sm font-medium text-gray-500" data-tab="settings">设置</button>
+                    <button id="btn-logout" class="px-3 py-2 rounded-md text-sm font-medium text-red-500 hover:bg-red-50">退出</button>
+                </nav>
+            </div>
+        </header>
+
+        <main class="flex-1 overflow-hidden relative bg-gray-50">
+            <!-- 名片识别 -->
+            <section class="absolute inset-0 overflow-y-auto p-4 md:p-6" id="section-ocr">
+                <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-5 rounded-xl shadow-sm">
+                        <h2 class="text-lg font-semibold mb-4">上传名片</h2>
+                        <div class="mb-4"><label class="block text-sm font-medium mb-2">正面 *</label>
+                            <div class="drop-zone rounded-lg flex flex-col items-center justify-center cursor-pointer bg-gray-50 relative" id="drop-zone-front">
+                                <input accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" id="file-input-front" type="file">
+                                <div class="text-center p-4" id="upload-placeholder-front"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-1"></i><p class="text-gray-500 text-sm">点击或拖拽</p></div>
+                                <img class="hidden max-h-36 object-contain rounded" id="image-preview-front">
                             </div>
                         </div>
+                        <button class="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm disabled:opacity-50 flex items-center gap-2" disabled id="btn-recognize"><span>开始识别</span><div class="loader hidden" id="btn-loader"></div></button>
+                        <details open class="mt-4"><summary class="text-xs text-gray-500 cursor-pointer mb-2">识别结果</summary><div class="debug-area" id="debug-ocr-text">等待识别...</div></details>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm">
+                        <h2 class="text-lg font-semibold mb-4">客户信息</h2>
+                        <form id="customer-form">
+                            <input type="hidden" id="cust-id">
+                            <div class="space-y-3">
+                                <div><label>姓名 *</label><input type="text" id="cust-name" class="w-full border p-2 rounded" required></div>
+                                <div><label>公司</label><input type="text" id="cust-company" class="w-full border p-2 rounded"></div>
+                                <div><label>职位</label><input type="text" id="cust-position" class="w-full border p-2 rounded"></div>
+                                <div><label>电话</label><input type="tel" id="cust-phone" class="w-full border p-2 rounded"></div>
+                                <div><label>邮箱</label><input type="email" id="cust-email" class="w-full border p-2 rounded"></div>
+                                <div><label>国家</label><input type="text" id="cust-country" list="country-list" class="w-full border p-2 rounded"><datalist id="country-list"><option>中国</option><option>美国</option><option>日本</option><option>德国</option></datalist></div>
+                                <div><label>备注</label><textarea id="cust-notes" rows="2" class="w-full border p-2 rounded"></textarea></div>
+                                <div class="flex gap-2">
+                                    <button type="submit" class="flex-1 bg-green-600 text-white py-2 rounded">保存客户</button>
+                                    <button type="button" id="btn-whatsapp-from-form" class="bg-green-500 text-white px-4 py-2 rounded whatsapp-btn"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 产品 -->
+            <section class="absolute inset-0 overflow-y-auto p-4 md:p-6 hidden" id="section-product">
+                <div class="max-w-7xl mx-auto space-y-6">
+                    <div class="bg-white p-5 rounded-xl shadow-sm">
+                        <h2 class="text-xl font-bold mb-4">产品管理</h2>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50" id="product-dropzone">
+                                <input type="file" id="product-image-input" accept="image/*" class="hidden">
+                                <i class="fas fa-image text-4xl text-gray-400 mb-2"></i><p class="text-gray-600">点击或拖拽产品图片</p>
+                                <img id="product-preview" class="hidden mt-3 max-h-40 mx-auto rounded border">
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <form id="product-form" class="space-y-3">
+                                    <input type="hidden" id="product-id">
+                                    <div><label>品牌</label><input type="text" id="product-brand" class="w-full border p-2 rounded"></div>
+                                    <div><label>品名</label><input type="text" id="product-type" class="w-full border p-2 rounded"></div>
+                                    <div><label>型号</label><input type="text" id="product-model" class="w-full border p-2 rounded"></div>
+                                    <div><label>零件号</label><input type="text" id="product-partno" class="w-full border p-2 rounded"></div>
+                                    <div><label>序列号</label><input type="text" id="product-serial" class="w-full border p-2 rounded"></div>
+                                    <div><label>备注</label><textarea id="product-notes" rows="2" class="w-full border p-2 rounded"></textarea></div>
+                                    <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded">保存产品</button>
+                                </form>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-end"><button id="export-products-excel" class="bg-green-600 text-white px-4 py-2 rounded">导出Excel</button></div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div class="px-6 py-3 bg-gray-100 font-semibold">产品库</div>
+                        <div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-gray-50"><tr><th class="px-4 py-2">品牌</th><th>品名</th><th>型号</th><th>零件号</th><th>序列号</th><th>操作</th></tr></thead><tbody id="product-list-body"></tbody></table></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 看板 -->
+            <section class="absolute inset-0 overflow-hidden flex flex-col hidden" id="section-kanban">
+                <div class="p-4 bg-white border-b">
+                    <div class="flex justify-between items-center mb-3"><h2 class="text-lg font-bold">客户看板</h2><span>共 <span id="total-customers">0</span> 位</span></div>
+                    <div class="flex gap-2 flex-wrap">
+                        <input type="text" id="search-input" placeholder="搜索" class="border p-2 rounded w-40 text-sm">
+                        <input type="text" id="country-filter" placeholder="国家" class="border p-2 rounded w-28 text-sm">
+                        <button id="reset-filter" class="bg-gray-200 px-3 py-2 rounded text-sm">重置</button>
+                        <button id="sync-now-btn" class="bg-blue-500 text-white px-3 py-2 rounded text-sm">🔄 手动同步</button>
+                        <button id="find-duplicates-btn" class="bg-orange-500 text-white px-3 py-2 rounded text-sm">🔍 查找重复</button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-x-auto p-4">
+                    <div class="flex gap-4 h-full min-w-max">
+                        <div class="w-80 flex flex-col bg-gray-100 rounded" data-status="potential"><div class="p-3 bg-gray-200 font-semibold rounded-t">潜在 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-potential"></div></div>
+                        <div class="w-80 flex flex-col bg-yellow-50 rounded" data-status="contacted"><div class="p-3 bg-yellow-100 font-semibold rounded-t">已联系 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-contacted"></div></div>
+                        <div class="w-80 flex flex-col bg-blue-50 rounded" data-status="followed_up"><div class="p-3 bg-blue-100 font-semibold rounded-t">已跟进 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-followed_up"></div></div>
+                        <div class="w-80 flex flex-col bg-green-50 rounded" data-status="closed"><div class="p-3 bg-green-100 font-semibold rounded-t">已成交 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-closed"></div></div>
+                        <div class="w-80 flex flex-col bg-red-50 rounded" data-status="lost"><div class="p-3 bg-red-100 font-semibold rounded-t">已丢失 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-lost"></div></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 设置 -->
+            <section class="absolute inset-0 overflow-y-auto p-4 md:p-6 hidden" id="section-settings">
+                <div class="max-w-2xl mx-auto space-y-5">
+                    <div class="bg-white p-5 rounded-xl shadow-sm">
+                        <h2 class="font-semibold border-b pb-2 mb-3">Firebase 云同步 <span class="text-xs text-gray-400">v2.0</span></h2>
+                        <textarea id="firebase-config-area" rows="4" class="w-full border p-2 font-mono text-sm rounded" placeholder='{"apiKey":"...","projectId":"...","storageBucket":"..."}'></textarea>
+                        <button id="init-firebase-btn" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm">连接并同步</button>
+                        <div id="firebase-status" class="text-sm text-green-600 hidden mt-2">未连接</div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm">
+                        <h2 class="font-semibold border-b pb-2 mb-3">API 设置</h2>
+                        <input id="api-key-input" class="w-full border p-2 rounded text-sm" type="password" placeholder="通义千问 API Key">
+                        <button id="save-api-key-btn" class="mt-2 bg-gray-800 text-white px-4 py-2 rounded text-sm">保存</button>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl shadow-sm flex gap-3">
+                        <button id="export-customers-excel" class="bg-green-600 text-white px-4 py-2 rounded text-sm">导出Excel</button>
+                        <button id="clear-all-data" class="bg-red-600 text-white px-4 py-2 rounded text-sm">清空数据</button>
+                    </div>
+                    <p class="text-xs text-center text-gray-400">v2.0 最终版 | 2026-05-10</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- 沟通记录 -->
+        <div class="modal-overlay" id="log-modal">
+            <div class="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col mx-4">
+                <div class="p-4 border-b flex justify-between"><h3 class="text-lg font-bold">沟通记录</h3><button id="close-log-modal" class="text-gray-400 text-2xl">&times;</button></div>
+                <div class="p-4 flex-1 overflow-y-auto bg-gray-50">
+                    <div id="log-history" class="space-y-3 mb-4"></div>
+                    <form id="log-form" class="bg-white p-4 rounded border">
+                        <input type="hidden" id="log-customer-id">
+                        <div class="grid grid-cols-2 gap-3 mb-3"><div><label class="text-sm">时间</label><input type="datetime-local" id="log-time" class="w-full border p-2 rounded text-sm"></div><div><label class="text-sm">类型</label><select id="log-type" class="w-full border p-2 rounded text-sm"><option value="phone">电话</option><option value="email">邮件</option><option value="online">在线</option><option value="meeting">面谈</option></select></div></div>
+                        <div class="mb-3"><label class="text-sm">内容</label><textarea id="log-content" rows="2" class="w-full border p-2 rounded text-sm" required></textarea></div>
+                        <div class="mb-3"><label class="text-sm">下一步</label><input type="text" id="log-next" class="w-full border p-2 rounded text-sm"></div>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded">添加记录</button>
                     </form>
                 </div>
             </div>
-        </section>
+        </div>
+    </div>
 
-        <!-- 产品 -->
-        <section class="absolute inset-0 overflow-y-auto p-4 md:p-6 hidden" id="section-product">
-            <div class="max-w-7xl mx-auto space-y-6">
-                <div class="bg-white p-5 rounded-xl shadow-sm">
-                    <h2 class="text-xl font-bold mb-4">产品管理</h2>
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50" id="product-dropzone">
-                            <input type="file" id="product-image-input" accept="image/*" class="hidden">
-                            <i class="fas fa-image text-4xl text-gray-400 mb-2"></i><p class="text-gray-600">点击或拖拽产品图片</p>
-                            <img id="product-preview" class="hidden mt-3 max-h-40 mx-auto rounded border">
-                        </div>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <form id="product-form" class="space-y-3">
-                                <input type="hidden" id="product-id">
-                                <div><label>品牌</label><input type="text" id="product-brand" class="w-full border p-2 rounded"></div>
-                                <div><label>品名</label><input type="text" id="product-type" class="w-full border p-2 rounded"></div>
-                                <div><label>型号</label><input type="text" id="product-model" class="w-full border p-2 rounded"></div>
-                                <div><label>零件号</label><input type="text" id="product-partno" class="w-full border p-2 rounded"></div>
-                                <div><label>序列号</label><input type="text" id="product-serial" class="w-full border p-2 rounded"></div>
-                                <div><label>备注</label><textarea id="product-notes" rows="2" class="w-full border p-2 rounded"></textarea></div>
-                                <button type="submit" class="w-full bg-purple-600 text-white py-2 rounded">保存产品</button>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="mt-4 flex justify-end"><button id="export-products-excel" class="bg-green-600 text-white px-4 py-2 rounded">导出Excel</button></div>
-                </div>
-                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <div class="px-6 py-3 bg-gray-100 font-semibold">产品库</div>
-                    <div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-gray-50"><tr><th class="px-4 py-2">品牌</th><th>品名</th><th>型号</th><th>零件号</th><th>序列号</th><th>操作</th></tr></thead><tbody id="product-list-body"></tbody></table></div>
-                </div>
+    <!-- 重复确认弹窗 -->
+    <div class="modal-overlay" id="duplicate-modal">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div class="text-center mb-4">
+                <i class="fas fa-exclamation-triangle text-4xl text-orange-500 mb-2"></i>
+                <h3 class="text-lg font-bold">可能重复的客户</h3>
+                <p class="text-sm text-gray-500 mt-1" id="dup-message"></p>
             </div>
-        </section>
-
-        <!-- 看板 -->
-        <section class="absolute inset-0 overflow-hidden flex flex-col hidden" id="section-kanban">
-            <div class="p-4 bg-white border-b">
-                <div class="flex justify-between items-center mb-3"><h2 class="text-lg font-bold">客户看板</h2><span>共 <span id="total-customers">0</span> 位</span></div>
-                <div class="flex gap-2 flex-wrap">
-                    <input type="text" id="search-input" placeholder="搜索" class="border p-2 rounded w-40 text-sm">
-                    <input type="text" id="country-filter" placeholder="国家" class="border p-2 rounded w-28 text-sm">
-                    <button id="reset-filter" class="bg-gray-200 px-3 py-2 rounded text-sm">重置</button>
-                    <button id="sync-now-btn" class="bg-blue-500 text-white px-3 py-2 rounded text-sm">手动同步</button>
-                </div>
-            </div>
-            <div class="flex-1 overflow-x-auto p-4">
-                <div class="flex gap-4 h-full min-w-max">
-                    <div class="w-80 flex flex-col bg-gray-100 rounded" data-status="potential"><div class="p-3 bg-gray-200 font-semibold rounded-t">潜在 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-potential"></div></div>
-                    <div class="w-80 flex flex-col bg-yellow-50 rounded" data-status="contacted"><div class="p-3 bg-yellow-100 font-semibold rounded-t">已联系 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-contacted"></div></div>
-                    <div class="w-80 flex flex-col bg-blue-50 rounded" data-status="followed_up"><div class="p-3 bg-blue-100 font-semibold rounded-t">已跟进 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-followed_up"></div></div>
-                    <div class="w-80 flex flex-col bg-green-50 rounded" data-status="closed"><div class="p-3 bg-green-100 font-semibold rounded-t">已成交 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-closed"></div></div>
-                    <div class="w-80 flex flex-col bg-red-50 rounded" data-status="lost"><div class="p-3 bg-red-100 font-semibold rounded-t">已丢失 <span class="count-badge text-xs">0</span></div><div class="p-3 flex-1 kanban-col space-y-3" id="col-lost"></div></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 设置 -->
-        <section class="absolute inset-0 overflow-y-auto p-4 md:p-6 hidden" id="section-settings">
-            <div class="max-w-2xl mx-auto space-y-5">
-                <div class="bg-white p-5 rounded-xl shadow-sm">
-                    <h2 class="font-semibold border-b pb-2 mb-3">Firebase 云同步</h2>
-                    <textarea id="firebase-config-area" rows="4" class="w-full border p-2 font-mono text-sm rounded" placeholder='{"apiKey":"...","projectId":"...","storageBucket":"..."}'></textarea>
-                    <button id="init-firebase-btn" class="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm">连接并同步</button>
-                    <div id="firebase-status" class="text-sm text-green-600 hidden mt-2">未连接</div>
-                </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm">
-                    <h2 class="font-semibold border-b pb-2 mb-3">API 设置</h2>
-                    <input id="api-key-input" class="w-full border p-2 rounded text-sm" type="password" placeholder="通义千问 API Key">
-                    <button id="save-api-key-btn" class="mt-2 bg-gray-800 text-white px-4 py-2 rounded text-sm">保存</button>
-                </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm flex gap-3">
-                    <button id="export-customers-excel" class="bg-green-600 text-white px-4 py-2 rounded text-sm">导出Excel</button>
-                    <button id="clear-all-data" class="bg-red-600 text-white px-4 py-2 rounded text-sm">清空数据</button>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- 沟通记录 -->
-    <div class="modal-overlay" id="log-modal">
-        <div class="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col mx-4">
-            <div class="p-4 border-b flex justify-between"><h3 class="text-lg font-bold">沟通记录</h3><button id="close-log-modal" class="text-gray-400 text-2xl">&times;</button></div>
-            <div class="p-4 flex-1 overflow-y-auto bg-gray-50">
-                <div id="log-history" class="space-y-3 mb-4"></div>
-                <form id="log-form" class="bg-white p-4 rounded border">
-                    <input type="hidden" id="log-customer-id">
-                    <div class="grid grid-cols-2 gap-3 mb-3"><div><label class="text-sm">时间</label><input type="datetime-local" id="log-time" class="w-full border p-2 rounded text-sm"></div><div><label class="text-sm">类型</label><select id="log-type" class="w-full border p-2 rounded text-sm"><option value="phone">电话</option><option value="email">邮件</option><option value="online">在线</option><option value="meeting">面谈</option></select></div></div>
-                    <div class="mb-3"><label class="text-sm">内容</label><textarea id="log-content" rows="2" class="w-full border p-2 rounded text-sm" required></textarea></div>
-                    <div class="mb-3"><label class="text-sm">下一步</label><input type="text" id="log-next" class="w-full border p-2 rounded text-sm"></div>
-                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded">添加记录</button>
-                </form>
+            <div class="bg-orange-50 rounded-lg p-3 mb-4" id="dup-details"></div>
+            <div class="flex gap-3">
+                <button id="dup-cancel" class="flex-1 bg-gray-200 hover:bg-gray-300 py-2 rounded font-medium">取消</button>
+                <button id="dup-confirm" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded font-medium">仍要添加</button>
             </div>
         </div>
     </div>
-</div>
 
-<script>
-(function() {
-    // ==================== 全局 ====================
-    let customers = [];
-    let products = [];
-    let firestoreEnabled = false;
-    let db = null;
-    let storage = null;
-    let currentImageBlob = null;
-    let frontImageFile = null;
-    let draggedCustomerId = null;
-    let currentSearchKeyword = '';
-    let currentCountryFilter = '';
-    const CONFIG = {
-        apiKey: localStorage.getItem('crm_api_key') || '',
-        apiEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
-    };
+    <script>
+        (function() {
+            // ==================== 版本 ====================
+            const APP_VERSION = 'v2.0 最终版';
+            const APP_DATE = '2026-05-10';
+            console.log(`🚀 智能识别系统 ${APP_VERSION} | ${APP_DATE}`);
 
-    const showToast = (msg, type = 'info') => {
-        const container = document.getElementById('toast-container');
-        if (!container) return;
-        const toast = document.createElement('div');
-        const bg = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-gray-800';
-        toast.className = `toast ${bg}`;
-        toast.innerHTML = `<i class="fas fa-${type==='success'?'check':type==='error'?'exclamation':'info'}-circle mr-2"></i>${msg}`;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    };
+            // ==================== 全局 ====================
+            let customers = [];
+            let products = [];
+            let firestoreEnabled = false;
+            let db = null;
+            let storage = null;
+            let currentImageBlob = null;
+            let frontImageFile = null;
+            let draggedCustomerId = null;
+            let currentSearchKeyword = '';
+            let currentCountryFilter = '';
+            let pendingCustomer = null; // 待确认的重复客户
+            const CONFIG = {
+                apiKey: localStorage.getItem('crm_api_key') || '',
+                apiEndpoint: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
+            };
 
-    const escapeHtml = (s) => s ? String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]) : '';
+            const showToast = (msg, type = 'info') => {
+                const container = document.getElementById('toast-container');
+                if (!container) return;
+                const toast = document.createElement('div');
+                const bg = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-gray-800';
+                toast.className = `toast ${bg}`;
+                const icon = type === 'success' ? 'check' : type === 'error' ? 'exclamation' : 'info';
+                toast.innerHTML = `<i class="fas fa-${icon}-circle mr-2"></i>${msg}`;
+                container.appendChild(toast);
+                setTimeout(() => { toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.3s';
+                    setTimeout(() => toast.remove(), 300); }, 3000);
+            };
 
-    const saveLocal = () => { localStorage.setItem('crm_customers', JSON.stringify(customers)); localStorage.setItem('crm_products', JSON.stringify(products)); };
-    const loadLocal = () => {
-        try { customers = JSON.parse(localStorage.getItem('crm_customers') || '[]'); } catch (e) { customers = []; }
-        try { products = JSON.parse(localStorage.getItem('crm_products') || '[]'); } catch (e) { products = []; }
-    };
+            const escapeHtml = (s) => s ? String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;',
+                '"': '&quot;', "'": '&#39;' })[m]) : '';
 
-    // ==================== Firebase（不会清空数据）====================
-    const initFirestore = () => {
-        const configText = document.getElementById('firebase-config-area').value.trim();
-        if (!configText) return showToast('请输入配置', 'error');
-        try {
-            const config = JSON.parse(configText);
-            if (!firebase.apps.length) firebase.initializeApp(config);
-            db = firebase.firestore();
-            storage = firebase.storage();
-            firestoreEnabled = true;
-            localStorage.setItem('crm_firebase_config', configText);
-            document.getElementById('firebase-status').classList.remove('hidden');
-            document.getElementById('firebase-status').innerText = '已连接，正在智能同步...';
-            smartSync();
-        } catch (e) { showToast('配置错误: ' + e.message, 'error'); }
-    };
+            const saveLocal = () => { localStorage.setItem('crm_customers', JSON.stringify(customers));
+                localStorage.setItem('crm_products', JSON.stringify(products)); };
+            const loadLocal = () => {
+                try { customers = JSON.parse(localStorage.getItem('crm_customers') || '[]'); } catch (e) { customers = []; }
+                try { products = JSON.parse(localStorage.getItem('crm_products') || '[]'); } catch (e) { products = []; }
+            };
 
-    // 🔥 智能同步：云端有数据用云端，本地有数据保留本地，合并后上传
-    const smartSync = async () => {
-        if (!firestoreEnabled || !db) return;
-        try {
-            // 获取云端数据
-            const custSnap = await db.collection('customers').get();
-            const cloudCustomers = [];
-            custSnap.forEach(d => cloudCustomers.push({ ...d.data(), id: d.id }));
+            // ==================== Firebase ====================
+            const initFirestore = () => {
+                const configText = document.getElementById('firebase-config-area').value.trim();
+                if (!configText) return showToast('请输入配置', 'error');
+                try {
+                    const config = JSON.parse(configText);
+                    if (!firebase.apps.length) firebase.initializeApp(config);
+                    db = firebase.firestore();
+                    storage = firebase.storage();
+                    firestoreEnabled = true;
+                    localStorage.setItem('crm_firebase_config', configText);
+                    document.getElementById('firebase-status').classList.remove('hidden');
+                    document.getElementById('firebase-status').innerText = '已连接，正在智能合并...';
+                    smartSync();
+                } catch (e) { showToast('配置错误: ' + e.message, 'error'); }
+            };
 
-            const prodSnap = await db.collection('products').get();
-            const cloudProducts = [];
-            prodSnap.forEach(d => cloudProducts.push({ ...d.data(), id: d.id }));
+            const smartSync = async () => {
+                if (!firestoreEnabled || !db) return;
+                try {
+                    const custSnap = await db.collection('customers').get();
+                    const cloudCust = [];
+                    custSnap.forEach(d => cloudCust.push({ ...d.data(), id: d.id }));
+                    const prodSnap = await db.collection('products').get();
+                    const cloudProd = [];
+                    prodSnap.forEach(d => cloudProd.push({ ...d.data(), id: d.id }));
 
-            // 🔥 合并策略：云端和本地合并，以时间最新的为准
-            const mergedCustomers = mergeArrays(customers, cloudCustomers);
-            const mergedProducts = mergeArrays(products, cloudProducts);
+                    customers = mergeArrays(customers, cloudCust);
+                    products = mergeArrays(products, cloudProd);
+                    saveLocal();
+                    renderKanban();
+                    renderProductTable();
 
-            customers = mergedCustomers;
-            products = mergedProducts;
-            saveLocal();
-            renderKanban();
-            renderProductTable();
+                    for (let c of customers) await db.collection('customers').doc(c.id).set(c).catch(() => {});
+                    for (let p of products) await db.collection('products').doc(p.id).set(p).catch(() => {});
 
-            // 上传合并后的数据到云端
-            for (let c of customers) {
-                await db.collection('customers').doc(c.id).set(c).catch(() => {});
+                    document.getElementById('firebase-status').innerText = '已连接 · ' + customers.length + '位客户';
+                    showToast('同步完成，共' + customers.length + '位客户', 'success');
+                } catch (e) { showToast('同步失败: ' + e.message, 'error'); }
+            };
+
+            function mergeArrays(localArr, cloudArr) {
+                const map = new Map();
+                localArr.forEach(i => map.set(i.id, i));
+                cloudArr.forEach(i => {
+                    const ex = map.get(i.id);
+                    if (!ex || new Date(i.createTime) > new Date(ex.createTime)) map.set(i.id, i);
+                });
+                return Array.from(map.values());
             }
-            for (let p of products) {
-                await db.collection('products').doc(p.id).set(p).catch(() => {});
+
+            const syncCustomerToFirestore = async (customer) => {
+                if (!firestoreEnabled || !db) return;
+                try { await db.collection('customers').doc(customer.id).set(customer); } catch (e) {}
+            };
+
+            // ==================== 重复检测 ====================
+            function findDuplicates(customer, excludeId = null) {
+                return customers.filter(c => {
+                    if (excludeId && c.id === excludeId) return false;
+                    const sameName = customer.name && c.name && c.name.trim() === customer.name.trim();
+                    const samePhone = customer.phone && c.phone && c.phone.replace(/[^\d]/g, '') === customer.phone
+                        .replace(/[^\d]/g, '');
+                    return sameName || samePhone;
+                });
             }
 
-            document.getElementById('firebase-status').innerText = '已连接 · ' + customers.length + '位客户';
-            showToast('同步完成，共' + customers.length + '位客户', 'success');
-        } catch (e) {
-            showToast('同步失败: ' + e.message, 'error');
-        }
-    };
+            function checkDuplicate(customer, callback) {
+                const dups = findDuplicates(customer, customer.id);
+                if (dups.length === 0) { callback(true); return; }
 
-    // 合并数组，同ID保留最新的
-    function mergeArrays(localArr, cloudArr) {
-        const map = new Map();
-        // 先加入本地数据
-        localArr.forEach(item => map.set(item.id, item));
-        // 再加入云端数据，如果云端更新则覆盖
-        cloudArr.forEach(item => {
-            const existing = map.get(item.id);
-            if (!existing || new Date(item.createTime) > new Date(existing.createTime)) {
-                map.set(item.id, item);
+                pendingCustomer = customer;
+                document.getElementById('dup-message').innerText = `发现 ${dups.length} 个可能重复的客户`;
+                document.getElementById('dup-details').innerHTML = dups.map(d => `
+                    <div class="text-sm mb-1"><b>${escapeHtml(d.name)}</b> ${d.company ? '· '+escapeHtml(d.company) : ''} ${d.phone ? '· '+escapeHtml(d.phone) : ''}</div>
+                `).join('');
+                document.getElementById('duplicate-modal').classList.add('active');
+
+                document.getElementById('dup-confirm').onclick = () => {
+                    document.getElementById('duplicate-modal').classList.remove('active');
+                    callback(true);
+                };
+                document.getElementById('dup-cancel').onclick = () => {
+                    document.getElementById('duplicate-modal').classList.remove('active');
+                    callback(false);
+                };
             }
-        });
-        return Array.from(map.values());
-    }
 
-    const syncCustomerToFirestore = async (customer) => {
-        if (!firestoreEnabled || !db) return;
-        try { await db.collection('customers').doc(customer.id).set(customer); } catch (e) {}
-    };
+            function findAllDuplicates() {
+                const dupGroups = [];
+                const checked = new Set();
+                customers.forEach(c => {
+                    if (checked.has(c.id)) return;
+                    const dups = findDuplicates(c, c.id);
+                    if (dups.length > 0) {
+                        dupGroups.push([c, ...dups]);
+                        [c, ...dups].forEach(d => checked.add(d.id));
+                    }
+                });
+                return dupGroups;
+            }
 
-    // ==================== 看板 ====================
-    function renderKanban() {
-        let filtered = [...customers];
-        if (currentSearchKeyword) {
-            const kw = currentSearchKeyword.toLowerCase();
-            filtered = filtered.filter(c => (c.name && c.name.toLowerCase().includes(kw)) || (c.company && c.company.toLowerCase().includes(kw)) || (c.phone && c.phone.includes(kw)));
-        }
-        if (currentCountryFilter) filtered = filtered.filter(c => c.country === currentCountryFilter);
+            // ==================== 看板 ====================
+            function renderKanban() {
+                let filtered = [...customers];
+                if (currentSearchKeyword) {
+                    const kw = currentSearchKeyword.toLowerCase();
+                    filtered = filtered.filter(c => (c.name && c.name.toLowerCase().includes(kw)) || (c.company && c
+                        .company.toLowerCase().includes(kw)) || (c.phone && c.phone.includes(kw)));
+                }
+                if (currentCountryFilter) filtered = filtered.filter(c => c.country === currentCountryFilter);
 
-        document.getElementById('total-customers').innerText = filtered.length;
-        ['potential', 'contacted', 'followed_up', 'closed', 'lost'].forEach(s => {
-            const col = document.getElementById(`col-${s}`);
-            if (col) col.innerHTML = '';
-            const cnt = filtered.filter(c => c.status === s).length;
-            const badge = document.querySelector(`[data-status="${s}"] .count-badge`);
-            if (badge) badge.innerText = cnt;
-        });
+                document.getElementById('total-customers').innerText = filtered.length;
+                ['potential', 'contacted', 'followed_up', 'closed', 'lost'].forEach(s => {
+                    const col = document.getElementById(`col-${s}`);
+                    if (col) col.innerHTML = '';
+                    const cnt = filtered.filter(c => c.status === s).length;
+                    const badge = document.querySelector(`[data-status="${s}"] .count-badge`);
+                    if (badge) badge.innerText = cnt;
+                });
 
-        filtered.forEach(c => {
-            const card = document.createElement('div');
-            card.className = 'bg-white p-3 rounded shadow border border-gray-200 cursor-pointer hover:shadow-md group mb-3';
-            card.draggable = true;
-            card.setAttribute('data-id', c.id);
-            card.addEventListener('dragstart', e => { draggedCustomerId = c.id; card.classList.add('card-dragging'); });
-            card.addEventListener('dragend', () => card.classList.remove('card-dragging'));
-            const logsCount = (c.logs || []).length;
-            card.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-bold truncate cursor-pointer" data-edit="${c.id}">${escapeHtml(c.name||'未命名')}</h4>
-                    <div class="flex gap-1 opacity-0 group-hover:opacity-100">
-                        <button data-edit="${c.id}" class="text-blue-500"><i class="fas fa-edit text-xs"></i></button>
-                        <button data-log="${c.id}" class="text-green-500"><i class="far fa-comment-dots text-xs"></i>${logsCount||''}</button>
-                        <button data-del="${c.id}" class="text-red-400"><i class="fas fa-trash text-xs"></i></button>
-                    </div>
-                </div>
-                <div class="text-xs text-gray-500 space-y-1 cursor-pointer" data-edit="${c.id}">
-                    ${c.company?`<div>${escapeHtml(c.company)}</div>`:''}
-                    ${c.phone?`<div>📞 ${escapeHtml(c.phone)}</div>`:''}
-                </div>
-                <div class="mt-2 pt-2 border-t flex justify-between items-center">
-                    <span class="text-xs text-gray-400">${new Date(c.createTime).toLocaleDateString()}</span>
-                    <div class="flex gap-2 items-center">
-                        ${c.phone?`<button class="whatsapp-btn text-xs wa-btn" data-phone="${c.phone.replace(/'/g,"\\'")}">WhatsApp</button>`:''}
-                        <select class="text-xs border rounded p-1 status-select" data-statusid="${c.id}">
-                            <option value="potential" ${c.status==='potential'?'selected':''}>潜在</option>
-                            <option value="contacted" ${c.status==='contacted'?'selected':''}>已联系</option>
-                            <option value="followed_up" ${c.status==='followed_up'?'selected':''}>已跟进</option>
-                            <option value="closed" ${c.status==='closed'?'selected':''}>已成交</option>
-                            <option value="lost" ${c.status==='lost'?'selected':''}>已丢失</option>
-                        </select>
-                    </div>
-                </div>`;
-            const col = document.getElementById(`col-${c.status||'potential'}`);
-            if (col) col.appendChild(card);
-        });
+                // 查找重复
+                const dupGroups = findAllDuplicates();
+                const dupIds = new Set();
+                dupGroups.forEach(g => g.forEach(c => dupIds.add(c.id)));
 
-        document.querySelectorAll('.kanban-col').forEach(col => {
-            col.addEventListener('dragover', e => e.preventDefault());
-            col.addEventListener('drop', e => {
-                e.preventDefault();
-                const ns = col.closest('[data-status]')?.dataset.status;
-                if (draggedCustomerId && ns) updateStatus(draggedCustomerId, ns);
+                filtered.forEach(c => {
+                    const card = document.createElement('div');
+                    card.className =
+                        'bg-white p-3 rounded shadow border border-gray-200 cursor-pointer hover:shadow-md group mb-3';
+                    if (dupIds.has(c.id)) card.classList.add('duplicate-highlight');
+                    card.draggable = true;
+                    card.setAttribute('data-id', c.id);
+                    card.addEventListener('dragstart', e => { draggedCustomerId = c.id;
+                        card.classList.add('card-dragging'); });
+                    card.addEventListener('dragend', () => card.classList.remove('card-dragging'));
+                    const logsCount = (c.logs || []).length;
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold truncate cursor-pointer" data-edit="${c.id}">${escapeHtml(c.name||'未命名')}${dupIds.has(c.id)?'<span class="dup-badge">重复</span>':''}</h4>
+                            <div class="flex gap-1 opacity-0 group-hover:opacity-100">
+                                <button data-edit="${c.id}" class="text-blue-500"><i class="fas fa-edit text-xs"></i></button>
+                                <button data-log="${c.id}" class="text-green-500"><i class="far fa-comment-dots text-xs"></i>${logsCount||''}</button>
+                                <button data-del="${c.id}" class="text-red-400"><i class="fas fa-trash text-xs"></i></button>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 space-y-1 cursor-pointer" data-edit="${c.id}">
+                            ${c.company?`<div>${escapeHtml(c.company)}</div>`:''}
+                            ${c.phone?`<div>📞 ${escapeHtml(c.phone)}</div>`:''}
+                        </div>
+                        <div class="mt-2 pt-2 border-t flex justify-between items-center">
+                            <span class="text-xs text-gray-400">${new Date(c.createTime).toLocaleDateString()}</span>
+                            <div class="flex gap-2 items-center">
+                                ${c.phone?`<button class="whatsapp-btn text-xs wa-btn" data-phone="${c.phone.replace(/'/g,"\\'")}">WhatsApp</button>`:''}
+                                <select class="text-xs border rounded p-1 status-select" data-statusid="${c.id}">
+                                    <option value="potential" ${c.status==='potential'?'selected':''}>潜在</option>
+                                    <option value="contacted" ${c.status==='contacted'?'selected':''}>已联系</option>
+                                    <option value="followed_up" ${c.status==='followed_up'?'selected':''}>已跟进</option>
+                                    <option value="closed" ${c.status==='closed'?'selected':''}>已成交</option>
+                                    <option value="lost" ${c.status==='lost'?'selected':''}>已丢失</option>
+                                </select>
+                            </div>
+                        </div>`;
+                    const col = document.getElementById(`col-${c.status||'potential'}`);
+                    if (col) col.appendChild(card);
+                });
+
+                document.querySelectorAll('.kanban-col').forEach(col => {
+                    col.addEventListener('dragover', e => e.preventDefault());
+                    col.addEventListener('drop', e => {
+                        e.preventDefault();
+                        const ns = col.closest('[data-status]')?.dataset.status;
+                        if (draggedCustomerId && ns) updateStatus(draggedCustomerId, ns);
+                    });
+                });
+            }
+
+            // 🔥 状态更新 + 强制同步到云端
+            function updateStatus(id, newStatus) {
+                const c = customers.find(x => x.id === id);
+                if (c && c.status !== newStatus) {
+                    c.status = newStatus;
+                    saveLocal();
+                    // 强制同步到云端
+                    if (firestoreEnabled && db) {
+                        db.collection('customers').doc(id).set(c).then(() => {
+                            console.log('✅ 状态已同步到云端:', c.name, '→', newStatus);
+                        }).catch(e => console.warn('状态同步失败:', e));
+                    }
+                    renderKanban();
+                    showToast('状态已更新并同步', 'success');
+                }
+            }
+
+            document.body.addEventListener('click', e => {
+                const editBtn = e.target.closest('[data-edit]'); if (editBtn) { editCustomer(editBtn.dataset.edit);
+                    return; }
+                const logBtn = e.target.closest('[data-log]'); if (logBtn) { openLogModal(logBtn.dataset.log); return; }
+                const delBtn = e.target.closest('[data-del]'); if (delBtn) { deleteCustomer(delBtn.dataset.del); return; }
+                const waBtn = e.target.closest('.wa-btn'); if (waBtn) { openWhatsApp(waBtn.dataset.phone); return; }
+                const statusSel = e.target.closest('.status-select'); if (statusSel) { updateStatus(statusSel.dataset
+                        .statusid, statusSel.value); return; }
             });
-        });
-    }
 
-    function updateStatus(id, newStatus) {
-        const c = customers.find(x => x.id === id);
-        if (c && c.status !== newStatus) { c.status = newStatus; saveLocal(); syncCustomerToFirestore(c); renderKanban(); }
-    }
+            // ==================== 客户 ====================
+            function saveCustomer(e) {
+                e.preventDefault();
+                const id = document.getElementById('cust-id').value || Date.now().toString();
+                const customer = {
+                    id,
+                    name: document.getElementById('cust-name').value,
+                    company: document.getElementById('cust-company').value,
+                    position: document.getElementById('cust-position').value,
+                    phone: document.getElementById('cust-phone').value,
+                    email: document.getElementById('cust-email').value,
+                    country: document.getElementById('cust-country').value,
+                    notes: document.getElementById('cust-notes').value,
+                    status: 'potential',
+                    logs: [],
+                    createTime: new Date().toISOString()
+                };
 
-    document.body.addEventListener('click', e => {
-        const editBtn = e.target.closest('[data-edit]'); if (editBtn) { editCustomer(editBtn.dataset.edit); return; }
-        const logBtn = e.target.closest('[data-log]'); if (logBtn) { openLogModal(logBtn.dataset.log); return; }
-        const delBtn = e.target.closest('[data-del]'); if (delBtn) { deleteCustomer(delBtn.dataset.del); return; }
-        const waBtn = e.target.closest('.wa-btn'); if (waBtn) { openWhatsApp(waBtn.dataset.phone); return; }
-        const statusSel = e.target.closest('.status-select'); if (statusSel) { updateStatus(statusSel.dataset.statusid, statusSel.value); return; }
-    });
+                // 重复检测
+                checkDuplicate(customer, (proceed) => {
+                    if (!proceed) { showToast('已取消保存', 'info'); return; }
 
-    // ==================== 客户 ====================
-    function saveCustomer(e) {
-        e.preventDefault();
-        const id = document.getElementById('cust-id').value || Date.now().toString();
-        const customer = {
-            id, name: document.getElementById('cust-name').value,
-            company: document.getElementById('cust-company').value,
-            position: document.getElementById('cust-position').value,
-            phone: document.getElementById('cust-phone').value,
-            email: document.getElementById('cust-email').value,
-            country: document.getElementById('cust-country').value,
-            notes: document.getElementById('cust-notes').value,
-            status: 'potential', logs: [], createTime: new Date().toISOString()
-        };
-        const idx = customers.findIndex(c => c.id === id);
-        if (idx !== -1) { customer.status = customers[idx].status; customer.logs = customers[idx].logs || []; customers[idx] = customer; }
-        else customers.push(customer);
-        saveLocal(); syncCustomerToFirestore(customer); renderKanban();
-        document.getElementById('customer-form').reset(); document.getElementById('cust-id').value = '';
-        frontImageFile = null;
-        document.getElementById('image-preview-front')?.classList.add('hidden');
-        document.getElementById('upload-placeholder-front')?.classList.remove('hidden');
-        document.getElementById('btn-recognize').disabled = true;
-        showToast('客户已保存并同步', 'success');
-    }
+                    const idx = customers.findIndex(c => c.id === id);
+                    if (idx !== -1) { customer.status = customers[idx].status;
+                        customer.logs = customers[idx].logs || [];
+                        customers[idx] = customer; } else customers.push(customer);
+                    saveLocal();
+                    syncCustomerToFirestore(customer);
+                    renderKanban();
+                    document.getElementById('customer-form').reset();
+                    document.getElementById('cust-id').value = '';
+                    frontImageFile = null;
+                    document.getElementById('image-preview-front')?.classList.add('hidden');
+                    document.getElementById('upload-placeholder-front')?.classList.remove('hidden');
+                    document.getElementById('btn-recognize').disabled = true;
+                    showToast('客户已保存并同步', 'success');
+                });
+            }
 
-    function editCustomer(id) {
-        const c = customers.find(x => x.id === id); if (!c) return;
-        document.getElementById('cust-id').value = c.id; document.getElementById('cust-name').value = c.name || '';
-        document.getElementById('cust-company').value = c.company || ''; document.getElementById('cust-position').value = c.position || '';
-        document.getElementById('cust-phone').value = c.phone || ''; document.getElementById('cust-email').value = c.email || '';
-        document.getElementById('cust-country').value = c.country || ''; document.getElementById('cust-notes').value = c.notes || '';
-        switchTab('ocr');
-    }
+            function editCustomer(id) {
+                const c = customers.find(x => x.id === id); if (!c) return;
+                document.getElementById('cust-id').value = c.id;
+                document.getElementById('cust-name').value = c.name || '';
+                document.getElementById('cust-company').value = c.company || '';
+                document.getElementById('cust-position').value = c.position || '';
+                document.getElementById('cust-phone').value = c.phone || '';
+                document.getElementById('cust-email').value = c.email || '';
+                document.getElementById('cust-country').value = c.country || '';
+                document.getElementById('cust-notes').value = c.notes || '';
+                switchTab('ocr');
+            }
 
-    function deleteCustomer(id) {
-        if (confirm('确定删除？')) { customers = customers.filter(c => c.id !== id); saveLocal(); if (firestoreEnabled && db) db.collection('customers').doc(id).delete(); renderKanban(); showToast('已删除', 'success'); }
-    }
+            function deleteCustomer(id) { if (confirm('确定删除？')) { customers = customers.filter(c => c.id !== id);
+                    saveLocal(); if (firestoreEnabled && db) db.collection('customers').doc(id).delete();
+                    renderKanban();
+                    showToast('已删除', 'success'); } }
 
-    function openWhatsApp(phone) {
-        if (!phone) return; let clean = String(phone).replace(/[^\d+]/g, ''); if (!clean.startsWith('+')) clean = '+' + clean;
-        window.open('https://wa.me/' + clean, '_blank');
-    }
+            function openWhatsApp(phone) { if (!phone) return;
+                let clean = String(phone).replace(/[^\d+]/g, ''); if (!clean.startsWith('+')) clean = '+' + clean;
+                window.open('https://wa.me/' + clean, '_blank'); }
 
-    // ==================== 沟通记录 ====================
-    function openLogModal(id) {
-        const c = customers.find(x => x.id === id); if (!c) return;
-        document.getElementById('log-customer-id').value = id;
-        const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        document.getElementById('log-time').value = now.toISOString().slice(0, 16);
-        const logs = c.logs || [];
-        document.getElementById('log-history').innerHTML = logs.length ? logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).map(l => `<div class="bg-white p-3 rounded border text-sm"><div class="font-bold">${new Date(l.timestamp).toLocaleString()}</div><p>${escapeHtml(l.content)}</p>${l.nextStep?`<div class="text-xs bg-yellow-50 p-1 rounded mt-1">→ ${escapeHtml(l.nextStep)}</div>`:''}</div>`).join('') : '<p class="text-gray-400 text-center py-4">暂无记录</p>';
-        document.getElementById('log-modal').classList.add('active');
-    }
+            // ==================== 沟通记录 ====================
+            function openLogModal(id) { const c = customers.find(x => x.id === id); if (!c) return;
+                document.getElementById('log-customer-id').value = id;
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('log-time').value = now.toISOString().slice(0, 16);
+                const logs = c.logs || [];
+                document.getElementById('log-history').innerHTML = logs.length ? logs.sort((a, b) => new Date(b.timestamp) -
+                    new Date(a.timestamp)).map(l =>
+                    `<div class="bg-white p-3 rounded border text-sm"><div class="font-bold">${new Date(l.timestamp).toLocaleString()}</div><p>${escapeHtml(l.content)}</p>${l.nextStep?`<div class="text-xs bg-yellow-50 p-1 rounded mt-1">→ ${escapeHtml(l.nextStep)}</div>`:''}</div>`
+                    ).join('') : '<p class="text-gray-400 text-center py-4">暂无记录</p>';
+                document.getElementById('log-modal').classList.add('active'); }
 
-    function saveLog(e) {
-        e.preventDefault();
-        const id = document.getElementById('log-customer-id').value; const c = customers.find(x => x.id === id); if (!c) return;
-        c.logs = c.logs || []; c.logs.push({ timestamp: document.getElementById('log-time').value || new Date().toISOString(), type: document.getElementById('log-type').value, content: document.getElementById('log-content').value.trim(), nextStep: document.getElementById('log-next').value.trim() });
-        saveLocal(); syncCustomerToFirestore(c); openLogModal(id);
-        document.getElementById('log-content').value = ''; document.getElementById('log-next').value = '';
-        showToast('记录已添加', 'success');
-    }
+            function saveLog(e) { e.preventDefault();
+                const id = document.getElementById('log-customer-id').value;
+                const c = customers.find(x => x.id === id); if (!c) return;
+                c.logs = c.logs || [];
+                c.logs.push({ timestamp: document.getElementById('log-time').value || new Date().toISOString(), type: document
+                        .getElementById('log-type').value, content: document.getElementById('log-content').value.trim(),
+                    nextStep: document.getElementById('log-next').value.trim() });
+                saveLocal();
+                syncCustomerToFirestore(c);
+                openLogModal(id);
+                document.getElementById('log-content').value = '';
+                document.getElementById('log-next').value = '';
+                showToast('记录已添加', 'success'); }
 
-    // ==================== 产品 ====================
-    function saveProduct(e) {
-        e.preventDefault();
-        const id = document.getElementById('product-id').value || Date.now().toString();
-        const product = { id, brand: document.getElementById('product-brand').value, type: document.getElementById('product-type').value, model: document.getElementById('product-model').value, partNo: document.getElementById('product-partno').value, serial: document.getElementById('product-serial').value, notes: document.getElementById('product-notes').value, createTime: new Date().toISOString() };
-        const idx = products.findIndex(p => p.id === id); if (idx !== -1) products[idx] = product; else products.push(product);
-        saveLocal(); if (firestoreEnabled && db) db.collection('products').doc(id).set(product); renderProductTable();
-        document.getElementById('product-form').reset(); showToast('产品已保存', 'success');
-    }
+            // ==================== 产品 ====================
+            function saveProduct(e) { e.preventDefault();
+                const id = document.getElementById('product-id').value || Date.now().toString();
+                const product = { id, brand: document.getElementById('product-brand').value, type: document.getElementById(
+                        'product-type').value, model: document.getElementById('product-model').value, partNo: document
+                        .getElementById('product-partno').value, serial: document.getElementById('product-serial').value,
+                    notes: document.getElementById('product-notes').value, createTime: new Date().toISOString() };
+                const idx = products.findIndex(p => p.id === id); if (idx !== -1) products[idx] = product;
+                else products.push(product);
+                saveLocal(); if (firestoreEnabled && db) db.collection('products').doc(id).set(product);
+                renderProductTable();
+                document.getElementById('product-form').reset();
+                showToast('产品已保存', 'success'); }
 
-    function deleteProduct(id) { if (confirm('删除？')) { products = products.filter(p => p.id !== id); saveLocal(); if (firestoreEnabled && db) db.collection('products').doc(id).delete(); renderProductTable(); } }
+            function deleteProduct(id) { if (confirm('删除？')) { products = products.filter(p => p.id !== id);
+                    saveLocal(); if (firestoreEnabled && db) db.collection('products').doc(id).delete();
+                    renderProductTable(); } }
 
-    function renderProductTable() {
-        const tbody = document.getElementById('product-list-body'); if (!tbody) return;
-        tbody.innerHTML = products.length ? products.map(p => `<tr class="border-b"><td class="px-3 py-2">${escapeHtml(p.brand||'-')}</td><td>${escapeHtml(p.type||'-')}</td><td>${escapeHtml(p.model||'-')}</td><td>${escapeHtml(p.partNo||'-')}</td><td>${escapeHtml(p.serial||'-')}</td><td><button class="text-red-500" onclick="window.delProd('${p.id}')">删除</button></td></tr>`).join('') : '<tr><td colspan="6" class="text-center py-8 text-gray-400">暂无产品</td></tr>';
-    }
+            function renderProductTable() { const tbody = document.getElementById('product-list-body'); if (!tbody)
+                return;
+                tbody.innerHTML = products.length ? products.map(p =>
+                    `<tr class="border-b"><td class="px-3 py-2">${escapeHtml(p.brand||'-')}</td><td>${escapeHtml(p.type||'-')}</td><td>${escapeHtml(p.model||'-')}</td><td>${escapeHtml(p.partNo||'-')}</td><td>${escapeHtml(p.serial||'-')}</td><td><button class="text-red-500" onclick="window.delProd('${p.id}')">删除</button></td></tr>`
+                    ).join('') : '<tr><td colspan="6" class="text-center py-8 text-gray-400">暂无产品</td></tr>'; }
 
-    // ==================== OCR ====================
-    async function compressImage(file) {
-        return new Promise(resolve => { const img = new Image(); img.onload = () => { const c = document.createElement('canvas'); let w = img.width, h = img.height; if (w > 1200) { h = (h * 1200) / w; w = 1200; } c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h); c.toBlob(resolve, 'image/jpeg', 0.8); }; img.src = URL.createObjectURL(file); });
-    }
+            // ==================== OCR ====================
+            async function compressImage(file) { return new Promise(resolve => { const img = new Image();
+                    img.onload = () => { const c = document.createElement('canvas');
+                        let w = img.width,
+                            h = img.height; if (w > 1200) { h = (h * 1200) / w;
+                            w = 1200; }
+                        c.width = w;
+                        c.height = h;
+                        c.getContext('2d').drawImage(img, 0, 0, w, h);
+                        c.toBlob(resolve, 'image/jpeg', 0.8); };
+                    img.src = URL.createObjectURL(file); }); }
+            async function recognizeBusinessCard() { if (!CONFIG.apiKey) { showToast('请配置API Key', 'error');
+                    switchTab('settings'); return; } if (!frontImageFile) { showToast('请上传图片', 'error'); return; }
+                const btn = document.getElementById('btn-recognize');
+                btn.disabled = true;
+                document.getElementById('btn-loader').classList.remove('hidden'); try { currentImageBlob =
+                        await compressImage(frontImageFile);
+                    const base64 = await new Promise(r => { const reader = new FileReader();
+                        reader.onload = () => r(reader.result);
+                        reader.readAsDataURL(currentImageBlob); });
+                    const res = await fetch(CONFIG.apiEndpoint, { method: 'POST', headers: { 'Authorization': 'Bearer ' +
+                                CONFIG.apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen-vl-plus',
+                            messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: base64 } }, { type: 'text',
+                                    text: '提取名片信息，只返回JSON：{"name":"","company":"","position":"","phone":"","email":"","country":""}' }] }] }) });
+                    if (!res.ok) throw new Error('API错误');
+                    const data = await res.json();
+                    const text = data.choices[0].message.content;
+                    document.getElementById('debug-ocr-text').innerText = text;
+                    const m = text.match(/\{[\s\S]*\}/); if (m) { const ex = JSON.parse(m[0]); if (ex.name) document
+                            .getElementById('cust-name').value = ex.name; if (ex.company) document.getElementById(
+                            'cust-company').value = ex.company; if (ex.position) document.getElementById('cust-position')
+                        .value = ex.position; if (ex.phone) document.getElementById('cust-phone').value = ex.phone; if (ex
+                            .email) document.getElementById('cust-email').value = ex.email; if (ex.country) document
+                            .getElementById('cust-country').value = ex.country;
+                        showToast('识别成功', 'success'); } else showToast('请手动填写', 'info'); } catch (e) { showToast(
+                        '识别失败', 'error'); } finally { btn.disabled = false;
+                    document.getElementById('btn-loader').classList.add('hidden'); } }
+            async function recognizeProduct(file) { if (!CONFIG.apiKey) return null;
+                const compressed = await compressImage(file);
+                const base64 = await new Promise(r => { const reader = new FileReader();
+                    reader.onload = () => r(reader.result);
+                    reader.readAsDataURL(compressed); });
+                const res = await fetch(CONFIG.apiEndpoint, { method: 'POST', headers: { 'Authorization': 'Bearer ' + CONFIG
+                            .apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen-vl-plus',
+                        messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: base64 } }, { type: 'text',
+                                text: '提取产品信息，只返回JSON：{"brand":"","type":"","model":"","partNo":"","serial":""}' }] }] }) });
+                if (!res.ok) return null;
+                const data = await res.json();
+                const text = data.choices[0].message.content;
+                const m = text.match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : null; }
 
-    async function recognizeBusinessCard() {
-        if (!CONFIG.apiKey) { showToast('请配置API Key', 'error'); switchTab('settings'); return; }
-        if (!frontImageFile) { showToast('请上传图片', 'error'); return; }
-        const btn = document.getElementById('btn-recognize'); btn.disabled = true; document.getElementById('btn-loader').classList.remove('hidden');
-        try {
-            currentImageBlob = await compressImage(frontImageFile);
-            const base64 = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(currentImageBlob); });
-            const res = await fetch(CONFIG.apiEndpoint, { method: 'POST', headers: { 'Authorization': 'Bearer ' + CONFIG.apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen-vl-plus', messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: base64 } }, { type: 'text', text: '提取名片信息，只返回JSON：{"name":"","company":"","position":"","phone":"","email":"","country":""}' }] }] }) });
-            if (!res.ok) throw new Error('API错误');
-            const data = await res.json(); const text = data.choices[0].message.content;
-            document.getElementById('debug-ocr-text').innerText = text;
-            const m = text.match(/\{[\s\S]*\}/);
-            if (m) { const ex = JSON.parse(m[0]); if (ex.name) document.getElementById('cust-name').value = ex.name; if (ex.company) document.getElementById('cust-company').value = ex.company; if (ex.position) document.getElementById('cust-position').value = ex.position; if (ex.phone) document.getElementById('cust-phone').value = ex.phone; if (ex.email) document.getElementById('cust-email').value = ex.email; if (ex.country) document.getElementById('cust-country').value = ex.country; showToast('识别成功', 'success'); }
-            else showToast('请手动填写', 'info');
-        } catch (e) { showToast('识别失败', 'error'); } finally { btn.disabled = false; document.getElementById('btn-loader').classList.add('hidden'); }
-    }
+            function handleProductUpload(file) { if (!file) return;
+                const reader = new FileReader();
+                reader.onload = e => { document.getElementById('product-preview').src = e.target.result;
+                    document.getElementById('product-preview').classList.remove('hidden'); };
+                reader.readAsDataURL(file); if (CONFIG.apiKey) recognizeProduct(file).then(r => { if (r) { if (r.brand)
+                            document.getElementById('product-brand').value = r.brand; if (r.type) document.getElementById(
+                            'product-type').value = r.type; if (r.model) document.getElementById('product-model').value = r
+                        .model; if (r.partNo) document.getElementById('product-partno').value = r.partNo; if (r.serial)
+                        document.getElementById('product-serial').value = r.serial;
+                        showToast('识别完成', 'success'); } }); }
 
-    async function recognizeProduct(file) {
-        if (!CONFIG.apiKey) return null;
-        const compressed = await compressImage(file);
-        const base64 = await new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(compressed); });
-        const res = await fetch(CONFIG.apiEndpoint, { method: 'POST', headers: { 'Authorization': 'Bearer ' + CONFIG.apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'qwen-vl-plus', messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: base64 } }, { type: 'text', text: '提取产品信息，只返回JSON：{"brand":"","type":"","model":"","partNo":"","serial":""}' }] }] }) });
-        if (!res.ok) return null; const data = await res.json(); const text = data.choices[0].message.content; const m = text.match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : null;
-    }
+            // ==================== 页面切换 ====================
+            function switchTab(tab) { ['ocr', 'product', 'kanban', 'settings'].forEach(s => document.getElementById(
+                    'section-' + s).classList.add('hidden'));
+                document.getElementById('section-' + tab).classList.remove('hidden');
+                document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-blue-100', 'text-blue-700');
+                    b.classList.add('text-gray-500'); });
+                const active = document.querySelector(`.nav-btn[data-tab="${tab}"]`); if (active) active.classList.add(
+                    'bg-blue-100', 'text-blue-700'); if (tab === 'kanban') renderKanban(); if (tab === 'product')
+                renderProductTable(); }
 
-    function handleProductUpload(file) {
-        if (!file) return;
-        const reader = new FileReader(); reader.onload = e => { document.getElementById('product-preview').src = e.target.result; document.getElementById('product-preview').classList.remove('hidden'); }; reader.readAsDataURL(file);
-        if (CONFIG.apiKey) recognizeProduct(file).then(r => { if (r) { if (r.brand) document.getElementById('product-brand').value = r.brand; if (r.type) document.getElementById('product-type').value = r.type; if (r.model) document.getElementById('product-model').value = r.model; if (r.partNo) document.getElementById('product-partno').value = r.partNo; if (r.serial) document.getElementById('product-serial').value = r.serial; showToast('识别完成', 'success'); } });
-    }
+            // ==================== 登录 ====================
+            function doLogin() { if (document.getElementById('login-password').value === localStorage.getItem(
+                    'crm_password')) { sessionStorage.setItem('crm_logged_in', 'true');
+                    document.getElementById('login-page').style.display = 'none';
+                    document.getElementById('main-app').classList.remove('hidden');
+                    loadLocal();
+                    const fbConfig = localStorage.getItem('crm_firebase_config'); if (fbConfig) { document.getElementById(
+                            'firebase-config-area').value = fbConfig; try { const config = JSON.parse(fbConfig); if (!
+                            firebase.apps.length) firebase.initializeApp(config);
+                        db = firebase.firestore();
+                        storage = firebase.storage();
+                        firestoreEnabled = true;
+                        document.getElementById('firebase-status').classList.remove('hidden');
+                        smartSync(); } catch (e) {} } else { renderKanban();
+                    renderProductTable(); } } else showToast('密码错误', 'error'); }
 
-    // ==================== 页面切换 ====================
-    function switchTab(tab) {
-        ['ocr', 'product', 'kanban', 'settings'].forEach(s => document.getElementById('section-' + s).classList.add('hidden'));
-        document.getElementById('section-' + tab).classList.remove('hidden');
-        document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-blue-100', 'text-blue-700'); b.classList.add('text-gray-500'); });
-        const active = document.querySelector(`.nav-btn[data-tab="${tab}"]`); if (active) active.classList.add('bg-blue-100', 'text-blue-700');
-        if (tab === 'kanban') renderKanban();
-        if (tab === 'product') renderProductTable();
-    }
+            // ==================== 查找重复 ====================
+            function showDuplicates() {
+                const groups = findAllDuplicates();
+                if (groups.length === 0) { showToast('未发现重复客户', 'info'); return; }
+                showToast(`发现 ${groups.length} 组重复客户，已在看板中高亮显示`, 'info');
+                renderKanban();
+                switchTab('kanban');
+            }
 
-    // ==================== 登录 ====================
-    function doLogin() {
-        if (document.getElementById('login-password').value === localStorage.getItem('crm_password')) {
-            sessionStorage.setItem('crm_logged_in', 'true');
-            document.getElementById('login-page').style.display = 'none';
-            document.getElementById('main-app').classList.remove('hidden');
-            loadLocal();
-            const fbConfig = localStorage.getItem('crm_firebase_config');
-            if (fbConfig) {
-                document.getElementById('firebase-config-area').value = fbConfig;
-                try { const config = JSON.parse(fbConfig); if (!firebase.apps.length) firebase.initializeApp(config); db = firebase.firestore(); storage = firebase.storage(); firestoreEnabled = true; document.getElementById('firebase-status').classList.remove('hidden'); smartSync(); } catch (e) {}
-            } else { renderKanban(); renderProductTable(); }
-        } else showToast('密码错误', 'error');
-    }
+            // ==================== 初始化 ====================
+            document.addEventListener('DOMContentLoaded', () => {
+                document.getElementById('btn-login').addEventListener('click', doLogin);
+                document.getElementById('login-password').addEventListener('keypress', e => { if (e.key === 'Enter')
+                        doLogin(); });
+                document.getElementById('btn-save-password').addEventListener('click', () => { const p = document
+                        .getElementById('new-password').value; if (p.length < 6) return showToast('至少6位', 'error'); if (
+                        p !== document.getElementById('confirm-password').value) return showToast('不一致', 'error');
+                    localStorage.setItem('crm_password', p);
+                    showToast('密码已设置', 'success');
+                    document.getElementById('set-password-section').classList.add('hidden');
+                    document.getElementById('password-login-section').classList.remove('hidden'); });
+                document.getElementById('btn-show-set-password').addEventListener('click', () => { document.getElementById(
+                    'password-login-section').classList.add('hidden');
+                    document.getElementById('set-password-section').classList.remove('hidden'); });
+                document.getElementById('btn-back-to-login').addEventListener('click', () => { document.getElementById(
+                    'set-password-section').classList.add('hidden');
+                    document.getElementById('password-login-section').classList.remove('hidden'); });
+                document.getElementById('btn-logout').addEventListener('click', () => { sessionStorage.removeItem(
+                        'crm_logged_in');
+                    document.getElementById('login-page').style.display = 'flex';
+                    document.getElementById('main-app').classList.add('hidden'); });
+                document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset
+                    .tab)));
+                document.getElementById('file-input-front').addEventListener('change', e => { if (e.target.files[0]) {
+                        frontImageFile = e.target.files[0];
+                        document.getElementById('image-preview-front').src = URL.createObjectURL(e.target.files[0]);
+                        document.getElementById('image-preview-front').classList.remove('hidden');
+                        document.getElementById('upload-placeholder-front').classList.add('hidden');
+                        document.getElementById('btn-recognize').disabled = false; } });
+                document.getElementById('btn-recognize').addEventListener('click', recognizeBusinessCard);
+                document.getElementById('customer-form').addEventListener('submit', saveCustomer);
+                document.getElementById('btn-whatsapp-from-form').addEventListener('click', () => openWhatsApp(document
+                    .getElementById('cust-phone').value));
+                document.getElementById('product-form').addEventListener('submit', saveProduct);
+                const pdz = document.getElementById('product-dropzone');
+                const pdi = document.getElementById('product-image-input');
+                pdz.addEventListener('click', () => pdi.click());
+                pdi.addEventListener('change', e => { if (e.target.files[0]) handleProductUpload(e.target.files[0]); });
+                pdz.addEventListener('dragover', e => { e.preventDefault();
+                    pdz.classList.add('active'); });
+                pdz.addEventListener('dragleave', () => pdz.classList.remove('active'));
+                pdz.addEventListener('drop', e => { e.preventDefault();
+                    pdz.classList.remove('active'); if (e.dataTransfer.files[0]) handleProductUpload(e.dataTransfer
+                        .files[0]); });
+                document.getElementById('log-form').addEventListener('submit', saveLog);
+                document.getElementById('close-log-modal').addEventListener('click', () => document.getElementById('log-modal')
+                    .classList.remove('active'));
+                document.getElementById('init-firebase-btn').addEventListener('click', initFirestore);
+                document.getElementById('sync-now-btn').addEventListener('click', () => { if (!firestoreEnabled) return showToast(
+                        '请先连接Firebase', 'error');
+                    smartSync(); });
+                document.getElementById('find-duplicates-btn').addEventListener('click', showDuplicates);
+                document.getElementById('save-api-key-btn').addEventListener('click', () => { CONFIG.apiKey = document
+                        .getElementById('api-key-input').value.trim();
+                    localStorage.setItem('crm_api_key', CONFIG.apiKey);
+                    showToast('API Key已保存', 'success'); });
+                document.getElementById('export-customers-excel').addEventListener('click', () => { if (!customers.length)
+                        return showToast('无数据', 'error');
+                    XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.json_to_sheet(customers), '客户'), '客户数据.xlsx');
+                    showToast('导出成功', 'success'); });
+                document.getElementById('export-products-excel').addEventListener('click', () => { if (!products.length)
+                        return showToast('无数据', 'error');
+                    XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.json_to_sheet(products), '产品'), '产品数据.xlsx');
+                    showToast('导出成功', 'success'); });
+                document.getElementById('clear-all-data').addEventListener('click', () => { if (confirm('清空所有数据？')) {
+                        customers = [];
+                        products = [];
+                        saveLocal();
+                        renderKanban();
+                        renderProductTable();
+                        showToast('已清空', 'success'); } });
+                document.getElementById('search-input').addEventListener('input', e => { currentSearchKeyword = e.target
+                        .value;
+                    renderKanban(); });
+                document.getElementById('country-filter').addEventListener('input', e => { currentCountryFilter = e.target
+                        .value;
+                    renderKanban(); });
+                document.getElementById('reset-filter').addEventListener('click', () => { document.getElementById(
+                        'search-input').value = '';
+                    document.getElementById('country-filter').value = '';
+                    currentSearchKeyword = '';
+                    currentCountryFilter = '';
+                    renderKanban(); });
+                document.getElementById('api-key-input').value = CONFIG.apiKey;
+                if (!localStorage.getItem('crm_password')) { document.getElementById('password-login-section').classList
+                        .add('hidden');
+                    document.getElementById('set-password-section').classList.remove('hidden'); }
+                if (sessionStorage.getItem('crm_logged_in') === 'true') { document.getElementById('login-page').style
+                        .display = 'none';
+                    document.getElementById('main-app').classList.remove('hidden');
+                    loadLocal();
+                    const fbConfig = localStorage.getItem('crm_firebase_config'); if (fbConfig) { document.getElementById(
+                            'firebase-config-area').value = fbConfig; try { const config = JSON.parse(fbConfig); if (!
+                            firebase.apps.length) firebase.initializeApp(config);
+                        db = firebase.firestore();
+                        storage = firebase.storage();
+                        firestoreEnabled = true;
+                        document.getElementById('firebase-status').classList.remove('hidden');
+                        smartSync(); } catch (e) {} } else { renderKanban();
+                    renderProductTable(); } }
+            });
 
-    // ==================== 初始化 ====================
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('btn-login').addEventListener('click', doLogin);
-        document.getElementById('login-password').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
-        document.getElementById('btn-save-password').addEventListener('click', () => {
-            const p = document.getElementById('new-password').value; if (p.length < 6) return showToast('至少6位', 'error');
-            if (p !== document.getElementById('confirm-password').value) return showToast('不一致', 'error');
-            localStorage.setItem('crm_password', p); showToast('密码已设置', 'success');
-            document.getElementById('set-password-section').classList.add('hidden'); document.getElementById('password-login-section').classList.remove('hidden');
-        });
-        document.getElementById('btn-show-set-password').addEventListener('click', () => { document.getElementById('password-login-section').classList.add('hidden'); document.getElementById('set-password-section').classList.remove('hidden'); });
-        document.getElementById('btn-back-to-login').addEventListener('click', () => { document.getElementById('set-password-section').classList.add('hidden'); document.getElementById('password-login-section').classList.remove('hidden'); });
-        document.getElementById('btn-logout').addEventListener('click', () => { sessionStorage.removeItem('crm_logged_in'); document.getElementById('login-page').style.display = 'flex'; document.getElementById('main-app').classList.add('hidden'); });
-        document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
-        document.getElementById('file-input-front').addEventListener('change', e => { if (e.target.files[0]) { frontImageFile = e.target.files[0]; document.getElementById('image-preview-front').src = URL.createObjectURL(e.target.files[0]); document.getElementById('image-preview-front').classList.remove('hidden'); document.getElementById('upload-placeholder-front').classList.add('hidden'); document.getElementById('btn-recognize').disabled = false; } });
-        document.getElementById('btn-recognize').addEventListener('click', recognizeBusinessCard);
-        document.getElementById('customer-form').addEventListener('submit', saveCustomer);
-        document.getElementById('btn-whatsapp-from-form').addEventListener('click', () => openWhatsApp(document.getElementById('cust-phone').value));
-        document.getElementById('product-form').addEventListener('submit', saveProduct);
-        const pdz = document.getElementById('product-dropzone'); const pdi = document.getElementById('product-image-input');
-        pdz.addEventListener('click', () => pdi.click()); pdi.addEventListener('change', e => { if (e.target.files[0]) handleProductUpload(e.target.files[0]); });
-        pdz.addEventListener('dragover', e => { e.preventDefault(); pdz.classList.add('active'); }); pdz.addEventListener('dragleave', () => pdz.classList.remove('active'));
-        pdz.addEventListener('drop', e => { e.preventDefault(); pdz.classList.remove('active'); if (e.dataTransfer.files[0]) handleProductUpload(e.dataTransfer.files[0]); });
-        document.getElementById('log-form').addEventListener('submit', saveLog);
-        document.getElementById('close-log-modal').addEventListener('click', () => document.getElementById('log-modal').classList.remove('active'));
-        document.getElementById('init-firebase-btn').addEventListener('click', initFirestore);
-        document.getElementById('sync-now-btn').addEventListener('click', () => { if (!firestoreEnabled) return showToast('请先连接Firebase', 'error'); smartSync(); });
-        document.getElementById('save-api-key-btn').addEventListener('click', () => { CONFIG.apiKey = document.getElementById('api-key-input').value.trim(); localStorage.setItem('crm_api_key', CONFIG.apiKey); showToast('API Key已保存', 'success'); });
-        document.getElementById('export-customers-excel').addEventListener('click', () => { if (!customers.length) return showToast('无数据', 'error'); XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.json_to_sheet(customers), '客户'), '客户数据.xlsx'); showToast('导出成功', 'success'); });
-        document.getElementById('export-products-excel').addEventListener('click', () => { if (!products.length) return showToast('无数据', 'error'); XLSX.writeFile(XLSX.utils.book_new(XLSX.utils.json_to_sheet(products), '产品'), '产品数据.xlsx'); showToast('导出成功', 'success'); });
-        document.getElementById('clear-all-data').addEventListener('click', () => { if (confirm('清空所有数据？')) { customers = []; products = []; saveLocal(); renderKanban(); renderProductTable(); showToast('已清空', 'success'); } });
-        document.getElementById('search-input').addEventListener('input', e => { currentSearchKeyword = e.target.value; renderKanban(); });
-        document.getElementById('country-filter').addEventListener('input', e => { currentCountryFilter = e.target.value; renderKanban(); });
-        document.getElementById('reset-filter').addEventListener('click', () => { document.getElementById('search-input').value = ''; document.getElementById('country-filter').value = ''; currentSearchKeyword = ''; currentCountryFilter = ''; renderKanban(); });
-        document.getElementById('api-key-input').value = CONFIG.apiKey;
-        if (!localStorage.getItem('crm_password')) { document.getElementById('password-login-section').classList.add('hidden'); document.getElementById('set-password-section').classList.remove('hidden'); }
-        if (sessionStorage.getItem('crm_logged_in') === 'true') {
-            document.getElementById('login-page').style.display = 'none'; document.getElementById('main-app').classList.remove('hidden');
-            loadLocal();
-            const fbConfig = localStorage.getItem('crm_firebase_config');
-            if (fbConfig) { document.getElementById('firebase-config-area').value = fbConfig; try { const config = JSON.parse(fbConfig); if (!firebase.apps.length) firebase.initializeApp(config); db = firebase.firestore(); storage = firebase.storage(); firestoreEnabled = true; document.getElementById('firebase-status').classList.remove('hidden'); smartSync(); } catch (e) {} }
-            else { renderKanban(); renderProductTable(); }
-        }
-    });
-
-    window.delProd = deleteProduct;
-})();
-</script>
+            window.delProd = deleteProduct;
+            console.log(`✅ 智能识别系统 ${APP_VERSION} 初始化完成 | ${APP_DATE}`);
+        })();
+    </script>
 </body>
 </html>
