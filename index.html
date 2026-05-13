@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
 <title>智能识别系统 v2.6</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -12,7 +12,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <style>
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,system-ui,sans-serif;background:#f3f4f6}
+html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,system-ui,sans-serif;background:#f3f4f6;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 
 #login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%)}
 .login-box{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:0 25px 50px rgba(0,0,0,.25)}
@@ -23,14 +23,14 @@ html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,system-ui
 #app-header{flex-shrink:0;background:#fff;border-bottom:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,.06);z-index:10}
 #app-body{flex:1;overflow:hidden;position:relative}
 
-.app-section{display:none;height:100%;overflow-y:auto;padding:24px}
+.app-section{display:none;height:100%;overflow-y:auto;padding:24px;-webkit-overflow-scrolling:touch}
 .app-section.active{display:block}
 #section-kanban{overflow:hidden;padding:0;flex-direction:column}
 #section-kanban.active{display:flex}
 
 /* 看板 */
 #kanban-toolbar{padding:14px 16px;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0}
-#kanban-scroll{flex:1;overflow-x:auto;overflow-y:hidden;padding:14px}
+#kanban-scroll{flex:1;overflow-x:auto;overflow-y:hidden;padding:14px;-webkit-overflow-scrolling:touch}
 .kanban-col-wrap{width:272px;flex-shrink:0;display:flex;flex-direction:column;border-radius:10px;overflow:hidden}
 .kanban-col-head{padding:10px 14px;font-weight:600;font-size:14px;display:flex;justify-content:space-between;align-items:center}
 .col-body{flex:1;overflow-y:auto;padding:8px;min-height:180px;transition:background .15s}
@@ -43,6 +43,11 @@ html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,system-ui
 .kcard.dup-card{border:2px solid #f59e0b!important;background:#fffbeb!important}
 .card-acts{opacity:0;transition:opacity .15s}
 .kcard:hover .card-acts{opacity:1}
+
+/* 移动端始终显示操作按钮 */
+@media (max-width: 768px) {
+  .card-acts{opacity:1!important}
+}
 
 /* 国家标签 */
 .ctag{display:inline-flex;align-items:center;gap:3px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:500}
@@ -80,7 +85,7 @@ html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,system-ui
 #batch-summary{margin-top:10px;font-size:13px;color:#6b7280;display:none}
 
 /* Modal */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:20px;-webkit-overflow-scrolling:touch}
 .modal-bg.show{display:flex}
 
 /* Toast */
@@ -99,7 +104,7 @@ html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,system-ui
 
 /* 通用 */
 .card-box{background:#fff;border-radius:14px;padding:22px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:13px;outline:none;transition:border-color .15s;font-family:inherit;background:#fff}
+input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:16px;outline:none;transition:border-color .15s;font-family:inherit;background:#fff}
 input:focus,select:focus,textarea:focus{border-color:#2563eb}
 label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:3px}
 .btn{padding:8px 16px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
@@ -114,38 +119,169 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:3
 .nav-btn.active{background:#dbeafe;color:#1d4ed8}
 .nav-btn:hover:not(.active){background:#f3f4f6}
 button i, button .fas, button .fab, button .far{pointer-events:none}
-#version-tag{position:fixed;bottom:8px;left:10px;background:#1f2937;color:#9ca3af;padding:3px 9px;border-radius:10px;font-size:10px;z-index:99;font-family:monospace}
+#version-tag{position:fixed;bottom:8px;left:10px;background:#1f2937;color:#9ca3af;padding:3px 9px;border-radius:10px;font-size:10px;z-index:99;font-family:monospace;display:none}
 
 /* ── 客户详情弹窗 ── */
-#detail-modal .cimg{width:100%;border-radius:10px;border:1px solid #e5e7eb;object-fit:contain;max-height:200px;background:#f9fafb;cursor:pointer;transition:transform 0.2s}
-#detail-modal .cimg:active{transform:scale(0.98)}
-#detail-modal .cimg:hover{opacity:0.9}
+#detail-modal .cimg{
+  width:100%;
+  border-radius:10px;
+  border:2px solid #e5e7eb;
+  object-fit:contain;
+  max-height:250px;
+  background:#f9fafb;
+  cursor:pointer;
+  transition:all 0.2s;
+  display:block;
+  min-height:80px;
+}
+#detail-modal .cimg:active{
+  transform:scale(0.98);
+  border-color:#2563eb;
+}
 #detail-modal .irow{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
 #detail-modal .ilabel{color:#9ca3af;width:52px;flex-shrink:0;font-size:12px;padding-top:1px}
 #detail-modal .ival{color:#111827;flex:1;word-break:break-all}
 
-/* ── 图片预览提示 ── */
-.img-preview-hint{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;pointer-events:none;opacity:0;transition:opacity 0.3s}
-.img-container{position:relative;cursor:pointer}
-.img-container:hover .img-preview-hint{opacity:1}
+/* ── 图片容器 ── */
+.img-container{
+  position:relative;
+  margin-bottom:12px;
+  border-radius:10px;
+  overflow:hidden;
+}
+.img-label{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:6px;
+  font-size:12px;
+}
+.img-label .hint{
+  color:#2563eb;
+  font-size:11px;
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
 
 /* ── 灯箱 ── */
-#lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;align-items:center;justify-content:center;flex-direction:column}
+#lightbox{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.95);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  touch-action:pan-x pan-y pinch-zoom;
+}
 #lightbox.show{display:flex}
-#lightbox img{max-width:92vw;max-height:85vh;border-radius:8px;object-fit:contain;cursor:default}
-#lightbox-close{position:absolute;top:20px;right:20px;color:#fff;font-size:30px;cursor:pointer;background:rgba(0,0,0,0.5);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
-#lightbox-hint{color:#fff;margin-top:16px;font-size:14px;opacity:0.7}
-
-/* ── 上传进度条 ── */
-.uprog{height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;margin-top:4px;display:none}
-.uprog-fill{height:100%;width:0%;background:#2563eb;transition:width .2s}
+#lightbox img{
+  max-width:95vw;
+  max-height:80vh;
+  border-radius:8px;
+  object-fit:contain;
+  cursor:default;
+  -webkit-user-select:none;
+  user-select:none;
+}
+#lightbox-close{
+  position:absolute;
+  top:16px;
+  right:16px;
+  color:#fff;
+  font-size:28px;
+  cursor:pointer;
+  background:rgba(0,0,0,.6);
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:2px solid rgba(255,255,255,.6);
+  z-index:1;
+}
+#lightbox-hint{
+  color:#fff;
+  margin-top:16px;
+  font-size:14px;
+  opacity:0.7;
+  text-align:center;
+}
 
 /* ── 移动端适配 ── */
 @media (max-width: 768px) {
-  .app-section{padding:12px}
-  #detail-modal .cimg{max-height:160px}
-  #detail-imgs{grid-template-columns:1fr!important}
-  .login-box{padding:24px;margin:12px}
+  #login-page{padding:16px}
+  .login-box{padding:24px;margin:0}
+  .app-section{padding:12px 8px}
+  
+  #section-ocr > div{
+    grid-template-columns:1fr!important;
+    gap:12px!important;
+  }
+  
+  #section-product > div{
+    grid-template-columns:1fr!important;
+  }
+  
+  #detail-modal > div{
+    max-width:100%!important;
+    max-height:100vh!important;
+    border-radius:12px 12px 0 0!important;
+    margin-top:auto!important;
+  }
+  
+  #detail-modal .cimg{
+    max-height:200px;
+  }
+  
+  #detail-imgs{
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+  
+  #kanban-toolbar{padding:10px}
+  #kanban-scroll{padding:10px}
+  
+  .btn{padding:10px 16px;font-size:14px}
+  .nav-btn{padding:8px 10px;font-size:12px}
+  
+  input,select,textarea{
+    font-size:16px; /* 防止iOS缩放 */
+    padding:8px 10px;
+  }
+  
+  #lightbox img{
+    max-width:100vw;
+    max-height:75vh;
+  }
+  
+  #lightbox-hint{
+    font-size:12px;
+    padding:0 20px;
+  }
+  
+  #toast-wrap{
+    top:10px;
+    right:10px;
+    left:10px;
+  }
+  
+  .toast{
+    min-width:0;
+  }
+}
+
+@media (max-width: 480px) {
+  #app-header > div{
+    padding:0 10px;
+  }
+  
+  #detail-modal .cimg{
+    max-height:180px;
+  }
 }
 </style>
 </head>
@@ -164,14 +300,14 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
       <span style="color:#9ca3af;font-size:11px">v2.6</span>
     </div>
     <div id="login-sec">
-      <div style="margin-bottom:12px"><label>访问密码</label><input type="password" id="login-pwd" placeholder="输入密码"></div>
+      <div style="margin-bottom:12px"><label>访问密码</label><input type="password" id="login-pwd" placeholder="输入密码" autocomplete="off"></div>
       <button class="btn btn-blue" style="width:100%" id="btn-login"><i class="fas fa-lock-open" style="pointer-events:none"></i> 登录</button>
       <div style="text-align:center;margin-top:10px"><button style="background:none;border:none;color:#4f46e5;font-size:12px;cursor:pointer" id="btn-show-setpwd">首次使用？设置密码</button></div>
     </div>
     <div id="setpwd-sec" style="display:none;margin-top:18px;border-top:1px solid #e5e7eb;padding-top:18px">
       <h3 style="font-size:15px;font-weight:600;margin:0 0 12px">设置密码</h3>
-      <div style="margin-bottom:10px"><label>新密码（≥6位）</label><input type="password" id="new-pwd"></div>
-      <div style="margin-bottom:12px"><label>确认密码</label><input type="password" id="cfm-pwd"></div>
+      <div style="margin-bottom:10px"><label>新密码（≥6位）</label><input type="password" id="new-pwd" autocomplete="off"></div>
+      <div style="margin-bottom:12px"><label>确认密码</label><input type="password" id="cfm-pwd" autocomplete="off"></div>
       <button class="btn btn-green" style="width:100%;margin-bottom:8px" id="btn-save-pwd">保存密码</button>
       <button style="background:none;border:none;color:#6b7280;font-size:12px;cursor:pointer;width:100%" id="btn-back-login">返回登录</button>
     </div>
@@ -206,24 +342,24 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
           <div style="margin-bottom:12px">
             <label>正面 *</label>
             <div class="dz" id="dz-front" style="min-height:140px">
-              <input type="file" accept="image/*" id="file-front" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
+              <input type="file" accept="image/*" capture="environment" id="file-front" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
               <div id="ph-front" style="text-align:center;pointer-events:none">
                 <i class="fas fa-cloud-upload-alt" style="font-size:26px;color:#9ca3af;display:block;margin-bottom:5px"></i>
                 <span style="color:#6b7280;font-size:13px">点击或拖拽正面</span>
               </div>
-              <img id="prev-front" style="display:none;max-height:130px;object-fit:contain;border-radius:6px;padding:6px">
+              <img id="prev-front" style="display:none;max-height:130px;width:100%;object-fit:contain;border-radius:6px;padding:6px">
             </div>
           </div>
           <div class="uprog" id="prog-front"><div class="uprog-fill" id="prog-front-fill"></div></div>
           <div style="margin-bottom:16px">
             <label>背面（可选）</label>
             <div class="dz" id="dz-back" style="min-height:120px">
-              <input type="file" accept="image/*" id="file-back" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
+              <input type="file" accept="image/*" capture="environment" id="file-back" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
               <div id="ph-back" style="text-align:center;pointer-events:none">
                 <i class="fas fa-plus-circle" style="font-size:26px;color:#9ca3af;display:block;margin-bottom:5px"></i>
                 <span style="color:#6b7280;font-size:13px">点击或拖拽背面</span>
               </div>
-              <img id="prev-back" style="display:none;max-height:120px;object-fit:contain;border-radius:6px;padding:6px">
+              <img id="prev-back" style="display:none;max-height:120px;width:100%;object-fit:contain;border-radius:6px;padding:6px">
             </div>
           </div>
           <div class="uprog" id="prog-back"><div class="uprog-fill" id="prog-back-fill"></div></div>
@@ -286,12 +422,12 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
             <div>
               <div class="dz" id="prod-dz" style="min-height:170px">
-                <input type="file" accept="image/*" id="prod-file" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
+                <input type="file" accept="image/*" capture="environment" id="prod-file" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
                 <div id="prod-ph" style="text-align:center;pointer-events:none">
                   <i class="fas fa-image" style="font-size:32px;color:#9ca3af;display:block;margin-bottom:7px"></i>
                   <span style="color:#6b7280;font-size:13px">点击或拖拽产品图片</span>
                 </div>
-                <img id="prod-preview" style="display:none;max-height:160px;object-fit:contain;border-radius:6px;padding:6px">
+                <img id="prod-preview" style="display:none;max-height:160px;width:100%;object-fit:contain;border-radius:6px;padding:6px">
               </div>
             </div>
             <form id="product-form" style="display:grid;gap:9px;align-content:start">
@@ -309,7 +445,7 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
 
         <!-- ══ 批量识别 ══ -->
         <div id="batch-panel">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
             <div>
               <h2 style="font-size:16px;font-weight:600;margin:0 0 2px">产品批量识别</h2>
               <p style="font-size:12px;color:#6b7280;margin:0">最多 20 张，支持拖拽或选择文件夹，识别后自动保存</p>
@@ -321,7 +457,7 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
 
           <!-- 批量上传区 -->
           <div id="batch-dz">
-            <input type="file" id="batch-file-input" accept="image/*" multiple>
+            <input type="file" id="batch-file-input" accept="image/*" multiple capture="environment">
             <div id="batch-ph" style="text-align:center;pointer-events:none">
               <i class="fas fa-layer-group" style="font-size:34px;color:#a78bfa;display:block;margin-bottom:8px"></i>
               <p style="color:#7c3aed;font-weight:600;font-size:14px;margin:0 0 4px">拖拽多张图片到此处</p>
@@ -347,12 +483,12 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
 
         <!-- 产品库 -->
         <div class="card-box" style="padding:0;overflow:hidden">
-          <div style="padding:12px 18px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
+          <div style="padding:12px 18px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
             <span style="font-weight:600;font-size:14px">产品库（<span id="product-count">0</span> 件）</span>
             <div style="display:flex;gap:8px"><button class="btn btn-green" style="padding:5px 12px;font-size:12px" id="export-products-excel">📊 导出 Excel</button><button class="btn btn-red" style="padding:5px 12px;font-size:12px" id="btn-clear-products">🗑 清空</button></div>
           </div>
-          <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:600px">
               <thead style="background:#f3f4f6;color:#6b7280">
                 <tr>
                   <th style="padding:9px 8px;text-align:left;width:44px">图片</th>
@@ -375,22 +511,22 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
     <!-- ═══ 看板 ═══ -->
     <div class="app-section" id="section-kanban">
       <div id="kanban-toolbar">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
           <h2 style="margin:0;font-size:17px;font-weight:700">客户看板</h2>
           <span style="font-size:13px;color:#6b7280">共 <strong id="total-customers" style="color:#2563eb">0</strong> 位</span>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <input type="text" id="search-input" placeholder="🔍 搜索姓名/公司/电话" style="width:200px">
+          <input type="text" id="search-input" placeholder="🔍 搜索姓名/公司/电话" style="width:180px;min-width:140px">
           <div style="position:relative" id="country-wrap">
-            <button id="country-btn" style="border:1px solid #d1d5db;background:#fff;border-radius:6px;padding:7px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;min-width:140px">
+            <button id="country-btn" style="border:1px solid #d1d5db;background:#fff;border-radius:6px;padding:7px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;min-width:130px;white-space:nowrap">
               <span id="country-label">🌏 所有国家</span>
               <i class="fas fa-chevron-down" style="font-size:10px;color:#9ca3af;margin-left:auto"></i>
             </button>
             <div id="country-dd" class="cdrop"></div>
           </div>
-          <button class="btn btn-gray" id="btn-reset">重置</button>
-          <button class="btn btn-blue" id="btn-sync">🔄 同步</button>
-          <button class="btn btn-orange" id="btn-finddup">🔍 查重</button>
+          <button class="btn btn-gray" id="btn-reset" style="white-space:nowrap">重置</button>
+          <button class="btn btn-blue" id="btn-sync" style="white-space:nowrap">🔄 同步</button>
+          <button class="btn btn-orange" id="btn-finddup" style="white-space:nowrap">🔍 查重</button>
         </div>
       </div>
       <div id="kanban-scroll">
@@ -425,7 +561,7 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
         <div class="card-box">
           <h2 style="font-size:15px;font-weight:600;margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid #e5e7eb">Firebase 云同步</h2>
           <textarea id="firebase-config" rows="4" style="font-family:monospace;font-size:12px" placeholder='{"apiKey":"...","projectId":"...","storageBucket":"...","appId":"..."}'></textarea>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
             <button class="btn btn-blue" id="btn-init-firebase">连接并同步</button>
             <span id="firebase-status" style="display:none;font-size:12px;color:#059669"></span>
           </div>
@@ -451,7 +587,7 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
 
 <!-- ═══ 沟通记录 Modal ═══ -->
 <div class="modal-bg" id="log-modal">
-  <div style="background:#fff;border-radius:14px;width:100%;max-width:620px;max-height:88vh;display:flex;flex-direction:column">
+  <div style="background:#fff;border-radius:14px;width:100%;max-width:620px;max-height:88vh;display:flex;flex-direction:column;margin:auto">
     <div style="padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
       <h3 style="margin:0;font-size:16px;font-weight:700" id="log-title">沟通记录</h3>
       <button id="close-log" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9ca3af;line-height:1">&times;</button>
@@ -474,7 +610,7 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
 
 <!-- ═══ 重复确认 Modal ═══ -->
 <div class="modal-bg" id="dup-modal">
-  <div style="background:#fff;border-radius:14px;padding:26px;max-width:420px;width:100%">
+  <div style="background:#fff;border-radius:14px;padding:26px;max-width:420px;width:100%;margin:auto">
     <div style="text-align:center;margin-bottom:14px">
       <i class="fas fa-exclamation-triangle" style="font-size:38px;color:#f59e0b;display:block;margin-bottom:10px"></i>
       <h3 style="margin:0;font-size:16px;font-weight:700">检测到可能重复的客户</h3>
@@ -491,7 +627,7 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
 
 <!-- ═══ 客户详情弹窗 ═══ -->
 <div class="modal-bg" id="detail-modal">
-  <div style="background:#fff;border-radius:16px;width:100%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;margin:auto">
     <div style="padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
       <h3 style="margin:0;font-size:16px;font-weight:700" id="detail-title">客户名片</h3>
       <div style="display:flex;gap:8px;align-items:center">
@@ -499,7 +635,7 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
         <button id="close-detail" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9ca3af;line-height:1">&times;</button>
       </div>
     </div>
-    <div style="flex:1;overflow-y:auto;padding:18px">
+    <div style="flex:1;overflow-y:auto;padding:18px;-webkit-overflow-scrolling:touch">
       <div id="detail-imgs" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"></div>
       <div id="detail-info"></div>
       <div style="margin-top:14px;padding-top:12px;border-top:1px solid #f3f4f6;display:flex;gap:8px">
@@ -514,7 +650,7 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
 <div id="lightbox">
   <span id="lightbox-close">&times;</span>
   <img id="lb-img" src="" alt="预览图片">
-  <p id="lightbox-hint">点击右上角关闭 | 双指缩放查看细节</p>
+  <p id="lightbox-hint">点击空白处或 ✕ 关闭</p>
 </div>
 
 <!-- ═══════════════════════ JS ═══════════════════════ -->
@@ -571,21 +707,35 @@ function switchTab(tab){
   if(tab==='product') renderProductTable();
 }
 
-/* ══ 图片灯箱功能 ══ */
+/* ══ 图片灯箱 ══ */
 function openLightbox(imgUrl) {
-  console.log('打开灯箱:', imgUrl ? imgUrl.substring(0, 50) + '...' : '无图片');
   if (!imgUrl) return;
+  console.log('打开灯箱:', imgUrl.substring(0, 50) + '...');
   
-  $('lb-img').src = imgUrl;
-  $('lightbox').classList.add('show');
+  const lb = $('lightbox');
+  const img = $('lb-img');
   
-  // 阻止背景滚动
+  // 先设置图片源
+  img.src = imgUrl;
+  
+  // 显示灯箱
+  lb.classList.add('show');
   document.body.style.overflow = 'hidden';
+  
+  // 图片加载完成后确保显示
+  img.onload = function() {
+    console.log('灯箱图片加载成功');
+  };
+  img.onerror = function() {
+    console.error('灯箱图片加载失败');
+    toast('图片加载失败','error');
+  };
 }
 
 function closeLightbox() {
   $('lightbox').classList.remove('show');
   document.body.style.overflow = '';
+  $('lb-img').src = '';
 }
 
 /* ── Firebase ── */
@@ -665,72 +815,91 @@ function buildDD(){
 const SL_DETAIL={potential:'潜在客户',contacted:'已联系',followed_up:'已跟进',closed:'已成交',lost:'已丢失'};
 
 function openDetail(id){
-  const c=customers.find(x=>x.id===id);if(!c)return;
-  console.log('打开详情，客户ID:', id);
+  const c=customers.find(x=>x.id===id);
+  if(!c){
+    console.error('客户未找到:', id);
+    return;
+  }
+  
+  console.log('打开详情，客户:', c.name, 'ID:', id);
   
   $('detail-title').textContent=c.name||'客户名片';
   $('detail-edit-btn').onclick=()=>{$('detail-modal').classList.remove('show');editCustomer(id);};
   
-  // 名片图片
-  const imgBox=$('detail-imgs');imgBox.innerHTML='';
+  const imgBox=$('detail-imgs');
+  imgBox.innerHTML='';
   
-  // 修复：按优先级获取图片URL
+  // 获取图片URL
   const frontUrl = c.cardFrontUrl || localStorage.getItem('card_img_'+id+'_front') || '';
   const backUrl = c.cardBackUrl || localStorage.getItem('card_img_'+id+'_back') || '';
   
-  console.log('详情页图片URL:', {
-    frontUrl: frontUrl ? (frontUrl.substring(0, 50) + '...') : '无',
-    backUrl: backUrl ? (backUrl.substring(0, 50) + '...') : '无'
+  console.log('图片URL检查:', {
+    frontExists: !!frontUrl,
+    frontLength: frontUrl ? frontUrl.length : 0,
+    frontPreview: frontUrl ? frontUrl.substring(0, 30) + '...' : '无',
+    backExists: !!backUrl,
+    backLength: backUrl ? backUrl.length : 0
   });
   
   const imgs=[
-    {url: frontUrl, label: '正面'},
-    {url: backUrl, label: '背面'}
+    {url: frontUrl, label: '名片正面'},
+    {url: backUrl, label: '名片背面'}
   ].filter(x => x.url && x.url.trim() !== '');
   
-  if(imgs.length){
+  if(imgs.length > 0){
+    console.log('准备显示', imgs.length, '张图片');
+    
     imgs.forEach(({url, label}) => {
-      // 创建图片容器，添加点击预览功能
-      const imgContainer = document.createElement('div');
-      imgContainer.className = 'img-container';
-      imgContainer.style.cssText = 'position:relative;';
+      const container = document.createElement('div');
+      container.className = 'img-container';
+      container.style.cssText = 'cursor:pointer;';
       
-      imgContainer.innerHTML = `
-        <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">
-          <span>${label}</span>
-          <span style="color:#2563eb;font-size:10px;cursor:pointer">
-            <i class="fas fa-search-plus"></i> 点击放大
-          </span>
-        </div>
-        <img class="cimg" src="${esc(url)}" alt="${label}" 
-        onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
-        style="width:100%;border-radius:10px;border:1px solid #e5e7eb;object-fit:contain;max-height:220px;background:#f9fafb;cursor:pointer">
-        <div style="display:none;color:#ef4444;font-size:12px;padding:20px;text-align:center">
-          <i class="fas fa-exclamation-circle"></i> 图片加载失败
-        </div>
-        <div class="img-preview-hint">
-          <i class="fas fa-search-plus"></i> 点击预览
-        </div>
+      // 创建标签和提示
+      const labelDiv = document.createElement('div');
+      labelDiv.className = 'img-label';
+      labelDiv.innerHTML = `
+        <span style="color:#6b7280;font-weight:500">${label}</span>
+        <span class="hint">
+          <i class="fas fa-search-plus"></i> 点击放大
+        </span>
       `;
       
-      // 添加点击事件 - 支持桌面和移动端
-      imgContainer.addEventListener('click', function(e) {
+      // 创建图片元素
+      const img = document.createElement('img');
+      img.className = 'cimg';
+      img.src = url;
+      img.alt = label;
+      img.loading = 'lazy';
+      
+      // 图片加载处理
+      img.onload = function() {
+        console.log(label + ' 加载成功');
+        img.style.display = 'block';
+      };
+      
+      img.onerror = function() {
+        console.error(label + ' 加载失败, URL:', url.substring(0, 50));
+        img.style.display = 'none';
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = 'color:#ef4444;font-size:12px;padding:20px;text-align:center;background:#fef2f2;border-radius:8px';
+        errorDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i> 图片加载失败';
+        container.appendChild(errorDiv);
+      };
+      
+      // 点击事件 - 整个容器可点击
+      container.addEventListener('click', function(e) {
         e.stopPropagation();
+        e.preventDefault();
+        console.log('点击图片，准备打开灯箱');
         openLightbox(url);
       });
       
-      // 为图片单独添加点击事件（防止嵌套问题）
-      const imgElement = imgContainer.querySelector('.cimg');
-      if (imgElement) {
-        imgElement.addEventListener('click', function(e) {
-          e.stopPropagation();
-          openLightbox(url);
-        });
-      }
-      
-      imgBox.appendChild(imgContainer);
+      container.appendChild(labelDiv);
+      container.appendChild(img);
+      imgBox.appendChild(container);
     });
   } else {
+    console.log('无图片可显示');
     imgBox.innerHTML = `
       <div style="grid-column:1/-1;color:#9ca3af;font-size:13px;text-align:center;padding:14px 0">
         <i class="fas fa-image" style="font-size:22px;display:block;margin-bottom:6px;opacity:.4"></i>
@@ -777,6 +946,10 @@ function openDetail(id){
   
   $('detail-modal').classList.add('show');
 }
+
+/* ── 其他函数保持不变 ── */
+// ... (这里保持之前的代码不变，为了简洁省略中间部分)
+// 完整代码请参照之前版本中的 renderKanban, saveCustomer 等函数
 
 /* ── 看板 ── */
 function renderKanban(){
@@ -859,7 +1032,6 @@ function saveCustomer(e){
   const eid=$('cust-id').value,id=eid||Date.now().toString();
   const ex=eid?customers.find(c=>c.id===eid):null;
   
-  // 先获取待保存的图片数据
   const pendingFrontB64 = window._pendingFrontB64;
   const pendingBackB64 = window._pendingBackB64;
   
@@ -882,11 +1054,10 @@ function saveCustomer(e){
   checkDup(c,ok=>{
     if(!ok){toast('已取消','info');return;}
     
-    // 立即保存图片到 localStorage（在保存客户数据之前）
     if(pendingFrontB64){
       try{
         localStorage.setItem('card_img_'+id+'_front', pendingFrontB64);
-        console.log('正面图片已保存到 localStorage');
+        console.log('正面图片已保存到 localStorage, 长度:', pendingFrontB64.length);
         window._pendingFrontB64 = null;
       }catch(err){
         console.error('localStorage 保存正面失败', err);
@@ -897,7 +1068,7 @@ function saveCustomer(e){
     if(pendingBackB64){
       try{
         localStorage.setItem('card_img_'+id+'_back', pendingBackB64);
-        console.log('背面图片已保存到 localStorage');
+        console.log('背面图片已保存到 localStorage, 长度:', pendingBackB64.length);
         window._pendingBackB64 = null;
       }catch(err){
         console.error('localStorage 保存背面失败', err);
@@ -905,19 +1076,19 @@ function saveCustomer(e){
       }
     }
     
-    // 保存客户数据
     const i=customers.findIndex(x=>x.id===id);
     if(i!==-1)customers[i]=c;else customers.push(c);
     save();
     
     console.log('客户保存完成，ID:', id);
+    console.log('正面图片localStorage:', localStorage.getItem('card_img_'+id+'_front') ? '存在' : '不存在');
+    console.log('背面图片localStorage:', localStorage.getItem('card_img_'+id+'_back') ? '存在' : '不存在');
     
     syncC(c);
     renderKanban();
     resetOcrForm();
     toast('客户已保存','success');
     
-    // 异步上传图片到 Firebase（不阻塞保存流程）
     if(fbEnabled&&storage){
       const frontBlob=window._pendingFrontBlob;
       const backBlob=window._pendingBackBlob;
@@ -992,7 +1163,6 @@ function editCustomer(id){
 function delCustomer(id){
   if(!confirm('确定删除？'))return;
   customers=customers.filter(c=>c.id!==id);
-  // 清理 localStorage 中的图片
   localStorage.removeItem('card_img_'+id+'_front');
   localStorage.removeItem('card_img_'+id+'_back');
   save();
@@ -1054,16 +1224,15 @@ async function recognizeCard(){
       toast('未提取到信息，请手动填写','info');
     }
     
-    // 关键修复：立即将图片转换为 base64 并保存到临时变量
     window._pendingFrontBlob = frontBlob;
     window._pendingFrontB64 = await toB64(frontBlob);
-    console.log('正面图片缓存完成');
+    console.log('正面图片缓存完成, base64长度:', window._pendingFrontB64.length);
     
     if(backFile){
       const bb = await compress(backFile);
       window._pendingBackBlob = bb;
       window._pendingBackB64 = await toB64(bb);
-      console.log('背面图片缓存完成');
+      console.log('背面图片缓存完成, base64长度:', window._pendingBackB64.length);
     }
   }catch(e){
     toast('识别失败: '+e.message,'error');
@@ -1086,9 +1255,7 @@ function handleProdUpload(file){
   if(API.key){toast('识别中…','info');recognizeProd(file).then(r=>{if(r){if(r.brand)$('product-brand').value=r.brand;if(r.type)$('product-type').value=r.type;if(r.model)$('product-model').value=r.model;if(r.partNo)$('product-partno').value=r.partNo;if(r.serial)$('product-serial').value=r.serial;toast('识别完成','success');}else toast('未识别到信息','info');});}
 }
 
-/* ════════════════════════════════════
-   批量识别核心逻辑
-════════════════════════════════════ */
+/* 批量识别相关函数保持不变 */
 function setupBatchFiles(files){
   const imgs=[...files].filter(f=>f.type.startsWith('image/'));
   if(imgs.length===0){toast('未检测到图片文件','error');return;}
@@ -1099,7 +1266,6 @@ function setupBatchFiles(files){
   $('batch-progress-wrap').style.display='none';
   $('batch-summary').style.display='none';
 }
-
 function renderBatchQueue(){
   const wrap=$('batch-queue');
   wrap.style.display='block';
@@ -1113,26 +1279,21 @@ function renderBatchQueue(){
       </div>`;
     }).join('');
 }
-
 function setBatchItemStatus(i,cls,txt){
   const el=$('bis-'+i);if(!el)return;
   el.className='bi-status '+cls;el.textContent=txt;
 }
-
 async function runBatch(){
   if(!API.key){toast('请先配置 API Key','error');switchTab('settings');return;}
   if(!batchFiles.length){toast('请先选择图片','error');return;}
   if(batchRunning){toast('识别中，请稍候','warning');return;}
   batchRunning=true;
   $('btn-start-batch').disabled=true;
-
   const total=batchFiles.length;
   let ok=0,fail=0;
-
   $('batch-progress-wrap').style.display='block';
   $('batch-progress-fill').style.width='0%';
   $('batch-summary').style.display='none';
-
   for(let i=0;i<total;i++){
     const f=batchFiles[i];
     const pct=Math.round(i/total*100);
@@ -1140,7 +1301,6 @@ async function runBatch(){
     $('batch-progress-text').textContent=`正在识别第 ${i+1} / ${total} 张`;
     $('batch-progress-pct').textContent=pct+'%';
     setBatchItemStatus(i,'st-run','识别中…');
-
     try{
       const b64=await toB64(await compress(f));
       const text=await callVision(b64,'提取产品铭牌或标签上的信息，只返回JSON：{"brand":"","type":"","model":"","partNo":"","serial":""}，如果识别不到某字段留空字符串');
@@ -1163,12 +1323,10 @@ async function runBatch(){
     }
     if(i<total-1) await new Promise(r=>setTimeout(r,600));
   }
-
   $('batch-progress-fill').style.width='100%';
   $('batch-progress-text').textContent='识别完成';
   $('batch-progress-pct').textContent='100%';
   renderProductTable();
-
   const sum=$('batch-summary');
   sum.style.display='block';
   sum.innerHTML=`<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:13px">
@@ -1176,7 +1334,6 @@ async function runBatch(){
     <span style="color:#6b7280;margin-left:8px">· 已自动保存到产品库</span>
   </div>`;
   toast(`批量识别完成：成功 ${ok} 张${fail?' · 失败 '+fail+' 张':''}`,'success');
-
   batchRunning=false;
   $('btn-start-batch').disabled=false;
 }
@@ -1203,7 +1360,7 @@ function renderProductTable(){
   const tb=$('product-list-body');if(!tb)return;
   $('product-count').textContent=products.length;
   tb.innerHTML=products.length?products.map(p=>`<tr style="border-bottom:1px solid #f3f4f6;transition:background .1s" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
-    <td style="padding:7px 8px">${p.imgUrl?`<img src="${esc(p.imgUrl)}" style="width:34px;height:34px;object-fit:cover;border-radius:5px;cursor:zoom-in;border:1px solid #e5e7eb" onclick="window.openLightbox('${esc(p.imgUrl)}')">` : `<div style="width:34px;height:34px;background:#f3f4f6;border-radius:5px;display:flex;align-items:center;justify-content:center"><i class="fas fa-image" style="color:#d1d5db;font-size:12px"></i></div>`}</td>
+    <td style="padding:7px 8px">${p.imgUrl?`<img src="${esc(p.imgUrl)}" style="width:34px;height:34px;object-fit:cover;border-radius:5px;cursor:pointer;border:1px solid #e5e7eb" onclick="window.openLightbox('${esc(p.imgUrl)}')">` : `<div style="width:34px;height:34px;background:#f3f4f6;border-radius:5px;display:flex;align-items:center;justify-content:center"><i class="fas fa-image" style="color:#d1d5db;font-size:12px"></i></div>`}</td>
     <td style="padding:9px 10px;font-size:13px">${esc(p.brand||'-')}</td>
     <td style="padding:9px 8px;font-size:13px">${esc(p.type||'-')}</td>
     <td style="padding:9px 8px;font-size:13px">${esc(p.model||'-')}</td>
@@ -1285,16 +1442,22 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   $('btn-start-batch').addEventListener('click',runBatch);
 
-  // 灯箱功能
-  $('lightbox-close').addEventListener('click', closeLightbox);
-  $('lightbox').addEventListener('click', function(e) {
-    if (e.target === $('lightbox') || e.target === $('lightbox-hint')) {
+  // 灯箱
+  $('lightbox-close').addEventListener('click',closeLightbox);
+  $('lightbox').addEventListener('click',function(e){
+    if(e.target===$('lightbox')||e.target===$('lightbox-hint')){
       closeLightbox();
     }
   });
   
-  // 将 openLightbox 函数暴露到全局
-  window.openLightbox = openLightbox;
+  // 触摸事件支持
+  $('lightbox').addEventListener('touchend',function(e){
+    if(e.target===$('lightbox')||e.target===$('lightbox-hint')){
+      closeLightbox();
+    }
+  });
+  
+  window.openLightbox=openLightbox;
 
   // 记录 modal
   $('log-form').addEventListener('submit',saveLog);
@@ -1335,6 +1498,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(sessionStorage.getItem('crm_logged')==='1'){
     $('login-page').style.display='none';$('main-app').classList.add('show');
     load();if(!autoConnect()){renderKanban();renderProductTable();}
+  }
+  
+  // 检测是否为移动设备并添加class
+  if(/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
+    document.body.classList.add('is-mobile');
+    console.log('📱 检测到移动设备');
   }
 });
 
