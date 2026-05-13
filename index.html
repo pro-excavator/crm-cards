@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>智能识别系统 v2.6</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -117,22 +117,41 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
 #version-tag{position:fixed;bottom:8px;left:10px;background:#1f2937;color:#9ca3af;padding:3px 9px;border-radius:10px;font-size:10px;z-index:99;font-family:monospace}
 
 /* ── 客户详情弹窗 ── */
-#detail-modal .cimg{width:100%;border-radius:10px;border:1px solid #e5e7eb;object-fit:contain;max-height:200px;background:#f9fafb;cursor:zoom-in}
+#detail-modal .cimg{width:100%;border-radius:10px;border:1px solid #e5e7eb;object-fit:contain;max-height:200px;background:#f9fafb;cursor:pointer;transition:transform 0.2s}
+#detail-modal .cimg:active{transform:scale(0.98)}
+#detail-modal .cimg:hover{opacity:0.9}
 #detail-modal .irow{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
 #detail-modal .ilabel{color:#9ca3af;width:52px;flex-shrink:0;font-size:12px;padding-top:1px}
 #detail-modal .ival{color:#111827;flex:1;word-break:break-all}
+
+/* ── 图片预览提示 ── */
+.img-preview-hint{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;pointer-events:none;opacity:0;transition:opacity 0.3s}
+.img-container{position:relative;cursor:pointer}
+.img-container:hover .img-preview-hint{opacity:1}
+
 /* ── 灯箱 ── */
-#lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out}
+#lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;align-items:center;justify-content:center;flex-direction:column}
 #lightbox.show{display:flex}
-#lightbox img{max-width:92vw;max-height:92vh;border-radius:8px;object-fit:contain}
+#lightbox img{max-width:92vw;max-height:85vh;border-radius:8px;object-fit:contain;cursor:default}
+#lightbox-close{position:absolute;top:20px;right:20px;color:#fff;font-size:30px;cursor:pointer;background:rgba(0,0,0,0.5);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
+#lightbox-hint{color:#fff;margin-top:16px;font-size:14px;opacity:0.7}
+
 /* ── 上传进度条 ── */
 .uprog{height:4px;background:#e5e7eb;border-radius:2px;overflow:hidden;margin-top:4px;display:none}
 .uprog-fill{height:100%;width:0%;background:#2563eb;transition:width .2s}
+
+/* ── 移动端适配 ── */
+@media (max-width: 768px) {
+  .app-section{padding:12px}
+  #detail-modal .cimg{max-height:160px}
+  #detail-imgs{grid-template-columns:1fr!important}
+  .login-box{padding:24px;margin:12px}
+}
 </style>
 </head>
 <body>
 
-<div id="version-tag">v2.6 | 2026-05-10</div>
+<div id="version-tag">v2.6 | 2026-05-12</div>
 <div id="toast-wrap"></div>
 
 <!-- ═══════════════════════ 登录 ═══════════════════════ -->
@@ -423,7 +442,7 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
             <button class="btn btn-red" id="btn-clear">🗑 清空所有数据</button>
           </div>
         </div>
-        <p style="text-align:center;color:#9ca3af;font-size:11px">智能识别系统 v2.6 | 2026-05-10</p>
+        <p style="text-align:center;color:#9ca3af;font-size:11px">智能识别系统 v2.6 | 2026-05-12</p>
       </div>
     </div>
 
@@ -492,7 +511,11 @@ button i, button .fas, button .fab, button .far{pointer-events:none}
 </div>
 
 <!-- 灯箱 -->
-<div id="lightbox"><img id="lb-img" src="" alt=""></div>
+<div id="lightbox">
+  <span id="lightbox-close">&times;</span>
+  <img id="lb-img" src="" alt="预览图片">
+  <p id="lightbox-hint">点击右上角关闭 | 双指缩放查看细节</p>
+</div>
 
 <!-- ═══════════════════════ JS ═══════════════════════ -->
 <script>
@@ -546,6 +569,23 @@ function switchTab(tab){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   if(tab==='kanban'){fbEnabled?smartSync():renderKanban();}
   if(tab==='product') renderProductTable();
+}
+
+/* ══ 图片灯箱功能 ══ */
+function openLightbox(imgUrl) {
+  console.log('打开灯箱:', imgUrl ? imgUrl.substring(0, 50) + '...' : '无图片');
+  if (!imgUrl) return;
+  
+  $('lb-img').src = imgUrl;
+  $('lightbox').classList.add('show');
+  
+  // 阻止背景滚动
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  $('lightbox').classList.remove('show');
+  document.body.style.overflow = '';
 }
 
 /* ── Firebase ── */
@@ -627,7 +667,6 @@ const SL_DETAIL={potential:'潜在客户',contacted:'已联系',followed_up:'已
 function openDetail(id){
   const c=customers.find(x=>x.id===id);if(!c)return;
   console.log('打开详情，客户ID:', id);
-  console.log('客户数据:', c);
   
   $('detail-title').textContent=c.name||'客户名片';
   $('detail-edit-btn').onclick=()=>{$('detail-modal').classList.remove('show');editCustomer(id);};
@@ -636,9 +675,6 @@ function openDetail(id){
   const imgBox=$('detail-imgs');imgBox.innerHTML='';
   
   // 修复：按优先级获取图片URL
-  // 1. 客户对象中的 cardFrontUrl/cardBackUrl (Firebase URL)
-  // 2. localStorage 中的 base64 数据
-  // 3. 空字符串（不显示）
   const frontUrl = c.cardFrontUrl || localStorage.getItem('card_img_'+id+'_front') || '';
   const backUrl = c.cardBackUrl || localStorage.getItem('card_img_'+id+'_back') || '';
   
@@ -654,25 +690,45 @@ function openDetail(id){
   
   if(imgs.length){
     imgs.forEach(({url, label}) => {
-      const d = document.createElement('div');
-      d.innerHTML = `
-        <div style="font-size:11px;color:#9ca3af;margin-bottom:4px">${label}</div>
+      // 创建图片容器，添加点击预览功能
+      const imgContainer = document.createElement('div');
+      imgContainer.className = 'img-container';
+      imgContainer.style.cssText = 'position:relative;';
+      
+      imgContainer.innerHTML = `
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">
+          <span>${label}</span>
+          <span style="color:#2563eb;font-size:10px;cursor:pointer">
+            <i class="fas fa-search-plus"></i> 点击放大
+          </span>
+        </div>
         <img class="cimg" src="${esc(url)}" alt="${label}" 
         onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
-        style="width:100%;border-radius:10px;border:1px solid #e5e7eb;object-fit:contain;max-height:220px;background:#f9fafb;cursor:zoom-in">
+        style="width:100%;border-radius:10px;border:1px solid #e5e7eb;object-fit:contain;max-height:220px;background:#f9fafb;cursor:pointer">
         <div style="display:none;color:#ef4444;font-size:12px;padding:20px;text-align:center">
           <i class="fas fa-exclamation-circle"></i> 图片加载失败
         </div>
+        <div class="img-preview-hint">
+          <i class="fas fa-search-plus"></i> 点击预览
+        </div>
       `;
-      imgBox.appendChild(d);
-    });
-    
-    // 添加图片点击放大功能
-    imgBox.querySelectorAll('.cimg').forEach(img => {
-      img.addEventListener('click', () => {
-        $('lb-img').src = img.src;
-        $('lightbox').classList.add('show');
+      
+      // 添加点击事件 - 支持桌面和移动端
+      imgContainer.addEventListener('click', function(e) {
+        e.stopPropagation();
+        openLightbox(url);
       });
+      
+      // 为图片单独添加点击事件（防止嵌套问题）
+      const imgElement = imgContainer.querySelector('.cimg');
+      if (imgElement) {
+        imgElement.addEventListener('click', function(e) {
+          e.stopPropagation();
+          openLightbox(url);
+        });
+      }
+      
+      imgBox.appendChild(imgContainer);
     });
   } else {
     imgBox.innerHTML = `
@@ -855,8 +911,6 @@ function saveCustomer(e){
     save();
     
     console.log('客户保存完成，ID:', id);
-    console.log('localStorage 正面图片:', localStorage.getItem('card_img_'+id+'_front') ? '存在' : '不存在');
-    console.log('localStorage 背面图片:', localStorage.getItem('card_img_'+id+'_back') ? '存在' : '不存在');
     
     syncC(c);
     renderKanban();
@@ -1149,7 +1203,7 @@ function renderProductTable(){
   const tb=$('product-list-body');if(!tb)return;
   $('product-count').textContent=products.length;
   tb.innerHTML=products.length?products.map(p=>`<tr style="border-bottom:1px solid #f3f4f6;transition:background .1s" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
-    <td style="padding:7px 8px">${p.imgUrl?`<img src="${esc(p.imgUrl)}" style="width:34px;height:34px;object-fit:cover;border-radius:5px;cursor:zoom-in;border:1px solid #e5e7eb" onclick="window._vi('${esc(p.imgUrl)}')">` : `<div style="width:34px;height:34px;background:#f3f4f6;border-radius:5px;display:flex;align-items:center;justify-content:center"><i class="fas fa-image" style="color:#d1d5db;font-size:12px"></i></div>`}</td>
+    <td style="padding:7px 8px">${p.imgUrl?`<img src="${esc(p.imgUrl)}" style="width:34px;height:34px;object-fit:cover;border-radius:5px;cursor:zoom-in;border:1px solid #e5e7eb" onclick="window.openLightbox('${esc(p.imgUrl)}')">` : `<div style="width:34px;height:34px;background:#f3f4f6;border-radius:5px;display:flex;align-items:center;justify-content:center"><i class="fas fa-image" style="color:#d1d5db;font-size:12px"></i></div>`}</td>
     <td style="padding:9px 10px;font-size:13px">${esc(p.brand||'-')}</td>
     <td style="padding:9px 8px;font-size:13px">${esc(p.type||'-')}</td>
     <td style="padding:9px 8px;font-size:13px">${esc(p.model||'-')}</td>
@@ -1231,6 +1285,17 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
   $('btn-start-batch').addEventListener('click',runBatch);
 
+  // 灯箱功能
+  $('lightbox-close').addEventListener('click', closeLightbox);
+  $('lightbox').addEventListener('click', function(e) {
+    if (e.target === $('lightbox') || e.target === $('lightbox-hint')) {
+      closeLightbox();
+    }
+  });
+  
+  // 将 openLightbox 函数暴露到全局
+  window.openLightbox = openLightbox;
+
   // 记录 modal
   $('log-form').addEventListener('submit',saveLog);
   $('close-log').addEventListener('click',()=>$('log-modal').classList.remove('show'));
@@ -1238,7 +1303,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('dup-modal').addEventListener('click',e=>{if(e.target===$('dup-modal'))$('dup-modal').classList.remove('show');});
   $('close-detail').addEventListener('click',()=>$('detail-modal').classList.remove('show'));
   $('detail-modal').addEventListener('click',e=>{if(e.target===$('detail-modal'))$('detail-modal').classList.remove('show');});
-  $('lightbox').addEventListener('click',()=>$('lightbox').classList.remove('show'));
 
   // Firebase & API
   $('btn-init-firebase').addEventListener('click',initFB);
@@ -1274,7 +1338,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 });
 
-window._dp=delProduct;window._ep=editProduct;window._vi=url=>{$('lb-img').src=url;$('lightbox').classList.add('show');};
+window._dp=delProduct;
+window._ep=editProduct;
+window._vi=openLightbox;
+window.openLightbox=openLightbox;
+
 console.log('✅',VER,'就绪');
 })();
 </script>
