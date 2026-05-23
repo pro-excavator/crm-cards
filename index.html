@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-<title>智能客户管理系统 v4.8</title>
+<title>智能客户管理系统 v5.0</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -75,29 +75,35 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
 <div id="first-setup-area" style="display:none;margin-top:16px;border-top:1px solid #e5e7eb;padding-top:16px"><h3 style="font-size:15px;font-weight:600;margin-bottom:12px">首次使用 - 设置管理员密码</h3><input type="password" id="setup-pwd" placeholder="设置密码(≥6位)" class="mb-2"><input type="password" id="setup-pwd-confirm" placeholder="确认密码"><button class="btn btn-green w-full mt-3" id="btn-setup-admin">设置并进入</button></div>
 </div></div></div>
 
-<div id="main-app"><div id="app-header"><div style="max-width:1280px;margin:0 auto;padding:0 18px;height:54px;display:flex;align-items:center;justify-content:space-between"><div><i class="fas fa-address-card" style="color:#2563eb"></i><span class="font-bold ml-2">CRM 智能识别 v4.8</span></div><nav class="flex gap-1"><button class="nav-btn active" data-tab="ocr">名片录入</button><button class="nav-btn" data-tab="product">产品库</button><button class="nav-btn" data-tab="kanban">客户看板</button><button class="nav-btn" data-tab="settings">设置</button><button class="btn btn-red py-1 px-3 text-sm ml-2" id="btn-logout">退出</button></nav></div></div>
+<div id="main-app"><div id="app-header"><div style="max-width:1280px;margin:0 auto;padding:0 18px;height:54px;display:flex;align-items:center;justify-content:space-between"><div><i class="fas fa-address-card" style="color:#2563eb"></i><span class="font-bold ml-2">CRM 智能识别 v5.0</span></div><nav class="flex gap-1"><button class="nav-btn active" data-tab="ocr">名片录入</button><button class="nav-btn" data-tab="product">产品库</button><button class="nav-btn" data-tab="kanban">客户看板</button><button class="nav-btn" data-tab="settings">设置</button><button class="btn btn-red py-1 px-3 text-sm ml-2" id="btn-logout">退出</button></nav></div></div>
 
 <div id="app-body">
+<!-- 名片录入页面 -->
 <div class="app-section active" id="section-ocr"><div style="max-width:1100px;margin:0 auto"><div class="card-box"><h2 class="font-semibold text-base mb-4"><i class="fas fa-id-card mr-2"></i>添加客户（OCR扫描 / 手动填写）</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><div class="dz" id="dz-front"><input type="file" accept="image/*" id="file-front"><div id="ph-front" class="text-center"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i><p class="text-sm">上传名片正面（自动识别）</p></div><img id="prev-front" style="display:none;max-height:130px"></div><div class="mt-3"><div class="dz" id="dz-back"><input type="file" accept="image/*" id="file-back"><div id="ph-back" class="text-center"><i class="fas fa-plus-circle text-2xl text-gray-400"></i><p class="text-xs">名片背面(可选，也会识别)</p></div><img id="prev-back" style="display:none;max-height:100px"></div></div><button class="btn btn-blue w-full mt-3" id="btn-recognize" disabled><i class="fas fa-magic"></i>开始OCR识别（正反面都识别）</button></div><form id="customer-form"><input type="hidden" id="cust-id"><div class="grid grid-cols-2 gap-2"><div><label>姓名 *</label><input type="text" id="cust-name" required></div><div><label>公司</label><input type="text" id="cust-company"></div><div><label>职位</label><input type="text" id="cust-position"></div><div><label>电话</label><input type="tel" id="cust-phone"></div><div><label>邮箱</label><input type="email" id="cust-email"></div><div><label>国家</label><input type="text" id="cust-country" list="country-list"><datalist id="country-list"><option>中国</option><option>美国</option><option>日本</option><option>德国</option><option>英国</option><option>加拿大</option><option>墨西哥</option><option>法国</option><option>韩国</option><option>澳大利亚</option><option>新加坡</option><option>马来西亚</option><option>泰国</option><option>越南</option><option>印度</option><option>俄罗斯</option><option>巴西</option><option>意大利</option><option>西班牙</option></datalist></div><div><label>城市</label><input type="text" id="cust-city"></div><div><label>地址</label><input type="text" id="cust-address"></div><div><label>网站</label><input type="url" id="cust-website"></div><div><label>微信</label><input type="text" id="cust-wechat"></div><div><label>客户来源</label><input type="text" id="cust-source" placeholder="展会/网络/介绍等"></div><div><label>联系日期</label><input type="date" id="cust-date"></div></div><div><label>备注</label><textarea id="cust-notes" rows="2"></textarea></div><div><label>客户合影(永久保存)</label><input type="file" accept="image/*" id="cust-img-file"><img id="cust-img-preview" style="max-height:60px;margin-top:5px;display:none"></div><div><label>初始状态</label><select id="cust-status"><option value="potential">潜在客户</option><option value="contacted">已联系</option><option value="followed_up">已跟进</option><option value="closed">已成交</option><option value="lost">已丢失</option></select></div><div class="flex gap-2 mt-3"><button type="submit" class="btn btn-green flex-1"><i class="fas fa-save"></i>保存客户</button><button type="button" class="wa" id="btn-wa-form"><i class="fab fa-whatsapp"></i>WhatsApp</button></div></form></div></div></div></div></div>
 
-<div class="app-section" id="section-product"><div style="max-width:1000px;margin:0 auto"><div class="card-box"><h2>📦 产品/设备库</h2><div class="grid md:grid-cols-2 gap-4"><div><div class="dz" id="prod-dz"><input type="file" accept="image/*" id="prod-file"><div id="prod-ph" class="text-center"><i class="fas fa-image text-3xl text-gray-400"></i><p class="text-sm">上传产品图片识别</p></div><img id="prod-preview" style="display:none;max-height:100px"></div></div><form id="product-form"><input type="hidden" id="product-id"><input placeholder="品牌/型号" id="product-model"><input placeholder="序列号/零件号" id="product-serial"><textarea placeholder="备注" rows="2" id="product-notes"></textarea><button class="btn btn-purple mt-2">保存产品</button></form></div><div class="mt-4 overflow-x-auto"><table class="w-full text-sm"><thead><tr><th>图片</th><th>型号</th><th>操作</th></tr></thead><tbody id="product-list-body"></tbody></table></div></div></div></div>
+<!-- 产品库页面 - 增加导出按钮 -->
+<div class="app-section" id="section-product"><div style="max-width:1000px;margin:0 auto"><div class="card-box"><div class="flex justify-between items-center mb-4"><h2 class="font-semibold text-base">📦 产品/设备库</h2><button class="btn btn-purple text-sm" id="export-products-excel"><i class="fas fa-file-excel"></i> 导出产品Excel</button></div><div class="grid md:grid-cols-2 gap-4"><div><div class="dz" id="prod-dz"><input type="file" accept="image/*" id="prod-file"><div id="prod-ph" class="text-center"><i class="fas fa-image text-3xl text-gray-400"></i><p class="text-sm">上传产品图片识别</p></div><img id="prod-preview" style="display:none;max-height:100px"></div></div><form id="product-form"><input type="hidden" id="product-id"><input placeholder="品牌/型号" id="product-model"><input placeholder="序列号/零件号" id="product-serial"><textarea placeholder="备注" rows="2" id="product-notes"></textarea><button class="btn btn-purple mt-2">保存产品</button></form></div><div class="mt-4 overflow-x-auto"><table class="w-full text-sm"><thead><tr><th>图片</th><th>型号</th><th>备注</th><th>操作</th></thead><tbody id="product-list-body"></tbody></table></div></div></div></div>
 
+<!-- 客户看板 -->
 <div class="app-section" id="section-kanban"><div id="kanban-toolbar"><div class="flex justify-between flex-wrap gap-2"><h2 class="font-bold">客户看板</h2><span>共 <strong id="total-customers">0</strong> 位</span></div><div class="flex gap-2 flex-wrap mt-2 items-center">
 <input type="text" id="search-input" placeholder="🔍 搜索姓名/公司/电话/城市..." class="w-48 text-sm">
 <div class="country-filter-wrap"><input type="text" id="country-filter-input" placeholder="🌏 筛选国家" class="w-36 text-sm" autocomplete="off"><button id="clear-country-btn" class="btn btn-gray text-xs py-1 px-2">清除</button><div id="country-dropdown" class="country-dropdown"></div></div>
 <div class="flex items-center gap-1"><span class="text-xs text-gray-500">添加时间:</span><input type="date" id="date-start" class="w-32 text-sm py-1"><span class="text-xs">至</span><input type="date" id="date-end" class="w-32 text-sm py-1"></div>
 <button class="btn btn-gray text-sm" id="btn-reset">重置筛选</button><button class="btn btn-blue text-sm" id="btn-sync">同步</button><button class="btn btn-orange text-sm" id="btn-finddup">查重</button>
-<button class="btn btn-green text-sm" id="btn-import-excel"><i class="fas fa-file-import"></i> 导入Excel</button><button class="btn btn-purple text-sm" id="export-customers-excel"><i class="fas fa-file-excel"></i> 导出Excel</button>
+<button class="btn btn-green text-sm" id="btn-import-excel"><i class="fas fa-file-import"></i> 导入Excel</button><button class="btn btn-purple text-sm" id="export-customers-excel"><i class="fas fa-file-excel"></i> 导出客户Excel</button>
 </div></div><div id="kanban-scroll"><div class="flex gap-3 h-full"><div class="kanban-col-wrap bg-gray-50" data-status="potential"><div class="kanban-col-head bg-gray-200">潜在客户<span class="col-cnt ml-2">0</span></div><div class="col-body" id="col-potential"></div></div><div class="kanban-col-wrap bg-amber-50" data-status="contacted"><div class="kanban-col-head bg-amber-200">已联系<span class="col-cnt">0</span></div><div class="col-body" id="col-contacted"></div></div><div class="kanban-col-wrap bg-blue-50" data-status="followed_up"><div class="kanban-col-head bg-blue-200">已跟进<span class="col-cnt">0</span></div><div class="col-body" id="col-followed_up"></div></div><div class="kanban-col-wrap bg-green-50" data-status="closed"><div class="kanban-col-head bg-green-200">已成交<span class="col-cnt">0</span></div><div class="col-body" id="col-closed"></div></div><div class="kanban-col-wrap bg-rose-50" data-status="lost"><div class="kanban-col-head bg-rose-200">已丢失<span class="col-cnt">0</span></div><div class="col-body" id="col-lost"></div></div></div></div></div>
 
+<!-- 导入Excel模态框 -->
 <div class="modal-bg" id="import-modal"><div class="bg-white rounded-xl max-w-5xl w-full max-h-[85vh] overflow-auto p-5"><div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">📂 导入Excel客户数据</h3><button id="close-import" class="text-2xl">&times;</button></div><p class="text-sm text-gray-500 mb-3">支持字段：序号、名称、国家、城市、通讯地址、联系人、公司名、职位、电话、岗位、邮箱、公司网址、备注</p><div class="dz mb-4" id="import-dz" style="min-height:100px"><input type="file" accept=".xlsx,.xls" id="import-file"><div class="text-center pointer-events-none"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i><p>点击或拖拽Excel文件</p></div></div>
 <div id="import-progress" style="display:none;margin-bottom:12px"><div class="flex justify-between text-xs mb-1"><span id="import-progress-text">解析文件中...</span><span id="import-progress-pct">0%</span></div><div class="progress-bar"><div id="import-progress-fill" class="progress-fill"></div></div></div>
 <div id="import-preview" style="display:none"></div>
 <div class="flex gap-3 mt-4"><button class="btn btn-green flex-1" id="confirm-import" disabled>确认导入</button><button class="btn btn-gray" id="cancel-import">取消</button></div></div></div>
 
-<div class="app-section" id="section-settings"><div style="max-width:620px;margin:0 auto"><div class="card-box"><h3 style="font-size:15px;font-weight:600;margin-bottom:12px">🔐 修改管理员密码</h3><input type="password" id="change-old-pwd" placeholder="当前密码" class="mb-2"><input type="password" id="change-new-pwd" placeholder="新密码(≥6位)" class="mb-2"><input type="password" id="change-confirm-pwd" placeholder="确认新密码"><button class="btn btn-blue mt-2" id="btn-change-pwd">修改密码</button></div><div class="card-box"><h3 style="font-size:15px;font-weight:600;margin-bottom:12px">☁️ Firebase 云同步</h3><textarea id="firebase-config" rows="3" placeholder='{"apiKey":"...","projectId":"...","appId":"..."}' class="font-mono text-xs w-full"></textarea><div style="display:flex;gap:10px;margin-top:10px"><button class="btn btn-blue" id="btn-init-firebase">连接并同步</button><span id="firebase-status" style="font-size:12px;color:#059669;display:none"></span></div></div><div class="card-box"><h3 style="font-size:15px;font-weight:600;margin-bottom:12px">🤖 通义千问 API</h3><input type="password" id="api-key-input" placeholder="sk-xxxxxxxx" class="w-full"><button class="btn btn-gray mt-2" id="btn-save-api">保存 API Key</button></div><div class="card-box"><h3 style="font-size:15px;font-weight:600;margin-bottom:12px">📊 数据管理</h3><button class="btn btn-red" id="btn-clear">🗑 清空所有数据</button><p style="margin-top:12px;color:#9ca3af;font-size:11px">智能客户管理系统 v4.8 | 正反面都识别</p></div></div></div>
+<!-- 设置页面 -->
+<div class="app-section" id="section-settings"><div style="max-width:620px;margin:0 auto"><div class="card-box"><h3 style="font-size:15px;font-weight:600;margin-bottom:12px">🔐 修改管理员密码</h3><input type="password" id="change-old-pwd" placeholder="当前密码" class="mb-2"><input type="password" id="change-new-pwd" placeholder="新密码(≥6位)" class="mb-2"><input type="password" id="change-confirm-pwd" placeholder="确认新密码"><button class="btn btn-blue mt-2" id="btn-change-pwd">修改密码</button></div><div class="card-box"><h3 style="font-size:15px;font-weight:600;margin-bottom:12px">☁️ Firebase 云同步</h3><textarea id="firebase-config" rows="3" placeholder='{"apiKey":"...","projectId":"...","appId":"..."}' class="font-mono text-xs w-full"></textarea><div style="display:flex;gap:10px;margin-top:10px"><button class="btn btn-blue" id="btn-init-firebase">连接并同步</button><span id="firebase-status" style="font-size:12px;color:#059669;display:none"></span></div></div><div class="card-box"><h3 style="font-size:15px;font-weight:600;margin-bottom:12px">🤖 通义千问 API</h3><input type="password" id="api-key-input" placeholder="sk-xxxxxxxx" class="w-full"><button class="btn btn-gray mt-2" id="btn-save-api">保存 API Key</button></div><div class="card-box"><h3 style="font-size:15px;font-weight:600;margin-bottom:12px">📊 数据管理</h3><button class="btn btn-red" id="btn-clear">🗑 清空所有数据</button><p style="margin-top:12px;color:#9ca3af;font-size:11px">智能客户管理系统 v5.0 | 正反面都识别</p></div></div></div>
 </div></div>
 
+<!-- 模态框 -->
 <div class="modal-bg" id="detail-modal"><div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-auto"><div class="p-4 border-b flex justify-between"><h3 id="detail-title" class="font-bold">客户详情</h3><button id="close-detail" class="text-2xl">&times;</button></div><div id="detail-imgs" class="grid grid-cols-2 gap-2 p-3"></div><div id="detail-info" class="p-3 grid grid-cols-2 gap-2 text-sm"></div><div class="p-3 border-t flex gap-2"><button id="detail-edit-btn" class="btn btn-blue">编辑</button><button id="detail-log-btn" class="btn btn-green">沟通记录</button><button id="detail-wa-btn" class="wa hidden">WhatsApp</button></div></div></div>
 <div class="modal-bg" id="log-modal"><div class="bg-white rounded-xl max-w-lg w-full p-4"><h3 id="log-title" class="font-bold mb-2">沟通记录</h3><div id="log-history" class="max-h-64 overflow-auto mb-3"></div><form id="log-form"><input type="hidden" id="log-cust-id"><textarea id="log-content" placeholder="沟通内容" required class="mb-2 w-full p-2 border rounded"></textarea><input type="text" id="log-next" placeholder="下一步计划" class="mb-2 w-full p-2 border rounded"><button type="submit" class="btn btn-blue w-full">添加记录</button></form><button id="close-log" class="mt-2 text-gray-400">关闭</button></div></div>
 <div class="modal-bg" id="dup-modal"><div class="bg-white rounded-xl p-6 max-w-md"><i class="fas fa-exclamation-triangle text-amber-500 text-3xl"></i><p id="dup-msg"></p><div id="dup-detail"></div><div class="flex gap-3 mt-4"><button id="dup-cancel" class="btn btn-gray">取消</button><button id="dup-confirm" class="btn btn-orange">仍要添加</button></div></div></div>
@@ -129,66 +135,6 @@ function switchTab(tab){
 }
 async function compress(file){return new Promise(ok=>{const img=new Image();img.onload=()=>{const cv=document.createElement('canvas');let w=img.width;if(w>600)w=600;cv.width=w;cv.height=img.height*(w/img.width);cv.getContext('2d').drawImage(img,0,0,w,cv.height);cv.toBlob(ok,'image/jpeg',0.7);};img.src=URL.createObjectURL(file);});}
 async function toB64(blob){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob);});}
-// 正面和背面都识别，合并结果
-async function recognizeCard(){
-    if(!API.key){toast('请先配置API Key','error');switchTab('settings');return;}
-    if(!frontFile){toast('请上传名片正面','error');return;}
-    $('btn-recognize').disabled=true;
-    const spinSpan=document.createElement('span');spinSpan.className='spin ml-2';$('btn-recognize').appendChild(spinSpan);
-    toast('正在识别正面...','info');
-    try{
-        // 识别正面
-        const frontBlob=await compress(frontFile);
-        const frontB64=await toB64(frontBlob);
-        const frontResult=await callVision(frontB64,'提取名片信息，只返回JSON：{"name":"","company":"","position":"","phone":"","email":"","country":""}，country用中文国家名');
-        let mergedData=frontResult;
-        
-        // 识别背面（如果有）
-        if(backFile){
-            toast('正在识别背面...','info');
-            const backBlob=await compress(backFile);
-            const backB64=await toB64(backBlob);
-            const backResult=await callVision(backB64,'提取名片背面信息，只返回JSON：{"name":"","company":"","position":"","phone":"","email":"","country":"","address":"","website":""}，country用中文国家名，注意背面可能有更多联系方式');
-            // 合并数据：正面有的优先用正面，背面补充正面没有的
-            if(backResult){
-                if(backResult.name && !mergedData.name) mergedData.name=backResult.name;
-                if(backResult.company && !mergedData.company) mergedData.company=backResult.company;
-                if(backResult.position && !mergedData.position) mergedData.position=backResult.position;
-                if(backResult.phone && !mergedData.phone) mergedData.phone=backResult.phone;
-                if(backResult.email && !mergedData.email) mergedData.email=backResult.email;
-                if(backResult.country && !mergedData.country) mergedData.country=backResult.country;
-                if(backResult.address && !mergedData.address) mergedData.address=backResult.address;
-                if(backResult.website && !mergedData.website) mergedData.website=backResult.website;
-            }
-        }
-        
-        if(mergedData){
-            if(mergedData.name) $('cust-name').value=mergedData.name;
-            if(mergedData.company) $('cust-company').value=mergedData.company;
-            if(mergedData.position) $('cust-position').value=mergedData.position;
-            if(mergedData.phone) $('cust-phone').value=mergedData.phone;
-            if(mergedData.email) $('cust-email').value=mergedData.email;
-            if(mergedData.country) $('cust-country').value=mergedData.country;
-            if(mergedData.address) $('cust-address').value=mergedData.address;
-            if(mergedData.website) $('cust-website').value=mergedData.website;
-            toast(backFile?'正反面识别完成，信息已合并！':'正面识别完成！','success');
-        }else{
-            toast('未提取到信息，请手动填写','info');
-        }
-        
-        window._pendingFrontB64=frontB64;
-        if(backFile){
-            const backBlob=await compress(backFile);
-            window._pendingBackB64=await toB64(backBlob);
-        }
-    }catch(e){
-        toast('识别失败: '+e.message,'error');
-        console.error(e);
-    }finally{
-        spinSpan.remove();
-        $('btn-recognize').disabled=false;
-    }
-}
 async function callVision(b64,prompt){
     const res=await fetch(API.url,{
         method:'POST',
@@ -203,6 +149,54 @@ async function callVision(b64,prompt){
     const txt=data.choices[0].message.content;
     const match=txt.match(/\{[\s\S]*\}/);
     return match?JSON.parse(match[0]):null;
+}
+async function recognizeCard(){
+    if(!API.key){toast('请先配置API Key','error');switchTab('settings');return;}
+    if(!frontFile){toast('请上传名片正面','error');return;}
+    $('btn-recognize').disabled=true;
+    const spinSpan=document.createElement('span');spinSpan.className='spin ml-2';$('btn-recognize').appendChild(spinSpan);
+    toast('正在识别正面...','info');
+    try{
+        const frontBlob=await compress(frontFile);
+        const frontB64=await toB64(frontBlob);
+        const frontResult=await callVision(frontB64,'提取名片信息，只返回JSON：{"name":"","company":"","position":"","phone":"","email":"","country":""}，country用中文国家名');
+        let mergedData=frontResult||{};
+        if(backFile){
+            toast('正在识别背面...','info');
+            const backBlob=await compress(backFile);
+            const backB64=await toB64(backBlob);
+            const backResult=await callVision(backB64,'提取名片背面信息，只返回JSON：{"name":"","company":"","position":"","phone":"","email":"","country":"","address":"","website":""}，country用中文国家名');
+            if(backResult){
+                if(backResult.name && !mergedData.name) mergedData.name=backResult.name;
+                if(backResult.company && !mergedData.company) mergedData.company=backResult.company;
+                if(backResult.position && !mergedData.position) mergedData.position=backResult.position;
+                if(backResult.phone && !mergedData.phone) mergedData.phone=backResult.phone;
+                if(backResult.email && !mergedData.email) mergedData.email=backResult.email;
+                if(backResult.country && !mergedData.country) mergedData.country=backResult.country;
+                if(backResult.address) mergedData.address=backResult.address;
+                if(backResult.website) mergedData.website=backResult.website;
+            }
+        }
+        if(mergedData.name||mergedData.company||mergedData.phone){
+            if(mergedData.name) $('cust-name').value=mergedData.name;
+            if(mergedData.company) $('cust-company').value=mergedData.company;
+            if(mergedData.position) $('cust-position').value=mergedData.position;
+            if(mergedData.phone) $('cust-phone').value=mergedData.phone;
+            if(mergedData.email) $('cust-email').value=mergedData.email;
+            if(mergedData.country) $('cust-country').value=mergedData.country;
+            if(mergedData.address) $('cust-address').value=mergedData.address;
+            if(mergedData.website) $('cust-website').value=mergedData.website;
+            toast(backFile?'正反面识别完成，信息已合并！':'正面识别完成！','success');
+        }else{
+            toast('未提取到信息，请手动填写','info');
+        }
+        window._pendingFrontB64=frontB64;
+        if(backFile){
+            const backBlob=await compress(backFile);
+            window._pendingBackB64=await toB64(backBlob);
+        }
+    }catch(e){toast('识别失败: '+e.message,'error');console.error(e);}
+    finally{spinSpan.remove();$('btn-recognize').disabled=false;}
 }
 function saveCustomer(e){e.preventDefault();const id=$('cust-id').value||Date.now().toString();const ex=customers.find(c=>c.id===id);let customerImg=ex?ex.customerImg:'';if($('cust-img-file').files[0]){const reader=new FileReader();reader.onload=ev=>{customerImg=ev.target.result;commit();};reader.readAsDataURL($('cust-img-file').files[0]);return;}commit();function commit(){const newCust={id,name:$('cust-name').value.trim(),company:$('cust-company').value,position:$('cust-position').value,phone:$('cust-phone').value,email:$('cust-email').value,country:$('cust-country').value,city:$('cust-city').value,address:$('cust-address').value,website:$('cust-website').value,wechat:$('cust-wechat').value,source:$('cust-source').value,contactDate:$('cust-date').value,notes:$('cust-notes').value,status:$('cust-status').value||'potential',logs:ex?ex.logs:[],createTime:ex?ex.createTime:new Date().toISOString(),cardFrontUrl:window._pendingFrontB64||ex?.cardFrontUrl||'',cardBackUrl:window._pendingBackB64||ex?.cardBackUrl||'',customerImg};const idx=customers.findIndex(x=>x.id===id);if(idx!==-1)customers[idx]=newCust;else customers.push(newCust);save();if(fbEnabled&&db)db.collection('customers').doc(id).set(newCust);resetForm();renderKanban();toast('客户已保存','success');window._pendingFrontB64=null;window._pendingBackB64=null;}}
 function resetForm(){$('customer-form').reset();$('cust-id').value='';$('prev-front').style.display='none';$('ph-front').style.display='';$('prev-back').style.display='none';frontFile=backFile=null;$('btn-recognize').disabled=true;$('cust-img-preview').style.display='none';}
@@ -241,17 +235,28 @@ function syncC(c){if(fbEnabled&&db)db.collection('customers').doc(c.id).set(c).c
 function openWA(p){if(p){let phone=String(p).replace(/\s+/g,'').replace(/[^\d+]/g,'');if(!phone.startsWith('+'))phone='+'+phone;window.open(`https://wa.me/${phone}`,'_blank');}}
 function exportCustomersProfessionally(){if(!customers.length){toast('暂无客户数据','error');return;}
 const headers=['姓名','公司','职位','电话','邮箱','国家','城市','地址','网站','微信','客户来源','联系日期','状态','沟通次数','备注','创建时间'];
-let html=`<html><head><meta charset="UTF-8"><title>客户数据</title><style>th{background:#1E3A8A;color:white;font-weight:bold;border:1px solid #9ca3af;padding:8px 12px;text-align:center;vertical-align:middle;}td{border:1px solid #d1d5db;padding:8px 12px;text-align:center;vertical-align:middle;}tr:nth-child(even){background:#F9FAFB;}table{border-collapse:collapse;width:100%;}</style></head><body><table><thead><tr>`;
+let html=`<html><head><meta charset="UTF-8"><title>客户数据</title><style>th{background:#1E3A8A;color:white;font-weight:bold;border:1px solid #9ca3af;padding:8px 12px;text-align:center;vertical-align:middle;}td{border:1px solid #d1d5db;padding:8px 12px;text-align:center;vertical-align:middle;}tr:nth-child(even){background:#F9FAFB;}table{border-collapse:collapse;width:100%;}</style></head><body></table><thead><tr>`;
 headers.forEach(h=>html+=`<th>${h}</th>`);
 html+=`</thead><tbody>`;
 customers.forEach(c=>{html+=`<tr>`;
-html+=`<td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.company||'')}</td><td>${escapeHtml(c.position||'')}</td><td>${escapeHtml(c.phone||'')}</td><td>${escapeHtml(c.email||'')}</td><td>${escapeHtml(c.country||'')}</td><td>${escapeHtml(c.city||'')}</td><td>${escapeHtml(c.address||'')}</td><td>${escapeHtml(c.website||'')}</td><td>${escapeHtml(c.wechat||'')}</td><td>${escapeHtml(c.source||'')}</td><td>${escapeHtml(c.contactDate||'')}</td><td>${escapeHtml(c.status||'')}</td><td>${(c.logs||[]).length}</td><td>${escapeHtml(c.notes||'')}</td><td>${c.createTime?new Date(c.createTime).toLocaleString():''}</td>`;html+=`<tr>`;});
+html+=`<td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.company||'')}</td><td>${escapeHtml(c.position||'')}</td><td>${escapeHtml(c.phone||'')}</td><td>${escapeHtml(c.email||'')}</td><td>${escapeHtml(c.country||'')}</td><td>${escapeHtml(c.city||'')}</td><td>${escapeHtml(c.address||'')}</td><td>${escapeHtml(c.website||'')}</td><td>${escapeHtml(c.wechat||'')}</td><td>${escapeHtml(c.source||'')}</td><td>${escapeHtml(c.contactDate||'')}</td><td>${escapeHtml(c.status||'')}</td><td>${(c.logs||[]).length}</td><td>${escapeHtml(c.notes||'')}</td><td>${c.createTime?new Date(c.createTime).toLocaleString():''}</td>`;html+=`</tr>`;});
 html+=`</tbody></table></body></html>`;
 const blob=new Blob([html],{type:'application/vnd.ms-excel'});
-const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`客户数据_${new Date().toISOString().slice(0,19)}.xls`;link.click();URL.revokeObjectURL(link.href);toast('导出成功！','success');}
-function handleExcelImport(file){const progressDiv=$('import-progress');const progressFill=$('import-progress-fill');const progressText=$('import-progress-text');const progressPct=$('import-progress-pct');progressDiv.style.display='block';progressFill.style.width='0%';progressText.textContent='正在读取文件...';progressPct.textContent='0%';const reader=new FileReader();reader.onload=function(e){progressText.textContent='正在解析Excel...';progressFill.style.width='30%';progressPct.textContent='30%';setTimeout(()=>{const data=new Uint8Array(e.target.result);const workbook=XLSX.read(data,{type:'array'});const sheet=workbook.Sheets[workbook.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});if(!rows||rows.length<2){toast('文件无数据','error');progressDiv.style.display='none';return;}progressText.textContent='正在匹配字段...';progressFill.style.width='60%';progressPct.textContent='60%';const headers=rows[0].map(h=>String(h||'').trim());const fieldMap={name:['名称','姓名','name','联系人'],company:['公司','公司名','企业','company'],position:['职位','职务','岗位','position'],phone:['电话','联系电话','手机','phone'],email:['邮箱','电子邮件','email'],country:['国家','country'],city:['城市','city'],address:['通讯地址','地址','address'],website:['公司网址','网址','网站','website'],wechat:['微信','wechat'],source:['客户来源','来源','source'],contactDate:['联系日期','日期','date'],notes:['备注','remark','notes']};let colIdx={};for(let key in fieldMap){colIdx[key]=-1;for(let i=0;i<headers.length;i++){if(fieldMap[key].some(k=>headers[i].includes(k))){colIdx[key]=i;break;}}}if(colIdx.name===-1&&colIdx.phone===-1){toast('未找到姓名或电话列','error');progressDiv.style.display='none';return;}pendingImportData=[];let successCount=0;for(let i=1;i<rows.length;i++){const row=rows[i];if(!row||row.length===0)continue;let name='';if(colIdx.name!==-1)name=row[colIdx.name]?String(row[colIdx.name]).trim():'';if(!name&&colIdx.phone!==-1){let phoneVal=row[colIdx.phone]?String(row[colIdx.phone]).trim():'';if(phoneVal)name='客户_'+phoneVal.slice(-6);}if(!name)continue;const cust={id:Date.now()+'_'+i+'_'+Math.random(),name:name,company:colIdx.company!==-1?(row[colIdx.company]?String(row[colIdx.company]).trim():''):'',position:colIdx.position!==-1?(row[colIdx.position]?String(row[colIdx.position]).trim():''):'',phone:colIdx.phone!==-1?(row[colIdx.phone]?String(row[colIdx.phone]).trim():''):'',email:colIdx.email!==-1?(row[colIdx.email]?String(row[colIdx.email]).trim():''):'',country:colIdx.country!==-1?(row[colIdx.country]?String(row[colIdx.country]).trim():''):'',city:colIdx.city!==-1?(row[colIdx.city]?String(row[colIdx.city]).trim():''):'',address:colIdx.address!==-1?(row[colIdx.address]?String(row[colIdx.address]).trim():''):'',website:colIdx.website!==-1?(row[colIdx.website]?String(row[colIdx.website]).trim():''):'',wechat:colIdx.wechat!==-1?(row[colIdx.wechat]?String(row[colIdx.wechat]).trim():''):'',source:colIdx.source!==-1?(row[colIdx.source]?String(row[colIdx.source]).trim():''):'',contactDate:colIdx.contactDate!==-1?(row[colIdx.contactDate]?String(row[colIdx.contactDate]).trim():''):'',notes:colIdx.notes!==-1?(row[colIdx.notes]?String(row[colIdx.notes]).trim():''):'',status:'potential',logs:[],createTime:new Date().toISOString(),cardFrontUrl:'',cardBackUrl:'',customerImg:''};pendingImportData.push(cust);successCount++;}if(successCount===0){toast('没有有效数据行','error');progressDiv.style.display='none';return;}progressText.textContent='生成预览...';progressFill.style.width='90%';progressPct.textContent='90%';setTimeout(()=>{let previewHtml='<table style="border-collapse:collapse;width:100%;font-size:12px"><thead><tr style="background:#1E3A8A;color:white">';['姓名','公司','电话','邮箱','国家','城市','客户来源','状态'].forEach(h=>previewHtml+=`<th style="padding:6px 10px;border:1px solid #ccc">${h}</th>`);previewHtml+='</thead><tbody>';pendingImportData.slice(0,10).forEach(c=>{previewHtml+=`<td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.name)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.company)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.phone)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.email)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.country)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.city)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.source)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.status)}</td></tr>`;});if(pendingImportData.length>10)previewHtml+=`<tr><td colspan="8" style="text-align:center;padding:8px">... 共 ${pendingImportData.length} 条记录</td></tr>`;previewHtml+='</tbody></table><p class="text-xs text-green-600 mt-2">✅ 解析完成！共 '+pendingImportData.length+' 条数据</p>';$('import-preview').innerHTML=previewHtml;$('import-preview').style.display='block';$('confirm-import').disabled=false;progressDiv.style.display='none';toast(`已解析 ${pendingImportData.length} 条客户数据`,'success');},100);},50);};reader.readAsArrayBuffer(file);}
+const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`客户数据_${new Date().toISOString().slice(0,19)}.xls`;link.click();URL.revokeObjectURL(link.href);toast('客户导出成功！','success');}
+function exportProductsExcel(){if(!products.length){toast('暂无产品数据','error');return;}
+const headers=['型号','序列号','备注','创建时间'];
+let html=`<html><head><meta charset="UTF-8"><title>产品数据</title><style>th{background:#1E3A8A;color:white;font-weight:bold;border:1px solid #9ca3af;padding:8px 12px;text-align:center;vertical-align:middle;}td{border:1px solid #d1d5db;padding:8px 12px;text-align:center;vertical-align:middle;}tr:nth-child(even){background:#F9FAFB;}table{border-collapse:collapse;width:100%;}</style></head><body><table><thead><tr>`;
+headers.forEach(h=>html+=`<th>${h}</th>`);
+html+=`</thead><tbody>`;
+products.forEach(p=>{html+=`<tr>`;
+html+=`<td>${escapeHtml(p.model||'')}</td><td>${escapeHtml(p.serial||'')}</td><td>${escapeHtml(p.notes||'')}</td><td>${p.createTime?new Date(p.createTime).toLocaleString():''}</td>`;
+html+=`</tr>`;});
+html+=`</tbody></table></body></html>`;
+const blob=new Blob([html],{type:'application/vnd.ms-excel'});
+const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`产品数据_${new Date().toISOString().slice(0,19)}.xls`;link.click();URL.revokeObjectURL(link.href);toast('产品导出成功！','success');}
+function handleExcelImport(file){const progressDiv=$('import-progress');const progressFill=$('import-progress-fill');const progressText=$('import-progress-text');const progressPct=$('import-progress-pct');progressDiv.style.display='block';progressFill.style.width='0%';progressText.textContent='正在读取文件...';progressPct.textContent='0%';const reader=new FileReader();reader.onload=function(e){progressText.textContent='正在解析Excel...';progressFill.style.width='30%';progressPct.textContent='30%';setTimeout(()=>{const data=new Uint8Array(e.target.result);const workbook=XLSX.read(data,{type:'array'});const sheet=workbook.Sheets[workbook.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});if(!rows||rows.length<2){toast('文件无数据','error');progressDiv.style.display='none';return;}progressText.textContent='正在匹配字段...';progressFill.style.width='60%';progressPct.textContent='60%';const headers=rows[0].map(h=>String(h||'').trim());const fieldMap={name:['名称','姓名','name','联系人'],company:['公司','公司名','企业','company'],position:['职位','职务','岗位','position'],phone:['电话','联系电话','手机','phone'],email:['邮箱','电子邮件','email'],country:['国家','country'],city:['城市','city'],address:['通讯地址','地址','address'],website:['公司网址','网址','网站','website'],wechat:['微信','wechat'],source:['客户来源','来源','source'],contactDate:['联系日期','日期','date'],notes:['备注','remark','notes']};let colIdx={};for(let key in fieldMap){colIdx[key]=-1;for(let i=0;i<headers.length;i++){if(fieldMap[key].some(k=>headers[i].includes(k))){colIdx[key]=i;break;}}}if(colIdx.name===-1&&colIdx.phone===-1){toast('未找到姓名或电话列','error');progressDiv.style.display='none';return;}pendingImportData=[];let successCount=0;for(let i=1;i<rows.length;i++){const row=rows[i];if(!row||row.length===0)continue;let name='';if(colIdx.name!==-1)name=row[colIdx.name]?String(row[colIdx.name]).trim():'';if(!name&&colIdx.phone!==-1){let phoneVal=row[colIdx.phone]?String(row[colIdx.phone]).trim():'';if(phoneVal)name='客户_'+phoneVal.slice(-6);}if(!name)continue;const cust={id:Date.now()+'_'+i+'_'+Math.random(),name:name,company:colIdx.company!==-1?(row[colIdx.company]?String(row[colIdx.company]).trim():''):'',position:colIdx.position!==-1?(row[colIdx.position]?String(row[colIdx.position]).trim():''):'',phone:colIdx.phone!==-1?(row[colIdx.phone]?String(row[colIdx.phone]).trim():''):'',email:colIdx.email!==-1?(row[colIdx.email]?String(row[colIdx.email]).trim():''):'',country:colIdx.country!==-1?(row[colIdx.country]?String(row[colIdx.country]).trim():''):'',city:colIdx.city!==-1?(row[colIdx.city]?String(row[colIdx.city]).trim():''):'',address:colIdx.address!==-1?(row[colIdx.address]?String(row[colIdx.address]).trim():''):'',website:colIdx.website!==-1?(row[colIdx.website]?String(row[colIdx.website]).trim():''):'',wechat:colIdx.wechat!==-1?(row[colIdx.wechat]?String(row[colIdx.wechat]).trim():''):'',source:colIdx.source!==-1?(row[colIdx.source]?String(row[colIdx.source]).trim():''):'',contactDate:colIdx.contactDate!==-1?(row[colIdx.contactDate]?String(row[colIdx.contactDate]).trim():''):'',notes:colIdx.notes!==-1?(row[colIdx.notes]?String(row[colIdx.notes]).trim():''):'',status:'potential',logs:[],createTime:new Date().toISOString(),cardFrontUrl:'',cardBackUrl:'',customerImg:''};pendingImportData.push(cust);successCount++;}if(successCount===0){toast('没有有效数据行','error');progressDiv.style.display='none';return;}progressText.textContent='生成预览...';progressFill.style.width='90%';progressPct.textContent='90%';setTimeout(()=>{let previewHtml='<table style="border-collapse:collapse;width:100%;font-size:12px"><thead><tr style="background:#1E3A8A;color:white">';['姓名','公司','电话','邮箱','国家','城市','客户来源','状态'].forEach(h=>previewHtml+=`<th style="padding:6px 10px;border:1px solid #ccc">${h}</th>`);previewHtml+='</thead><tbody>';pendingImportData.slice(0,10).forEach(c=>{previewHtml+=`<tr><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.name)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.company)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.phone)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.email)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.country)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.city)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.source)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.status)}</td></tr>`;});if(pendingImportData.length>10)previewHtml+=`<tr><td colspan="8" style="text-align:center;padding:8px">... 共 ${pendingImportData.length} 条记录</td>`;previewHtml+='</tbody></table><p class="text-xs text-green-600 mt-2">✅ 解析完成！共 '+pendingImportData.length+' 条数据</p>';$('import-preview').innerHTML=previewHtml;$('import-preview').style.display='block';$('confirm-import').disabled=false;progressDiv.style.display='none';toast(`已解析 ${pendingImportData.length} 条客户数据`,'success');},100);},50);};reader.readAsArrayBuffer(file);}
 function confirmImport(e){if(e) e.stopPropagation();if(!pendingImportData.length){toast('没有待导入数据','error');return;}const total=pendingImportData.length;let dupCount=0;for(let i=0;i<pendingImportData.length;i++){const cust=pendingImportData[i];const exists=customers.some(e=>(e.phone&&cust.phone&&e.phone.replace(/\D/g,'')===cust.phone.replace(/\D/g,''))||(e.name===cust.name));if(exists){dupCount++;}customers.push(cust);if(fbEnabled&&db)db.collection('customers').doc(cust.id).set(cust);}save();renderKanban();toast(`✅ 导入完成！共导入 ${total} 位客户${dupCount>0?`（其中${dupCount}位重复）`:''}`,'success');$('import-modal').classList.remove('show');$('import-preview').style.display='none';$('confirm-import').disabled=true;$('import-file').value='';pendingImportData=[];}
-function renderProductTable(){const tb=$('product-list-body');if(!tb)return;tb.innerHTML=products.slice(-8).map(p=>`<tr><td>${p.imgUrl?`<img src="${p.imgUrl}" class="w-8 h-8 object-cover rounded">`:'-'}</td><td>${escapeHtml(p.model||p.serial||'-')}</td><td><button onclick="window._dp('${p.id}')" class="text-red-500 text-sm">删除</button></td></tr>`).join('');}
+function renderProductTable(){const tb=$('product-list-body');if(!tb)return;tb.innerHTML=products.slice().reverse().map(p=>`<tr><td><img src="${p.imgUrl||'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%23f3f4f6%22/%3E%3C/svg%3E'}" class="w-10 h-10 object-cover rounded border" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%23f3f4f6%22/%3E%3C/svg%3E'"></td><td>${escapeHtml(p.model||'-')}</td><td>${escapeHtml(p.notes||'-')}</td><td><button onclick="window._dp('${p.id}')" class="text-red-500 text-sm">删除</button></td>`).join('');}
 async function autoConnect(){const s=localStorage.getItem('crm_firebase_config');if(s){try{$('firebase-config').value=s;const c=JSON.parse(s);if(!firebase.apps.length)firebase.initializeApp(c);db=firebase.firestore();fbEnabled=true;$('firebase-status').style.display='inline';$('firebase-status').textContent='已连接';const cs=await db.collection('customers').get();const remoteMap=new Map();cs.forEach(d=>{const docData=d.data();remoteMap.set(d.id,{...docData,id:d.id,logs:docData.logs||[]});});for(let [id,remote] of remoteMap){const local=customers.find(x=>x.id===id);if(local){local.logs=local.logs||[];remote.logs=remote.logs||[];const localLogMap=new Map(local.logs.map(l=>[l.timestamp,l]));remote.logs.forEach(r=>{if(!localLogMap.has(r.timestamp))local.logs.push(r);});Object.assign(local,remote);}else{customers.push(remote);}}save();renderKanban();return true;}catch(e){console.warn('同步失败',e);}}return false;}
 function updateCountryDropdownList(){
     const input=$('country-filter-input');const dropdown=$('country-dropdown');if(!input||!dropdown)return;
@@ -260,7 +265,7 @@ function updateCountryDropdownList(){
     const filtered=allCountries.filter(c=>c.toLowerCase().includes(inputVal));
     dropdown.innerHTML='';
     filtered.forEach(c=>{const div=document.createElement('div');div.className='country-dropdown-item';div.innerHTML=`${gf(c)} ${c}`;div.onclick=(e)=>{e.stopPropagation();input.value=c;countryFilter=c;renderKanban();dropdown.style.display='none';};div.ontouchstart=(e)=>{e.stopPropagation();input.value=c;countryFilter=c;renderKanban();dropdown.style.display='none';};dropdown.appendChild(div);});
-    dropdown.style.display=filtered.length>0?'block':'none';
+    dropdown.style.display=(filtered.length>0 && inputVal!=='')?'block':'none';
 }
 document.addEventListener('DOMContentLoaded',()=>{
 const hasPassword=localStorage.getItem('crm_password');
@@ -277,12 +282,13 @@ $('btn-recognize').onclick=recognizeCard;$('customer-form').addEventListener('su
 $('btn-wa-form').onclick=()=>openWA($('cust-phone').value);
 $('cust-img-file').onchange=e=>{if(e.target.files[0]){const r=new FileReader();r.onload=ev=>{$('cust-img-preview').src=ev.target.result;$('cust-img-preview').style.display='block';};r.readAsDataURL(e.target.files[0]);}};
 $('export-customers-excel').onclick=exportCustomersProfessionally;
+$('export-products-excel').onclick=exportProductsExcel;
 $('btn-init-firebase').onclick=()=>{try{const cfg=JSON.parse($('firebase-config').value);if(!firebase.apps.length)firebase.initializeApp(cfg);db=firebase.firestore();fbEnabled=true;localStorage.setItem('crm_firebase_config',JSON.stringify(cfg));autoConnect().then(()=>toast('Firebase已连接并同步','success'));}catch(e){toast('配置错误','error');}};
 $('btn-save-api').onclick=()=>{API.key=$('api-key-input').value;localStorage.setItem('crm_api_key',API.key);toast('API Key已保存','success');};$('api-key-input').value=API.key;
 $('search-input').oninput=e=>{searchKw=e.target.value;renderKanban();};
 $('date-start').onchange=e=>{startDate=e.target.value;renderKanban();};
 $('date-end').onchange=e=>{endDate=e.target.value;renderKanban();};
-const countryInput=$('country-filter-input');if(countryInput){countryInput.addEventListener('input',function(){updateCountryDropdownList();});countryInput.addEventListener('focus',function(){updateCountryDropdownList();});countryInput.addEventListener('blur',function(){setTimeout(()=>{$('country-dropdown').style.display='none';},300);});countryInput.addEventListener('keypress',function(e){if(e.key==='Enter'){countryFilter=this.value;renderKanban();$('country-dropdown').style.display='none';}});}
+const countryInput=$('country-filter-input');if(countryInput){countryInput.addEventListener('input',function(){updateCountryDropdownList();});countryInput.addEventListener('focus',function(){if(this.value!=='')updateCountryDropdownList();});countryInput.addEventListener('blur',function(){setTimeout(()=>{$('country-dropdown').style.display='none';},200);});countryInput.addEventListener('keypress',function(e){if(e.key==='Enter'){countryFilter=this.value;renderKanban();$('country-dropdown').style.display='none';}});}
 $('clear-country-btn').onclick=()=>{if(countryInput)countryInput.value='';countryFilter='';renderKanban();};
 document.addEventListener('click',function(e){const dropdown=$('country-dropdown');if(dropdown&&!dropdown.contains(e.target)&&e.target!==countryInput){dropdown.style.display='none';}});
 $('btn-reset').onclick=()=>{$('search-input').value='';searchKw='';countryFilter='';startDate='';endDate='';$('date-start').value='';$('date-end').value='';if(countryInput)countryInput.value='';renderKanban();};
@@ -290,7 +296,7 @@ $('btn-finddup').onclick=()=>toast('重复客户已高亮显示','info');
 $('close-detail').onclick=()=>$('detail-modal').classList.remove('show');
 $('close-log').onclick=()=>$('log-modal').classList.remove('show');
 $('log-form').addEventListener('submit',saveLog);
-$('btn-clear').onclick=()=>{if(confirm('清空所有客户数据？')){customers=[];save();renderKanban();toast('已清空','success');}};
+$('btn-clear').onclick=()=>{if(confirm('清空所有客户数据？')){customers=[];products=[];save();renderKanban();renderProductTable();toast('已清空','success');}};
 $('lightbox-close').onclick=()=>$('lightbox').classList.remove('show');$('lightbox').onclick=e=>{if(e.target===$('lightbox'))$('lightbox').classList.remove('show');};
 $('btn-import-excel').onclick=function(e){e.stopPropagation();$('import-modal').classList.add('show');$('import-preview').style.display='none';$('confirm-import').disabled=true;$('import-file').value='';pendingImportData=[];$('import-progress').style.display='none';};
 $('close-import').onclick=function(e){e.stopPropagation();$('import-modal').classList.remove('show');};
@@ -299,8 +305,8 @@ $('import-dz').onclick=function(e){e.stopPropagation();$('import-file').click();
 $('import-file').onchange=e=>{e.stopPropagation();if(e.target.files[0])handleExcelImport(e.target.files[0]);};
 $('confirm-import').onclick=function(e){e.stopPropagation();confirmImport(e);};
 $('prod-dz').onclick=function(e){e.stopPropagation();$('prod-file').click();};
-$('prod-file').onchange=e=>{if(e.target.files[0]){const file=e.target.files[0];const reader=new FileReader();reader.onload=ev=>{$('prod-preview').src=ev.target.result;$('prod-preview').style.display='block';$('prod-ph').style.display='none';};reader.readAsDataURL(file);toast('请手动填写产品信息','info');}};
-$('product-form').addEventListener('submit',e=>{e.preventDefault();const id=$('product-id').value||Date.now().toString();const p={id:id,model:$('product-model').value,serial:$('product-serial').value,notes:$('product-notes').value,imgUrl:window._prodImgUrl||'',createTime:new Date().toISOString()};products.push(p);save();$('product-form').reset();$('product-id').value='';$('prod-preview').style.display='none';$('prod-ph').style.display='';renderProductTable();toast('产品已保存','success');});
+$('prod-file').onchange=e=>{if(e.target.files[0]){const file=e.target.files[0];const reader=new FileReader();reader.onload=ev=>{$('prod-preview').src=ev.target.result;$('prod-preview').style.display='block';$('prod-ph').style.display='none';window._prodImgUrl=ev.target.result;};reader.readAsDataURL(file);toast('图片已上传，请填写信息后保存','info');}};
+$('product-form').addEventListener('submit',e=>{e.preventDefault();const id=$('product-id').value||Date.now().toString();const p={id:id,model:$('product-model').value,serial:$('product-serial').value,notes:$('product-notes').value,imgUrl:window._prodImgUrl||'',createTime:new Date().toISOString()};products.push(p);save();$('product-form').reset();$('product-id').value='';$('prod-preview').style.display='none';$('prod-ph').style.display='';window._prodImgUrl='';renderProductTable();toast('产品已保存','success');});
 if(sessionStorage.getItem('crm_logged')==='1'){$('login-page').style.display='none';$('main-app').classList.add('show');load();autoConnect();renderKanban();renderProductTable();}});
 window.openLightbox=(url)=>{$('lb-img').src=url;$('lightbox').classList.add('show');};window._dp=function(id){products=products.filter(p=>p.id!==id);localStorage.setItem('crm_products',JSON.stringify(products));renderProductTable();};
 })();
