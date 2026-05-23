@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
-<title>智能识别系统 v2.7</title>
+<title>智能客户管理系统 v3.9</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -11,1516 +11,273 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,system-ui,sans-serif;background:#f3f4f6;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-
-#login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%)}
-.login-box{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:0 25px 50px rgba(0,0,0,.25)}
-
+html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,system-ui,sans-serif;background:#f3f4f6}
+#login-page{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 100%)}
+.login-box{background:#fff;border-radius:24px;padding:40px;width:100%;max-width:420px;box-shadow:0 25px 50px rgba(0,0,0,.25)}
 #main-app{display:none;flex-direction:column;height:100vh;overflow:hidden}
 #main-app.show{display:flex}
-
-#app-header{flex-shrink:0;background:#fff;border-bottom:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,.06);z-index:10}
+#app-header{flex-shrink:0;background:#fff;border-bottom:1px solid #e5e7eb}
 #app-body{flex:1;overflow:hidden;position:relative}
-
-.app-section{display:none;height:100%;overflow-y:auto;padding:24px;-webkit-overflow-scrolling:touch}
+.app-section{display:none;height:100%;overflow-y:auto;padding:24px}
 .app-section.active{display:block}
 #section-kanban{overflow:hidden;padding:0;flex-direction:column}
 #section-kanban.active{display:flex}
-
-/* 看板 */
 #kanban-toolbar{padding:14px 16px;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0}
-#kanban-scroll{flex:1;overflow-x:auto;overflow-y:hidden;padding:14px;-webkit-overflow-scrolling:touch}
-.kanban-col-wrap{width:272px;flex-shrink:0;display:flex;flex-direction:column;border-radius:10px;overflow:hidden}
-.kanban-col-head{padding:10px 14px;font-weight:600;font-size:14px;display:flex;justify-content:space-between;align-items:center}
-.col-body{flex:1;overflow-y:auto;padding:8px;min-height:180px;transition:background .15s}
-.col-body.drag-over{background:#dbeafe;outline:2px dashed #3b82f6;border-radius:8px}
-
-/* 卡片 */
-.kcard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:11px;margin-bottom:7px;cursor:default;transition:box-shadow .15s}
+#kanban-scroll{flex:1;overflow-x:auto;overflow-y:hidden;padding:14px}
+.kanban-col-wrap{width:280px;flex-shrink:0;display:flex;flex-direction:column;border-radius:12px;overflow:hidden}
+.kanban-col-head{padding:10px 14px;font-weight:600;font-size:14px;display:flex;justify-content:space-between}
+.col-body{flex:1;overflow-y:auto;padding:8px;min-height:180px}
+.kcard{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:11px;margin-bottom:7px;cursor:default;transition:all .15s}
 .kcard:hover{box-shadow:0 3px 10px rgba(0,0,0,.09)}
-.kcard.dragging{opacity:.4;transform:rotate(1.5deg)}
-.kcard.dup-card{border:2px solid #f59e0b!important;background:#fffbeb!important}
-.card-acts{opacity:0;transition:opacity .15s}
-.kcard:hover .card-acts{opacity:1}
-
-@media (max-width: 768px) {
-  .card-acts{opacity:1!important}
-}
-
-/* 国家标签 */
-.ctag{display:inline-flex;align-items:center;gap:3px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:500}
-.dup-badge{background:#ef4444;color:#fff;font-size:10px;padding:1px 5px;border-radius:6px;margin-left:3px;vertical-align:middle}
-
-/* 下拉 */
-.cdrop{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:300;max-height:220px;overflow-y:auto;min-width:170px;display:none}
-.cdrop-item{padding:7px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.kcard.dup-card{border-left:4px solid #f59e0b;background:#fffbeb}
+.ctag{display:inline-flex;align-items:center;gap:3px;background:#f0f9ff;color:#0369a1;border:1px solid #bae6fd;padding:1px 8px;border-radius:10px;font-size:11px}
+.cdrop{position:absolute;top:100%;left:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:300;max-height:220px;overflow-y:auto;min-width:170px;display:none}
+.cdrop-item{padding:7px 14px;cursor:pointer;font-size:13px}
 .cdrop-item:hover{background:#f3f4f6}
-.cdrop-item.sel{background:#eff6ff;color:#1d4ed8;font-weight:600}
-
-/* Drop zone */
-.dz{border:2px dashed #cbd5e1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all .2s;min-height:150px}
-.dz:hover,.dz.on{border-color:#2563eb;background:#eff6ff}
-
-/* 批量识别 */
-#batch-panel{background:#fff;border-radius:14px;padding:22px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:24px}
-#batch-dz{border:2px dashed #a78bfa;border-radius:12px;min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all .2s;background:#faf5ff}
-#batch-dz:hover,#batch-dz.on{border-color:#7c3aed;background:#ede9fe}
-#batch-file-input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-#batch-queue{margin-top:16px;display:none}
-.batch-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:6px;background:#fff;font-size:13px}
-.batch-item img{width:40px;height:40px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;flex-shrink:0}
-.batch-item .bi-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#374151}
-.batch-item .bi-status{flex-shrink:0;font-size:12px;font-weight:600;padding:2px 8px;border-radius:99px}
-.st-wait{background:#f3f4f6;color:#6b7280}
-.st-run{background:#dbeafe;color:#1d4ed8}
-.st-ok{background:#dcfce7;color:#166534}
-.st-fail{background:#fee2e2;color:#991b1b}
-.st-skip{background:#fef9c3;color:#854d0e}
-#batch-progress-wrap{margin-top:12px;display:none}
-#batch-progress-bar{height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden}
-#batch-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#7c3aed,#2563eb);border-radius:99px;transition:width .3s}
-#batch-summary{margin-top:10px;font-size:13px;color:#6b7280;display:none}
-
-/* Modal */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:20px;-webkit-overflow-scrolling:touch}
-.modal-bg.show{display:flex}
-
-/* Toast */
-#toast-wrap{position:fixed;top:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
-.toast{min-width:230px;padding:10px 15px;border-radius:8px;color:#fff;box-shadow:0 5px 16px rgba(0,0,0,.18);display:flex;align-items:center;gap:8px;font-size:13px;animation:tin .22s ease}
-@keyframes tin{from{transform:translateX(110%);opacity:0}to{transform:none;opacity:1}}
-
-/* Loader */
-.spin{width:17px;height:17px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite;display:inline-block;flex-shrink:0}
-.spin-blue{border-color:#e5e7eb;border-top-color:#2563eb}
-@keyframes rot{to{transform:rotate(360deg)}}
-
-/* wa */
-.wa{display:inline-flex;align-items:center;gap:3px;background:#25D366;color:#fff;padding:3px 9px;border-radius:20px;font-size:12px;border:none;cursor:pointer;font-weight:500}
-.wa:hover{background:#128C7E}
-
-/* 通用 */
-.card-box{background:#fff;border-radius:14px;padding:22px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:16px;outline:none;transition:border-color .15s;font-family:inherit;background:#fff}
-input:focus,select:focus,textarea:focus{border-color:#2563eb}
-label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:3px}
-.btn{padding:8px 16px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn-blue{background:#2563eb;color:#fff}.btn-blue:hover:not(:disabled){background:#1d4ed8}
-.btn-green{background:#059669;color:#fff}.btn-green:hover:not(:disabled){background:#047857}
-.btn-purple{background:#7c3aed;color:#fff}.btn-purple:hover:not(:disabled){background:#6d28d9}
-.btn-gray{background:#e5e7eb;color:#374151}.btn-gray:hover{background:#d1d5db}
-.btn-red{background:#dc2626;color:#fff}.btn-red:hover{background:#b91c1c}
-.btn-orange{background:#ea580c;color:#fff}.btn-orange:hover{background:#c2410c}
-.nav-btn{padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:#6b7280;transition:all .15s}
+.dz{border:2px dashed #cbd5e1;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:140px;background:#fafafa;position:relative}
+.dz:hover{border-color:#2563eb;background:#eff6ff}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:1}
+.dz>div{pointer-events:none;z-index:0}
+.card-box{background:#fff;border-radius:16px;padding:22px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:20px}
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:6px}
+.btn-blue{background:#2563eb;color:#fff}.btn-blue:hover{background:#1d4ed8}
+.btn-green{background:#059669;color:#fff}.btn-green:hover{background:#047857}
+.btn-purple{background:#7c3aed;color:#fff}
+.btn-orange{background:#ea580c;color:#fff}
+.btn-gray{background:#e5e7eb;color:#374151}
+.btn-red{background:#dc2626;color:#fff}
+.nav-btn{padding:6px 12px;border-radius:8px;font-size:13px;background:none;color:#6b7280;cursor:pointer}
 .nav-btn.active{background:#dbeafe;color:#1d4ed8}
-.nav-btn:hover:not(.active){background:#f3f4f6}
-button i, button .fas, button .fab, button .far{pointer-events:none}
-
-/* 客户详情弹窗 */
-#detail-modal .cimg{
-  width:100%;border-radius:10px;border:2px solid #e5e7eb;object-fit:contain;
-  max-height:250px;background:#f9fafb;cursor:pointer;transition:all 0.2s;
-  display:block;min-height:80px;
-}
-#detail-modal .cimg:active{transform:scale(0.98);border-color:#2563eb;}
-#detail-modal .irow{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
-#detail-modal .ilabel{color:#9ca3af;width:52px;flex-shrink:0;font-size:12px;padding-top:1px}
-#detail-modal .ival{color:#111827;flex:1;word-break:break-all}
-
-.img-container{position:relative;margin-bottom:12px;border-radius:10px;overflow:hidden;}
-.img-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;}
-.img-label .hint{color:#2563eb;font-size:11px;display:flex;align-items:center;gap:4px;}
-
-/* 灯箱 */
-#lightbox{
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;
-  align-items:center;justify-content:center;flex-direction:column;
-  touch-action:pan-x pan-y pinch-zoom;
-}
-#lightbox.show{display:flex}
-#lightbox img{max-width:95vw;max-height:80vh;border-radius:8px;object-fit:contain;cursor:default;-webkit-user-select:none;user-select:none;}
-#lightbox-close{
-  position:absolute;top:16px;right:16px;color:#fff;font-size:28px;cursor:pointer;
-  background:rgba(0,0,0,.6);width:44px;height:44px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  border:2px solid rgba(255,255,255,.6);z-index:1;
-}
-#lightbox-hint{color:#fff;margin-top:16px;font-size:14px;opacity:0.7;text-align:center;}
-
-/* 移动端适配 */
-@media (max-width: 768px) {
-  #login-page{padding:16px}
-  .login-box{padding:24px;margin:0}
-  .app-section{padding:12px 8px}
-  #section-ocr > div{grid-template-columns:1fr!important;gap:12px!important;}
-  #section-product > div{grid-template-columns:1fr!important;}
-  #detail-modal > div{max-width:100%!important;max-height:100vh!important;border-radius:12px 12px 0 0!important;margin-top:auto!important;}
-  #detail-modal .cimg{max-height:200px;}
-  #detail-imgs{grid-template-columns:1fr!important;gap:10px!important;}
-  #kanban-toolbar{padding:10px}
-  #kanban-scroll{padding:10px}
-  .btn{padding:10px 16px;font-size:14px}
-  .nav-btn{padding:8px 10px;font-size:12px}
-  input,select,textarea{font-size:16px;padding:8px 10px;}
-  #lightbox img{max-width:100vw;max-height:75vh;}
-  #lightbox-hint{font-size:12px;padding:0 20px;}
-  #toast-wrap{top:10px;right:10px;left:10px;}
-  .toast{min-width:0;}
-}
-
-@media (max-width: 480px) {
-  #app-header > div{padding:0 10px;}
-  #detail-modal .cimg{max-height:180px;}
-}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex}
+#toast-wrap{position:fixed;top:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{min-width:230px;padding:10px 15px;border-radius:8px;color:#fff;box-shadow:0 5px 16px rgba(0,0,0,.18);display:flex;align-items:center;gap:8px;animation:tin .22s ease}
+@keyframes tin{from{transform:translateX(110%);opacity:0}to{transform:none;opacity:1}}
+.spin{width:17px;height:17px;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:rot .7s linear infinite}
+.wa{background:#25D366;color:#fff;padding:3px 9px;border-radius:20px;font-size:12px;border:none;cursor:pointer}
+.wa:hover{background:#128C7E}
+input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-size:14px;outline:none}
+input:focus{border-color:#2563eb}
+label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4px}
+.progress-bar{height:8px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin-top:12px}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#7c3aed,#2563eb);border-radius:99px;transition:width .3s}
+@media (max-width:768px){.app-section{padding:12px}.card-box{padding:16px}}
 </style>
 </head>
 <body>
-
 <div id="toast-wrap"></div>
+<div id="login-page"><div class="login-box"><div style="text-align:center;margin-bottom:28px"><i class="fas fa-address-card" style="font-size:46px;color:#4f46e5"></i><h1 style="font-size:21px;font-weight:700">智能客户管理</h1><p style="color:#6b7280;font-size:12px">名片识别 · 客户跟踪 · 专业导出</p></div><div id="login-sec"><input type="password" id="login-pwd" placeholder="访问密码"><button class="btn btn-blue w-full mt-3" id="btn-login">登录</button><div class="text-center mt-2"><button id="btn-show-setpwd" style="background:none;border:none;color:#4f46e5;font-size:12px;cursor:pointer">首次使用？设置密码</button></div></div><div id="setpwd-sec" style="display:none"><h3>设置密码</h3><input type="password" id="new-pwd" placeholder="新密码(≥6位)"><input type="password" id="cfm-pwd" placeholder="确认密码" class="mt-2"><button class="btn btn-green w-full mt-3" id="btn-save-pwd">保存密码</button><button id="btn-back-login" style="background:none;border:none;color:#6b7280;width:100%;margin-top:8px">返回登录</button></div></div></div>
 
-<!-- ═══════════════════════ 登录 ═══════════════════════ -->
-<div id="login-page">
-  <div class="login-box">
-    <div style="text-align:center;margin-bottom:28px">
-      <i class="fas fa-address-card" style="font-size:46px;color:#4f46e5;display:block;margin-bottom:12px"></i>
-      <h1 style="font-size:21px;font-weight:700;color:#111;margin:0">智能识别系统</h1>
-      <p style="color:#6b7280;font-size:12px;margin:6px 0 2px">名片 + 产品 · 云端同步 · 批量识别</p>
-      <span style="color:#9ca3af;font-size:11px">v2.7</span>
-    </div>
-    <div id="login-sec">
-      <div style="margin-bottom:12px"><label>访问密码</label><input type="password" id="login-pwd" placeholder="输入密码" autocomplete="off"></div>
-      <button class="btn btn-blue" style="width:100%" id="btn-login"><i class="fas fa-lock-open"></i> 登录</button>
-      <div style="text-align:center;margin-top:10px"><button style="background:none;border:none;color:#4f46e5;font-size:12px;cursor:pointer" id="btn-show-setpwd">首次使用？设置密码</button></div>
-    </div>
-    <div id="setpwd-sec" style="display:none;margin-top:18px;border-top:1px solid #e5e7eb;padding-top:18px">
-      <h3 style="font-size:15px;font-weight:600;margin:0 0 12px">设置密码</h3>
-      <div style="margin-bottom:10px"><label>新密码（≥6位）</label><input type="password" id="new-pwd" autocomplete="off"></div>
-      <div style="margin-bottom:12px"><label>确认密码</label><input type="password" id="cfm-pwd" autocomplete="off"></div>
-      <button class="btn btn-green" style="width:100%;margin-bottom:8px" id="btn-save-pwd">保存密码</button>
-      <button style="background:none;border:none;color:#6b7280;font-size:12px;cursor:pointer;width:100%" id="btn-back-login">返回登录</button>
-    </div>
-  </div>
-</div>
+<div id="main-app"><div id="app-header"><div style="max-width:1280px;margin:0 auto;padding:0 18px;height:54px;display:flex;align-items:center;justify-content:space-between"><div><i class="fas fa-address-card" style="color:#2563eb"></i><span class="font-bold ml-2">CRM 智能识别 v3.9</span></div><nav class="flex gap-1"><button class="nav-btn active" data-tab="ocr">名片录入</button><button class="nav-btn" data-tab="product">产品库</button><button class="nav-btn" data-tab="kanban">客户看板</button><button class="nav-btn" data-tab="settings">设置</button><button class="btn btn-red py-1 px-3 text-sm ml-2" id="btn-logout">退出</button></nav></div></div>
 
-<!-- ═══════════════════════ 主应用 ═══════════════════════ -->
-<div id="main-app">
-  <div id="app-header">
-    <div style="max-width:1280px;margin:0 auto;padding:0 18px;height:54px;display:flex;align-items:center;justify-content:space-between">
-      <div style="display:flex;align-items:center;gap:9px">
-        <i class="fas fa-address-card" style="font-size:20px;color:#2563eb"></i>
-        <span style="font-weight:700;font-size:16px;color:#111">OCR 识别 v2.7</span>
-      </div>
-      <nav style="display:flex;gap:3px;align-items:center">
-        <button class="nav-btn active" data-tab="ocr">名片</button>
-        <button class="nav-btn" data-tab="product">产品</button>
-        <button class="nav-btn" data-tab="kanban">看板</button>
-        <button class="nav-btn" data-tab="settings">设置</button>
-        <button class="btn btn-red" style="padding:5px 11px;font-size:12px;margin-left:4px" id="btn-logout">退出</button>
-      </nav>
-    </div>
-  </div>
+<div id="app-body">
+<div class="app-section active" id="section-ocr"><div style="max-width:1100px;margin:0 auto"><div class="card-box"><h2 class="font-semibold text-base mb-4"><i class="fas fa-id-card mr-2"></i>添加客户（OCR扫描 / 手动填写）</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-6"><div><div class="dz" id="dz-front"><input type="file" accept="image/*" id="file-front"><div id="ph-front" class="text-center"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i><p class="text-sm">上传名片正面（自动识别）</p></div><img id="prev-front" style="display:none;max-height:130px"></div><div class="mt-3"><div class="dz" id="dz-back"><input type="file" accept="image/*" id="file-back"><div id="ph-back" class="text-center"><i class="fas fa-plus-circle text-2xl text-gray-400"></i><p class="text-xs">名片背面(可选)</p></div><img id="prev-back" style="display:none;max-height:100px"></div></div><button class="btn btn-blue w-full mt-3" id="btn-recognize" disabled><i class="fas fa-magic"></i>开始OCR识别</button></div><form id="customer-form"><input type="hidden" id="cust-id"><div class="grid grid-cols-2 gap-2"><div><label>姓名 *</label><input type="text" id="cust-name" required></div><div><label>公司</label><input type="text" id="cust-company"></div><div><label>职位</label><input type="text" id="cust-position"></div><div><label>电话</label><input type="tel" id="cust-phone"></div><div><label>邮箱</label><input type="email" id="cust-email"></div><div><label>国家</label><input type="text" id="cust-country" list="country-list"><datalist id="country-list"><option>中国</option><option>美国</option><option>日本</option><option>德国</option><option>英国</option><option>加拿大</option><option>墨西哥</option></datalist></div><div><label>城市</label><input type="text" id="cust-city"></div><div><label>地址</label><input type="text" id="cust-address"></div><div><label>网站</label><input type="url" id="cust-website"></div><div><label>微信</label><input type="text" id="cust-wechat"></div><div><label>客户来源</label><input type="text" id="cust-source" placeholder="展会/网络/介绍等"></div><div><label>联系日期</label><input type="date" id="cust-date"></div></div><div><label>备注</label><textarea id="cust-notes" rows="2"></textarea></div><div><label>客户合影(永久保存)</label><input type="file" accept="image/*" id="cust-img-file"><img id="cust-img-preview" style="max-height:60px;margin-top:5px;display:none"></div><div><label>初始状态</label><select id="cust-status"><option value="potential">潜在客户</option><option value="contacted">已联系</option><option value="followed_up">已跟进</option><option value="closed">已成交</option><option value="lost">已丢失</option></select></div><div class="flex gap-2 mt-3"><button type="submit" class="btn btn-green flex-1"><i class="fas fa-save"></i>保存客户</button><button type="button" class="wa" id="btn-wa-form"><i class="fab fa-whatsapp"></i>WhatsApp</button></div></form></div></div></div></div></div>
 
-  <div id="app-body">
+<div class="app-section" id="section-product"><div style="max-width:1000px;margin:0 auto"><div class="card-box"><h2>📦 产品/设备库</h2><div class="grid md:grid-cols-2 gap-4"><div><div class="dz" id="prod-dz"><input type="file" accept="image/*" id="prod-file"><div id="prod-ph" class="text-center"><i class="fas fa-image text-3xl text-gray-400"></i><p class="text-sm">上传产品图片识别</p></div><img id="prod-preview" style="display:none;max-height:100px"></div></div><form id="product-form"><input type="hidden" id="product-id"><input placeholder="品牌/型号" id="product-model"><input placeholder="序列号/零件号" id="product-serial"><textarea placeholder="备注" rows="2" id="product-notes"></textarea><button class="btn btn-purple mt-2">保存产品</button></form></div><div class="mt-4 overflow-x-auto"><table class="w-full text-sm"><thead><tr><th>图片</th><th>型号</th><th>操作</th></tr></thead><tbody id="product-list-body"></tbody></table></div></div></div></div>
 
-    <!-- ═══ 名片 ═══ -->
-    <div class="app-section active" id="section-ocr">
-      <div style="max-width:1080px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:22px">
-        <div class="card-box">
-          <h2 style="font-size:16px;font-weight:600;margin:0 0 16px">上传名片</h2>
-          <div style="margin-bottom:12px">
-            <label>正面 *</label>
-            <div class="dz" id="dz-front" style="min-height:140px">
-              <input type="file" accept="image/*" id="file-front" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
-              <div id="ph-front" style="text-align:center;pointer-events:none">
-                <i class="fas fa-cloud-upload-alt" style="font-size:26px;color:#9ca3af;display:block;margin-bottom:5px"></i>
-                <span style="color:#6b7280;font-size:13px">点击或拖拽正面</span>
-              </div>
-              <img id="prev-front" style="display:none;max-height:130px;width:100%;object-fit:contain;border-radius:6px;padding:6px">
-            </div>
-          </div>
-          <div style="margin-bottom:16px">
-            <label>背面（可选）</label>
-            <div class="dz" id="dz-back" style="min-height:120px">
-              <input type="file" accept="image/*" id="file-back" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
-              <div id="ph-back" style="text-align:center;pointer-events:none">
-                <i class="fas fa-plus-circle" style="font-size:26px;color:#9ca3af;display:block;margin-bottom:5px"></i>
-                <span style="color:#6b7280;font-size:13px">点击或拖拽背面</span>
-              </div>
-              <img id="prev-back" style="display:none;max-height:120px;width:100%;object-fit:contain;border-radius:6px;padding:6px">
-            </div>
-          </div>
-          <button class="btn btn-blue" id="btn-recognize" disabled>
-            <i class="fas fa-magic"></i>开始识别<span class="spin spin-blue" id="ocr-spin" style="display:none"></span>
-          </button>
-        </div>
-        <div class="card-box">
-          <h2 style="font-size:16px;font-weight:600;margin:0 0 16px">客户信息</h2>
-          <form id="customer-form">
-            <input type="hidden" id="cust-id">
-            <div style="display:grid;gap:10px">
-              <div><label>姓名 *</label><input type="text" id="cust-name" required></div>
-              <div><label>公司</label><input type="text" id="cust-company"></div>
-              <div><label>职位</label><input type="text" id="cust-position"></div>
-              <div><label>电话</label><input type="tel" id="cust-phone"></div>
-              <div><label>邮箱</label><input type="email" id="cust-email"></div>
-              <div>
-                <label>国家</label>
-                <input type="text" id="cust-country" list="country-list" placeholder="输入或选择">
-                <datalist id="country-list">
-                  <option>中国</option><option>美国</option><option>日本</option><option>德国</option>
-                  <option>英国</option><option>法国</option><option>韩国</option><option>印度</option>
-                  <option>澳大利亚</option><option>加拿大</option><option>新加坡</option><option>马来西亚</option>
-                  <option>泰国</option><option>越南</option><option>印度尼西亚</option><option>俄罗斯</option>
-                  <option>巴西</option><option>墨西哥</option><option>意大利</option><option>西班牙</option>
-                  <option>荷兰</option><option>瑞士</option><option>瑞典</option><option>土耳其</option>
-                  <option>沙特阿拉伯</option><option>阿联酋</option><option>以色列</option><option>南非</option>
-                  <option>菲律宾</option><option>巴基斯坦</option>
-                </datalist>
-              </div>
-              <div>
-                <label>初始状态</label>
-                <select id="cust-status">
-                  <option value="potential">潜在客户</option>
-                  <option value="contacted">已联系</option>
-                  <option value="followed_up">已跟进</option>
-                  <option value="closed">已成交</option>
-                  <option value="lost">已丢失</option>
-                </select>
-              </div>
-              <div><label>备注</label><textarea id="cust-notes" rows="2"></textarea></div>
-              <div style="display:flex;gap:8px">
-                <button type="submit" class="btn btn-green" style="flex:1">保存客户</button>
-                <button type="button" class="wa" id="btn-wa-form" style="padding:8px 14px"><i class="fab fa-whatsapp"></i>WhatsApp</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+<div class="app-section" id="section-kanban"><div id="kanban-toolbar"><div class="flex justify-between flex-wrap gap-2"><h2 class="font-bold">客户看板</h2><span>共 <strong id="total-customers">0</strong> 位</span></div><div class="flex gap-2 flex-wrap mt-2"><input type="text" id="search-input" placeholder="🔍 搜索" class="w-36"><div class="relative"><button id="country-btn" class="border rounded-md px-3 py-1 text-sm bg-white">🌏 国家筛选</button><div id="country-dd" class="cdrop"></div></div><button class="btn btn-gray text-sm" id="btn-reset">重置</button><button class="btn btn-blue text-sm" id="btn-sync">同步</button><button class="btn btn-orange text-sm" id="btn-finddup">查重</button><button class="btn btn-green text-sm" id="btn-import-excel"><i class="fas fa-file-import"></i> 导入Excel</button><button class="btn btn-purple text-sm" id="export-customers-excel"><i class="fas fa-file-excel"></i> 导出Excel</button></div></div><div id="kanban-scroll"><div class="flex gap-3 h-full"><div class="kanban-col-wrap bg-gray-50" data-status="potential"><div class="kanban-col-head bg-gray-200">潜在客户<span class="col-cnt ml-2">0</span></div><div class="col-body" id="col-potential"></div></div><div class="kanban-col-wrap bg-amber-50" data-status="contacted"><div class="kanban-col-head bg-amber-200">已联系<span class="col-cnt">0</span></div><div class="col-body" id="col-contacted"></div></div><div class="kanban-col-wrap bg-blue-50" data-status="followed_up"><div class="kanban-col-head bg-blue-200">已跟进<span class="col-cnt">0</span></div><div class="col-body" id="col-followed_up"></div></div><div class="kanban-col-wrap bg-green-50" data-status="closed"><div class="kanban-col-head bg-green-200">已成交<span class="col-cnt">0</span></div><div class="col-body" id="col-closed"></div></div><div class="kanban-col-wrap bg-rose-50" data-status="lost"><div class="kanban-col-head bg-rose-200">已丢失<span class="col-cnt">0</span></div><div class="col-body" id="col-lost"></div></div></div></div></div>
 
-    <!-- ═══ 产品 ═══ -->
-    <div class="app-section" id="section-product">
-      <div style="max-width:1080px;margin:0 auto;display:grid;gap:22px">
-        <div class="card-box">
-          <h2 style="font-size:16px;font-weight:600;margin:0 0 16px">单张识别</h2>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px">
-            <div>
-              <div class="dz" id="prod-dz" style="min-height:170px">
-                <input type="file" accept="image/*" id="prod-file" style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%">
-                <div id="prod-ph" style="text-align:center;pointer-events:none">
-                  <i class="fas fa-image" style="font-size:32px;color:#9ca3af;display:block;margin-bottom:7px"></i>
-                  <span style="color:#6b7280;font-size:13px">点击或拖拽产品图片</span>
-                </div>
-                <img id="prod-preview" style="display:none;max-height:160px;width:100%;object-fit:contain;border-radius:6px;padding:6px">
-              </div>
-            </div>
-            <form id="product-form" style="display:grid;gap:9px;align-content:start">
-              <input type="hidden" id="product-id">
-              <div><label>品牌</label><input type="text" id="product-brand"></div>
-              <div><label>品名</label><input type="text" id="product-type"></div>
-              <div><label>型号</label><input type="text" id="product-model"></div>
-              <div><label>零件号</label><input type="text" id="product-partno"></div>
-              <div><label>序列号</label><input type="text" id="product-serial"></div>
-              <div><label>备注</label><textarea id="product-notes" rows="2"></textarea></div>
-              <button type="submit" class="btn btn-purple">保存产品</button>
-            </form>
-          </div>
-        </div>
+<!-- 导入Excel模态框 -->
+<div class="modal-bg" id="import-modal"><div class="bg-white rounded-xl max-w-5xl w-full max-h-[85vh] overflow-auto p-5"><div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">📂 导入Excel客户数据</h3><button id="close-import" class="text-2xl">&times;</button></div><p class="text-sm text-gray-500 mb-3">支持字段：序号、名称、国家、城市、通讯地址、联系人、公司名、职位、电话、岗位、邮箱、公司网址、备注</p><div class="dz mb-4" id="import-dz" style="min-height:100px"><input type="file" accept=".xlsx,.xls" id="import-file"><div class="text-center pointer-events-none"><i class="fas fa-cloud-upload-alt text-3xl text-gray-400"></i><p>点击或拖拽Excel文件</p></div></div>
+<div id="import-progress" style="display:none;margin-bottom:12px"><div class="flex justify-between text-xs mb-1"><span id="import-progress-text">解析文件中...</span><span id="import-progress-pct">0%</span></div><div class="progress-bar"><div id="import-progress-fill" class="progress-fill"></div></div></div>
+<div id="import-preview" style="display:none"></div>
+<div class="flex gap-3 mt-4"><button class="btn btn-green flex-1" id="confirm-import" disabled>确认导入</button><button class="btn btn-gray" id="cancel-import">取消</button></div></div></div>
 
-        <!-- 批量识别 -->
-        <div id="batch-panel">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-            <div>
-              <h2 style="font-size:16px;font-weight:600;margin:0 0 2px">产品批量识别</h2>
-              <p style="font-size:12px;color:#6b7280;margin:0">最多 20 张，识别后自动保存</p>
-            </div>
-            <button class="btn btn-orange" id="btn-start-batch" disabled>
-              <i class="fas fa-bolt"></i>开始识别
-            </button>
-          </div>
-          <div id="batch-dz">
-            <input type="file" id="batch-file-input" accept="image/*" multiple>
-            <div id="batch-ph" style="text-align:center;pointer-events:none">
-              <i class="fas fa-layer-group" style="font-size:34px;color:#a78bfa;display:block;margin-bottom:8px"></i>
-              <p style="color:#7c3aed;font-weight:600;font-size:14px;margin:0 0 4px">拖拽多张图片到此处</p>
-              <p style="color:#9ca3af;font-size:12px;margin:0">或点击选择文件（最多 20 张）</p>
-            </div>
-          </div>
-          <div id="batch-progress-wrap">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-              <span style="font-size:12px;color:#6b7280" id="batch-progress-text">准备中…</span>
-              <span style="font-size:12px;color:#6b7280" id="batch-progress-pct">0%</span>
-            </div>
-            <div id="batch-progress-bar"><div id="batch-progress-fill"></div></div>
-          </div>
-          <div id="batch-summary"></div>
-          <div id="batch-queue"></div>
-        </div>
+<div class="app-section" id="section-settings"><div style="max-width:620px;margin:0 auto"><div class="card-box"><h3 style="font-size:15px;font-weight:600;margin-bottom:12px">🔐 Firebase 云同步</h3><textarea id="firebase-config" rows="3" placeholder='{"apiKey":"...","projectId":"...","appId":"..."}' class="font-mono text-xs w-full"></textarea><div style="display:flex;gap:10px;margin-top:10px"><button class="btn btn-blue" id="btn-init-firebase">连接并同步</button><span id="firebase-status" style="font-size:12px;color:#059669;display:none"></span></div></div><div class="card-box"><h3 style="font-size:15px;font-weight:600;margin-bottom:12px">🤖 通义千问 API</h3><input type="password" id="api-key-input" placeholder="sk-xxxxxxxx" class="w-full"><button class="btn btn-gray mt-2" id="btn-save-api">保存 API Key</button></div><div class="card-box"><h3 style="font-size:15px;font-weight:600;margin-bottom:12px">📊 数据管理</h3><button class="btn btn-red" id="btn-clear">🗑 清空所有数据</button><p style="margin-top:12px;color:#9ca3af;font-size:11px">智能客户管理系统 v3.9</p></div></div></div>
+</div></div>
 
-        <!-- 产品库 -->
-        <div class="card-box" style="padding:0;overflow:hidden">
-          <div style="padding:12px 18px;background:#f9fafb;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-            <span style="font-weight:600;font-size:14px">产品库（<span id="product-count">0</span> 件）</span>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-green" style="padding:5px 12px;font-size:12px" id="export-products-excel">📊 导出 Excel</button>
-              <button class="btn btn-red" style="padding:5px 12px;font-size:12px" id="btn-clear-products">🗑 清空</button>
-            </div>
-          </div>
-          <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:600px">
-              <thead style="background:#f3f4f6;color:#6b7280">
-                <tr>
-                  <th style="padding:9px 8px;text-align:left;width:44px">图片</th>
-                  <th style="padding:9px 10px;text-align:left">品牌</th>
-                  <th style="padding:9px 8px;text-align:left">品名</th>
-                  <th style="padding:9px 8px;text-align:left">型号</th>
-                  <th style="padding:9px 8px;text-align:left">零件号</th>
-                  <th style="padding:9px 8px;text-align:left">序列号</th>
-                  <th style="padding:9px 14px;text-align:left">操作</th>
-                </tr>
-              </thead>
-              <tbody id="product-list-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
+<div class="modal-bg" id="detail-modal"><div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-auto"><div class="p-4 border-b flex justify-between"><h3 id="detail-title" class="font-bold">客户详情</h3><button id="close-detail" class="text-2xl">&times;</button></div><div id="detail-imgs" class="grid grid-cols-2 gap-2 p-3"></div><div id="detail-info" class="p-3 grid grid-cols-2 gap-2 text-sm"></div><div class="p-3 border-t flex gap-2"><button id="detail-edit-btn" class="btn btn-blue">编辑</button><button id="detail-log-btn" class="btn btn-green">沟通记录</button><button id="detail-wa-btn" class="wa hidden">WhatsApp</button></div></div></div>
+<div class="modal-bg" id="log-modal"><div class="bg-white rounded-xl max-w-lg w-full p-4"><h3 class="font-bold">沟通记录</h3><div id="log-history" class="max-h-64 overflow-auto mb-3"></div><form id="log-form"><input type="hidden" id="log-cust-id"><textarea id="log-content" placeholder="内容" required class="mb-2"></textarea><input type="text" id="log-next" placeholder="下一步计划"><button class="btn btn-blue w-full mt-2">添加记录</button></form><button id="close-log" class="mt-2 text-gray-400">关闭</button></div></div>
+<div class="modal-bg" id="dup-modal"><div class="bg-white rounded-xl p-6 max-w-md"><i class="fas fa-exclamation-triangle text-amber-500 text-3xl"></i><p id="dup-msg"></p><div id="dup-detail"></div><div class="flex gap-3 mt-4"><button id="dup-cancel" class="btn btn-gray">取消</button><button id="dup-confirm" class="btn btn-orange">仍要添加</button></div></div></div>
+<div id="lightbox" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[1000]"><span id="lightbox-close" class="absolute top-4 right-6 text-white text-4xl cursor-pointer">&times;</span><img id="lb-img" class="max-w-[90vw] max-h-[80vh] rounded"></div>
 
-    <!-- ═══ 看板 ═══ -->
-    <div class="app-section" id="section-kanban">
-      <div id="kanban-toolbar">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-          <h2 style="margin:0;font-size:17px;font-weight:700">客户看板</h2>
-          <span style="font-size:13px;color:#6b7280">共 <strong id="total-customers" style="color:#2563eb">0</strong> 位</span>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <input type="text" id="search-input" placeholder="🔍 搜索姓名/公司/电话" style="width:180px;min-width:140px">
-          <div style="position:relative" id="country-wrap">
-            <button id="country-btn" style="border:1px solid #d1d5db;background:#fff;border-radius:6px;padding:7px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;min-width:130px;white-space:nowrap">
-              <span id="country-label">🌏 所有国家</span>
-              <i class="fas fa-chevron-down" style="font-size:10px;color:#9ca3af;margin-left:auto"></i>
-            </button>
-            <div id="country-dd" class="cdrop"></div>
-          </div>
-          <button class="btn btn-gray" id="btn-reset" style="white-space:nowrap">重置</button>
-          <button class="btn btn-blue" id="btn-sync" style="white-space:nowrap">🔄 同步</button>
-          <button class="btn btn-orange" id="btn-finddup" style="white-space:nowrap">🔍 查重</button>
-        </div>
-      </div>
-      <div id="kanban-scroll">
-        <div style="display:flex;gap:13px;height:100%;min-width:max-content">
-          <div class="kanban-col-wrap" style="background:#f3f4f6" data-status="potential">
-            <div class="kanban-col-head" style="background:#e5e7eb;color:#374151">潜在客户<span class="col-cnt" style="background:#9ca3af;color:#fff;font-size:11px;padding:1px 8px;border-radius:99px">0</span></div>
-            <div class="col-body" id="col-potential"></div>
-          </div>
-          <div class="kanban-col-wrap" style="background:#fffbeb" data-status="contacted">
-            <div class="kanban-col-head" style="background:#fef3c7;color:#92400e">已联系<span class="col-cnt" style="background:#f59e0b;color:#fff;font-size:11px;padding:1px 8px;border-radius:99px">0</span></div>
-            <div class="col-body" id="col-contacted"></div>
-          </div>
-          <div class="kanban-col-wrap" style="background:#eff6ff" data-status="followed_up">
-            <div class="kanban-col-head" style="background:#dbeafe;color:#1e40af">已跟进<span class="col-cnt" style="background:#3b82f6;color:#fff;font-size:11px;padding:1px 8px;border-radius:99px">0</span></div>
-            <div class="col-body" id="col-followed_up"></div>
-          </div>
-          <div class="kanban-col-wrap" style="background:#f0fdf4" data-status="closed">
-            <div class="kanban-col-head" style="background:#dcfce7;color:#14532d">已成交<span class="col-cnt" style="background:#22c55e;color:#fff;font-size:11px;padding:1px 8px;border-radius:99px">0</span></div>
-            <div class="col-body" id="col-closed"></div>
-          </div>
-          <div class="kanban-col-wrap" style="background:#fff1f2" data-status="lost">
-            <div class="kanban-col-head" style="background:#fecdd3;color:#881337">已丢失<span class="col-cnt" style="background:#f43f5e;color:#fff;font-size:11px;padding:1px 8px;border-radius:99px">0</span></div>
-            <div class="col-body" id="col-lost"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ 设置 ═══ -->
-    <div class="app-section" id="section-settings">
-      <div style="max-width:620px;margin:0 auto;display:grid;gap:18px">
-        <div class="card-box">
-          <h2 style="font-size:15px;font-weight:600;margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid #e5e7eb">Firebase 云同步</h2>
-          <p style="font-size:12px;color:#6b7280;margin:0 0 10px">图片将直接存入 Firestore，无需开通 Storage，免费使用</p>
-          <textarea id="firebase-config" rows="4" style="font-family:monospace;font-size:12px" placeholder='{"apiKey":"...","projectId":"...","appId":"..."}'></textarea>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
-            <button class="btn btn-blue" id="btn-init-firebase">连接并同步</button>
-            <span id="firebase-status" style="display:none;font-size:12px;color:#059669"></span>
-          </div>
-        </div>
-        <div class="card-box">
-          <h2 style="font-size:15px;font-weight:600;margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid #e5e7eb">API 设置（通义千问）</h2>
-          <input type="password" id="api-key-input" placeholder="sk-xxxxxxxx">
-          <button class="btn" style="background:#1f2937;color:#fff;margin-top:10px" id="btn-save-api">保存 API Key</button>
-        </div>
-        <div class="card-box">
-          <h2 style="font-size:15px;font-weight:600;margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid #e5e7eb">数据管理</h2>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn btn-green" id="export-customers-excel">📊 导出客户 Excel</button>
-            <button class="btn btn-red" id="btn-clear">🗑 清空所有数据</button>
-          </div>
-        </div>
-        <p style="text-align:center;color:#9ca3af;font-size:11px">智能识别系统 v2.7 | 图片存入 Firestore · 无需 Storage</p>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ═══ 沟通记录 Modal ═══ -->
-<div class="modal-bg" id="log-modal">
-  <div style="background:#fff;border-radius:14px;width:100%;max-width:620px;max-height:88vh;display:flex;flex-direction:column;margin:auto">
-    <div style="padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center">
-      <h3 style="margin:0;font-size:16px;font-weight:700" id="log-title">沟通记录</h3>
-      <button id="close-log" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9ca3af;line-height:1">&times;</button>
-    </div>
-    <div style="flex:1;overflow-y:auto;padding:14px;background:#f9fafb;display:flex;flex-direction:column;gap:10px">
-      <div id="log-history"></div>
-      <form id="log-form" style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px">
-        <input type="hidden" id="log-cust-id">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-          <div><label>时间</label><input type="datetime-local" id="log-time"></div>
-          <div><label>类型</label><select id="log-type"><option value="phone">📞 电话</option><option value="email">📧 邮件</option><option value="online">💬 在线</option><option value="meeting">🤝 面谈</option></select></div>
-        </div>
-        <div style="margin-bottom:10px"><label>内容 *</label><textarea id="log-content" rows="2" required></textarea></div>
-        <div style="margin-bottom:12px"><label>下一步计划</label><input type="text" id="log-next"></div>
-        <button type="submit" class="btn btn-blue" style="width:100%">添加记录</button>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ 重复确认 Modal ═══ -->
-<div class="modal-bg" id="dup-modal">
-  <div style="background:#fff;border-radius:14px;padding:26px;max-width:420px;width:100%;margin:auto">
-    <div style="text-align:center;margin-bottom:14px">
-      <i class="fas fa-exclamation-triangle" style="font-size:38px;color:#f59e0b;display:block;margin-bottom:10px"></i>
-      <h3 style="margin:0;font-size:16px;font-weight:700">检测到可能重复的客户</h3>
-      <p style="color:#6b7280;font-size:12px;margin:6px 0 0" id="dup-msg"></p>
-    </div>
-    <div id="dup-detail" style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-bottom:14px;font-size:13px"></div>
-    <div style="display:flex;gap:10px">
-      <button class="btn btn-gray" style="flex:1" id="dup-cancel">取消</button>
-      <button class="btn" style="flex:1;background:#f59e0b;color:#fff" id="dup-confirm">仍要添加</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ 客户详情弹窗 ═══ -->
-<div class="modal-bg" id="detail-modal">
-  <div style="background:#fff;border-radius:16px;width:100%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;margin:auto">
-    <div style="padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
-      <h3 style="margin:0;font-size:16px;font-weight:700" id="detail-title">客户名片</h3>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btn-blue" style="padding:5px 12px;font-size:12px" id="detail-edit-btn">✏️ 编辑</button>
-        <button id="close-detail" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9ca3af;line-height:1">&times;</button>
-      </div>
-    </div>
-    <div style="flex:1;overflow-y:auto;padding:18px;-webkit-overflow-scrolling:touch">
-      <div id="detail-imgs" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px"></div>
-      <div id="detail-info"></div>
-      <div style="margin-top:14px;padding-top:12px;border-top:1px solid #f3f4f6;display:flex;gap:8px">
-        <button class="btn btn-green" style="flex:1;font-size:13px" id="detail-log-btn">💬 沟通记录</button>
-        <button class="wa" id="detail-wa-btn" style="padding:8px 16px;display:none"><i class="fab fa-whatsapp"></i> WhatsApp</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 灯箱 -->
-<div id="lightbox">
-  <span id="lightbox-close">&times;</span>
-  <img id="lb-img" src="" alt="预览图片">
-  <p id="lightbox-hint">点击空白处或 ✕ 关闭</p>
-</div>
-
-<!-- ═══════════════════════ JS ═══════════════════════ -->
 <script>
 (function(){
-'use strict';
-const VER='v2.7';
-console.log('🚀 智能识别系统',VER,'- 图片存储方案：Firestore base64');
-
-/* ── 数据 ── */
-let customers=[], products=[];
-let db=null, fbEnabled=false;
-let frontFile=null, backFile=null, dragId=null;
-let searchKw='', countryFilter='';
+let customers=[], products=[], db=null, fbEnabled=false, frontFile=null, backFile=null, dragId=null, searchKw='', countryFilter='', pendingImportData=[];
 const API={key:localStorage.getItem('crm_api_key')||'',url:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'};
-
-/* ── 批量识别状态 ── */
-let batchFiles=[];
-let batchRunning=false;
-
-/* ── 静态数据 ── */
-const FLAG={'中国':'🇨🇳','美国':'🇺🇸','日本':'🇯🇵','德国':'🇩🇪','英国':'🇬🇧','法国':'🇫🇷','韩国':'🇰🇷','印度':'🇮🇳','澳大利亚':'🇦🇺','加拿大':'🇨🇦','新加坡':'🇸🇬','马来西亚':'🇲🇾','泰国':'🇹🇭','越南':'🇻🇳','印度尼西亚':'🇮🇩','俄罗斯':'🇷🇺','巴西':'🇧🇷','墨西哥':'🇲🇽','意大利':'🇮🇹','西班牙':'🇪🇸','荷兰':'🇳🇱','瑞士':'🇨🇭','瑞典':'🇸🇪','土耳其':'🇹🇷','沙特阿拉伯':'🇸🇦','阿联酋':'🇦🇪','以色列':'🇮🇱','南非':'🇿🇦','菲律宾':'🇵🇭','巴基斯坦':'🇵🇰'};
-const SL={potential:'潜在',contacted:'已联系',followed_up:'已跟进',closed:'已成交',lost:'已丢失'};
-const SL_DETAIL={potential:'潜在客户',contacted:'已联系',followed_up:'已跟进',closed:'已成交',lost:'已丢失'};
-
-/* ── 工具 ── */
 const $=id=>document.getElementById(id);
-const esc=s=>s?String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]):'';
-const gf=c=>(c&&FLAG[c.trim()])||(c?'🌐':'');
-
-/* ── 本地存储（仅存文字数据，不存图片）── */
-const save=()=>{
-  // 保存时剥离图片base64，避免超出localStorage限制
-  const custLight=customers.map(c=>{
-    const {cardFrontUrl,cardBackUrl,...rest}=c;
-    return {
-      ...rest,
-      cardFrontUrl: (cardFrontUrl&&cardFrontUrl.startsWith('http'))?cardFrontUrl:'',
-      cardBackUrl: (cardBackUrl&&cardBackUrl.startsWith('http'))?cardBackUrl:''
-    };
-  });
-  localStorage.setItem('crm_customers',JSON.stringify(custLight));
-  localStorage.setItem('crm_products',JSON.stringify(products));
-};
-
-const load=()=>{
-  try{customers=JSON.parse(localStorage.getItem('crm_customers')||'[]')}catch{customers=[];}
-  try{products=JSON.parse(localStorage.getItem('crm_products')||'[]')}catch{products=[];}
-  customers=customers.map(c=>({logs:[],...c,status:c.status||'potential'}));
-};
-
-/* ── Toast ── */
-const toast=(msg,type='info')=>{
-  const clr={success:'#059669',error:'#dc2626',info:'#374151',warning:'#d97706'};
-  const ico={success:'check-circle',error:'exclamation-circle',info:'info-circle',warning:'exclamation-triangle'};
-  const el=document.createElement('div');
-  el.className='toast';el.style.background=clr[type]||clr.info;
-  el.innerHTML=`<i class="fas fa-${ico[type]||'info-circle'}"></i>${msg}`;
-  $('toast-wrap').appendChild(el);
-  setTimeout(()=>{el.style.transition='opacity .3s';el.style.opacity='0';setTimeout(()=>el.remove(),300);},3200);
-};
-
-/* ── 页面切换 ── */
+const toast=(msg,type='info')=>{const colors={success:'#059669',error:'#dc2626',info:'#2563eb'};const d=document.createElement('div');d.className='toast';d.style.background=colors[type];d.innerHTML=`<i class="fas fa-${type==='success'?'check-circle':'info-circle'}"></i>${msg}`;$('toast-wrap').appendChild(d);setTimeout(()=>{d.style.opacity='0';setTimeout(()=>d.remove(),300);},3000);};
+const save=()=>{localStorage.setItem('crm_customers',JSON.stringify(customers));localStorage.setItem('crm_products',JSON.stringify(products));};
+const load=()=>{try{customers=JSON.parse(localStorage.getItem('crm_customers')||'[]');products=JSON.parse(localStorage.getItem('crm_products')||'[]');}catch(e){}customers=customers.map(c=>({logs:c.logs||[],status:c.status||'potential',city:c.city||'',address:c.address||'',website:c.website||'',wechat:c.wechat||'',source:c.source||'',contactDate:c.contactDate||'',customerImg:c.customerImg||'',...c}));};
+const escapeHtml=(str)=>{if(!str)return '';return String(str).replace(/[&<>]/g,function(m){if(m==='&')return '&amp;';if(m==='<')return '&lt;';if(m==='>')return '&gt;';return m;});};
+const gf=c=>c?('中国'===c?'🇨🇳':'🌐'):'';
 function switchTab(tab){
-  document.querySelectorAll('.app-section').forEach(s=>s.style.display='none');
-  const t=$('section-'+tab);
-  if(t) t.style.display=(tab==='kanban'?'flex':'block');
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  if(tab==='kanban'){fbEnabled?smartSync():renderKanban();}
-  if(tab==='product') renderProductTable();
-}
-
-/* ══ 图片灯箱 ══ */
-function openLightbox(imgUrl){
-  if(!imgUrl)return;
-  const lb=$('lightbox');
-  const img=$('lb-img');
-  img.src=imgUrl;
-  lb.classList.add('show');
-  document.body.style.overflow='hidden';
-}
-function closeLightbox(){
-  $('lightbox').classList.remove('show');
-  document.body.style.overflow='';
-  $('lb-img').src='';
-}
-
-/* ══════════════════════════════════════════
-   Firebase — 仅用 Firestore，不用 Storage
-   图片以 base64 字符串存入 Firestore 文档
-══════════════════════════════════════════ */
-const autoConnect=()=>{
-  const s=localStorage.getItem('crm_firebase_config');
-  if(!s)return false;
-  $('firebase-config').value=s;
-  try{
-    const c=JSON.parse(s);
-    if(!firebase.apps.length)firebase.initializeApp(c);
-    db=firebase.firestore();
-    fbEnabled=true;
-    $('firebase-status').style.display='inline';
-    $('firebase-status').textContent='已连接，同步中…';
-    smartSync();
-    return true;
-  }catch(e){console.warn(e);return false;}
-};
-
-const initFB=()=>{
-  const txt=$('firebase-config').value.trim();
-  if(!txt)return toast('请填写配置','error');
-  try{
-    const c=JSON.parse(txt);
-    if(!firebase.apps.length)firebase.initializeApp(c);
-    db=firebase.firestore();
-    fbEnabled=true;
-    localStorage.setItem('crm_firebase_config',txt);
-    $('firebase-status').style.display='inline';
-    $('firebase-status').textContent='连接中…';
-    smartSync();
-  }catch(e){toast('配置错误: '+e.message,'error');}
-};
-
-const smartSync=async()=>{
-  if(!fbEnabled||!db)return;
-  try{
-    const[cs,ps]=await Promise.all([
-      db.collection('customers').get(),
-      db.collection('products').get()
-    ]);
-    const cc=[],cp=[];
-    cs.forEach(d=>cc.push({logs:[],...d.data(),id:d.id}));
-    ps.forEach(d=>cp.push({...d.data(),id:d.id}));
-    customers=mergeArr(customers,cc);
-    products=mergeArr(products,cp);
-    customers=customers.map(c=>({...c,status:c.status||'potential',logs:c.logs||[]}));
-    // 不调用save()，避免清除base64图片
-    localStorage.setItem('crm_products',JSON.stringify(products));
-    renderKanban();
-    renderProductTable();
-    // 把本地数据同步上去（不含base64，base64已在Firestore里）
-    const batch=db.batch();
-    customers.forEach(c=>{
-      const d=db.collection('customers').doc(c.id);
-      batch.set(d,c);
-    });
-    products.forEach(p=>{
-      const d=db.collection('products').doc(p.id);
-      batch.set(d,p);
-    });
-    await batch.commit();
-    $('firebase-status').textContent=`已连接 · ${customers.length} 位`;
-    toast(`同步完成，${customers.length} 位客户`,'success');
-  }catch(e){toast('同步失败: '+e.message,'error');}
-};
-
-function mergeArr(l,c){
-  const m=new Map();
-  l.forEach(i=>m.set(i.id,i));
-  c.forEach(i=>{
-    const e=m.get(i.id);
-    if(!e||new Date(i.createTime||0)>=new Date(e.createTime||0))m.set(i.id,i);
-  });
-  return[...m.values()];
-}
-
-/* 同步单个客户到Firestore（含base64图片）*/
-const syncC=c=>{
-  if(fbEnabled&&db)db.collection('customers').doc(c.id).set(c).catch(e=>console.warn('syncC失败',e));
-};
-const syncP=p=>{
-  if(fbEnabled&&db)db.collection('products').doc(p.id).set(p).catch(e=>console.warn('syncP失败',e));
-};
-
-/* ── 重复检测 ── */
-function findDups(c,exId=null){
-  return customers.filter(x=>{
-    if(exId&&x.id===exId)return false;
-    const nm=c.name&&x.name&&x.name.trim()===c.name.trim();
-    const ph=c.phone&&x.phone&&c.phone.replace(/\D/g,'')&&x.phone.replace(/\D/g,'')===c.phone.replace(/\D/g,'');
-    return nm||ph;
-  });
-}
-function checkDup(c,cb){
-  const d=findDups(c,c.id);
-  if(!d.length){cb(true);return;}
-  $('dup-msg').textContent=`发现 ${d.length} 个可能重复`;
-  $('dup-detail').innerHTML=d.map(x=>`<div style="margin-bottom:4px"><b>${esc(x.name)}</b>${x.company?' · '+esc(x.company):''}${x.phone?' · '+esc(x.phone):''}</div>`).join('');
-  $('dup-modal').classList.add('show');
-  $('dup-confirm').onclick=()=>{$('dup-modal').classList.remove('show');cb(true);};
-  $('dup-cancel').onclick=()=>{$('dup-modal').classList.remove('show');cb(false);};
-}
-function allDups(){
-  const gs=[],seen=new Set();
-  customers.forEach(c=>{
-    if(seen.has(c.id))return;
-    const d=findDups(c,c.id);
-    if(d.length){gs.push([c,...d]);[c,...d].forEach(x=>seen.add(x.id));}
-  });
-  return gs;
-}
-
-/* ── 国家下拉 ── */
-function buildDD(){
-  const dd=$('country-dd');if(!dd)return;
-  const all=[...new Set(customers.map(c=>c.country).filter(Boolean))].sort();
-  dd.innerHTML=`<div class="cdrop-item${!countryFilter?' sel':''}" data-c="">🌏 所有国家 <span style="color:#9ca3af;font-size:11px;margin-left:auto">${customers.length}</span></div>`
-    +all.map(c=>{const n=customers.filter(x=>x.country===c).length;return`<div class="cdrop-item${countryFilter===c?' sel':''}" data-c="${esc(c)}">${gf(c)} ${esc(c)} <span style="color:#9ca3af;font-size:11px;margin-left:auto">${n}</span></div>`;}).join('');
-  dd.querySelectorAll('.cdrop-item').forEach(el=>el.addEventListener('click',()=>{
-    countryFilter=el.dataset.c;
-    $('country-label').textContent=countryFilter?`${gf(countryFilter)} ${countryFilter}`:'🌏 所有国家';
-    dd.style.display='none';
-    renderKanban();
-  }));
-}
-
-/* ══ 客户详情弹窗 ══ */
-function openDetail(id){
-  const c=customers.find(x=>x.id===id);
-  if(!c)return;
-
-  $('detail-title').textContent=c.name||'客户名片';
-  $('detail-edit-btn').onclick=()=>{$('detail-modal').classList.remove('show');editCustomer(id);};
-
-  const imgBox=$('detail-imgs');
-  imgBox.innerHTML='';
-
-  // 图片优先用Firestore里的base64，其次用Firebase URL（如果有）
-  const frontUrl = c.cardFrontUrl||'';
-  const backUrl  = c.cardBackUrl||'';
-
-  const imgs=[
-    {url:frontUrl,label:'名片正面'},
-    {url:backUrl, label:'名片背面'}
-  ].filter(x=>x.url&&x.url.trim()!=='');
-
-  if(imgs.length>0){
-    imgs.forEach(({url,label})=>{
-      const container=document.createElement('div');
-      container.className='img-container';
-      container.style.cursor='pointer';
-
-      const labelDiv=document.createElement('div');
-      labelDiv.className='img-label';
-      labelDiv.innerHTML=`
-        <span style="color:#6b7280;font-weight:500">${label}</span>
-        <span class="hint"><i class="fas fa-search-plus"></i> 点击放大</span>
-      `;
-
-      const img=document.createElement('img');
-      img.className='cimg';
-      img.src=url;
-      img.alt=label;
-
-      img.onerror=function(){
-        img.style.display='none';
-        const err=document.createElement('div');
-        err.style.cssText='color:#ef4444;font-size:12px;padding:20px;text-align:center;background:#fef2f2;border-radius:8px';
-        err.innerHTML='<i class="fas fa-exclamation-circle"></i> 图片加载失败';
-        container.appendChild(err);
-      };
-
-      container.addEventListener('click',function(e){
-        e.stopPropagation();
-        openLightbox(url);
-      });
-
-      container.appendChild(labelDiv);
-      container.appendChild(img);
-      imgBox.appendChild(container);
-    });
-  }else{
-    imgBox.innerHTML=`
-      <div style="grid-column:1/-1;color:#9ca3af;font-size:13px;text-align:center;padding:14px 0">
-        <i class="fas fa-image" style="font-size:22px;display:block;margin-bottom:6px;opacity:.4"></i>
-        暂无名片图片<br>
-        <span style="font-size:11px">识别保存后自动同步至 Firestore，手机电脑均可查看</span>
-      </div>`;
-  }
-
-  const fields=[
-    ['公司',c.company],
-    ['职位',c.position],
-    ['电话',c.phone],
-    ['邮箱',c.email],
-    ['国家',c.country?(FLAG[c.country.trim()]?FLAG[c.country.trim()]+' '+c.country:c.country):''],
-    ['状态',SL_DETAIL[c.status]||c.status],
-    ['备注',c.notes],
-    ['沟通',(c.logs||[]).length+'次'],
-    ['录入',c.createTime?new Date(c.createTime).toLocaleDateString():'']
-  ];
-
-  $('detail-info').innerHTML=fields
-    .filter(([,v])=>v&&String(v).trim()!=='')
-    .map(([k,v])=>`<div class="irow"><span class="ilabel">${k}</span><span class="ival">${esc(String(v))}</span></div>`)
-    .join('');
-
-  if(c.phone&&c.phone.trim()){
-    $('detail-wa-btn').style.display='inline-flex';
-    $('detail-wa-btn').onclick=()=>openWA(c.phone);
-  }else{
-    $('detail-wa-btn').style.display='none';
-  }
-
-  $('detail-log-btn').onclick=()=>{$('detail-modal').classList.remove('show');openLog(id);};
-  $('detail-modal').classList.add('show');
-}
-
-/* ── 看板 ── */
-function renderKanban(){
-  buildDD();
-  let list=[...customers];
-  if(searchKw){const kw=searchKw.toLowerCase();list=list.filter(c=>(c.name&&c.name.toLowerCase().includes(kw))||(c.company&&c.company.toLowerCase().includes(kw))||(c.phone&&c.phone.includes(kw)));}
-  if(countryFilter)list=list.filter(c=>c.country===countryFilter);
-  $('total-customers').textContent=list.length;
-  const dupIds=new Set();allDups().forEach(g=>g.forEach(c=>dupIds.add(c.id)));
-  ['potential','contacted','followed_up','closed','lost'].forEach(s=>{
-    $('col-'+s).innerHTML='';
-    const cnt=list.filter(c=>(c.status||'potential')===s).length;
-    document.querySelector(`[data-status="${s}"] .col-cnt`).textContent=cnt;
-  });
-  list.forEach(c=>{
-    const st=c.status||'potential',isDup=dupIds.has(c.id),logs=(c.logs||[]).length;
-    // 有图片就显示图标（base64或URL都算）
-    const hasImage=!!(c.cardFrontUrl||c.cardBackUrl);
-    const card=document.createElement('div');
-    card.className='kcard'+(isDup?' dup-card':'');
-    card.draggable=true;card.dataset.id=c.id;
-    card.innerHTML=`
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px">
-        <div style="font-weight:700;font-size:13px;color:#111;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-          ${esc(c.name||'未命名')}${isDup?'<span class="dup-badge">重复</span>':''}
-          ${hasImage?`<span style="color:#8b5cf6;font-size:10px;margin-left:3px;cursor:pointer" data-view="${c.id}" title="查看名片图片">📷</span>`:''}
-        </div>
-        <div class="card-acts" style="display:flex;gap:1px;flex-shrink:0;margin-left:4px">
-          <button data-view="${c.id}" style="background:none;border:none;cursor:pointer;color:#8b5cf6;padding:2px 4px" title="查看名片"><i class="fas fa-id-card" style="font-size:11px"></i></button>
-          <button data-edit="${c.id}" style="background:none;border:none;cursor:pointer;color:#3b82f6;padding:2px 4px" title="编辑"><i class="fas fa-edit" style="font-size:11px"></i></button>
-          <button data-log="${c.id}" style="background:none;border:none;cursor:pointer;color:#10b981;padding:2px 4px" title="记录"><i class="far fa-comment-dots" style="font-size:11px"></i>${logs?`<b style="font-size:10px">${logs}</b>`:''}</button>
-          <button data-del="${c.id}" style="background:none;border:none;cursor:pointer;color:#f43f5e;padding:2px 4px" title="删除"><i class="fas fa-trash" style="font-size:11px"></i></button>
-        </div>
-      </div>
-      ${c.country?`<div style="margin-bottom:3px"><span class="ctag">${gf(c.country)} ${esc(c.country)}</span></div>`:''}
-      <div style="font-size:12px;color:#6b7280;margin-bottom:7px">
-        ${c.company?`<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🏢 ${esc(c.company)}</div>`:''}
-        ${c.phone?`<div>📞 ${esc(c.phone)}</div>`:''}
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid #f3f4f6;padding-top:7px;gap:4px">
-        <span style="font-size:11px;color:#9ca3af">${new Date(c.createTime).toLocaleDateString()}</span>
-        <div style="display:flex;align-items:center;gap:4px">
-          ${c.phone?`<button class="wa" data-phone="${esc(c.phone)}" style="padding:2px 8px;font-size:11px"><i class="fab fa-whatsapp"></i></button>`:''}
-          <select class="ssel" data-sid="${c.id}" style="font-size:11px;padding:3px 5px;border:1px solid #e5e7eb;border-radius:6px;background:#fff">
-            <option value="potential"   ${st==='potential'  ?'selected':''}>潜在</option>
-            <option value="contacted"   ${st==='contacted'  ?'selected':''}>已联系</option>
-            <option value="followed_up" ${st==='followed_up'?'selected':''}>已跟进</option>
-            <option value="closed"      ${st==='closed'     ?'selected':''}>已成交</option>
-            <option value="lost"        ${st==='lost'       ?'selected':''}>已丢失</option>
-          </select>
-        </div>
-      </div>`;
-    card.addEventListener('dragstart',e=>{dragId=c.id;card.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
-    card.addEventListener('dragend',()=>card.classList.remove('dragging'));
-    ($('col-'+st)||$('col-potential')).appendChild(card);
-  });
-  document.querySelectorAll('.col-body').forEach(col=>{
-    col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drag-over');});
-    col.addEventListener('dragleave',()=>col.classList.remove('drag-over'));
-    col.addEventListener('drop',e=>{e.preventDefault();col.classList.remove('drag-over');const ns=col.closest('[data-status]')?.dataset.status;if(dragId&&ns)upStatus(dragId,ns);dragId=null;});
-  });
-}
-
-function upStatus(id,ns){
-  const c=customers.find(x=>x.id===id);
-  if(c&&c.status!==ns){c.status=ns;save();syncC(c);renderKanban();toast(`状态 → 【${SL[ns]||ns}】`,'success');}
-}
-
-document.body.addEventListener('change',e=>{
-  const s=e.target.closest('.ssel');
-  if(s){e.stopPropagation();upStatus(s.dataset.sid,s.value);}
-});
-document.body.addEventListener('click',e=>{
-  if(e.target.closest('.ssel'))return;
-  const vw=e.target.closest('[data-view]');if(vw){openDetail(vw.dataset.view);return;}
-  const ed=e.target.closest('[data-edit]');if(ed){editCustomer(ed.dataset.edit);return;}
-  const lg=e.target.closest('[data-log]');if(lg){openLog(lg.dataset.log);return;}
-  const dl=e.target.closest('[data-del]');if(dl){delCustomer(dl.dataset.del);return;}
-  const wa=e.target.closest('[data-phone]');if(wa){openWA(wa.dataset.phone);return;}
-});
-
-/* ══════════════════════════════════════════
-   核心修改：saveCustomer
-   图片 base64 → 直接存入 Firestore 文档
-   不再依赖 Firebase Storage 或 localStorage
-══════════════════════════════════════════ */
-async function saveCustomer(e){
-  e.preventDefault();
-  const eid=$('cust-id').value, id=eid||Date.now().toString();
-  const ex=eid?customers.find(c=>c.id===eid):null;
-
-  const c={
-    id,
-    name:$('cust-name').value.trim(),
-    company:$('cust-company').value.trim(),
-    position:$('cust-position').value.trim(),
-    phone:$('cust-phone').value.trim(),
-    email:$('cust-email').value.trim(),
-    country:$('cust-country').value.trim(),
-    notes:$('cust-notes').value.trim(),
-    status:ex?ex.status:($('cust-status').value||'potential'),
-    logs:ex?(ex.logs||[]):[],
-    createTime:ex?ex.createTime:new Date().toISOString(),
-    cardFrontUrl:ex?(ex.cardFrontUrl||''):'',
-    cardBackUrl:ex?(ex.cardBackUrl||''):''
-  };
-
-  checkDup(c, async ok=>{
-    if(!ok){toast('已取消','info');return;}
-
-    const frontB64=window._pendingFrontB64;
-    const backB64 =window._pendingBackB64;
-
-    // ── 有 Firebase：base64 直接写进 Firestore ──
-    if(fbEnabled&&db){
-      if(frontB64) c.cardFrontUrl=frontB64;
-      if(backB64)  c.cardBackUrl=backB64;
+    if(event && event.stopPropagation) event.stopPropagation();
+    document.querySelectorAll('.app-section').forEach(section=>{section.classList.remove('active');section.style.display='none';});
+    const target=document.getElementById('section-'+tab);
+    if(target){
+        if(tab==='kanban'){target.style.display='flex';}else{target.style.display='block';}
+        target.classList.add('active');
     }
-    // ── 无 Firebase：只能用 localStorage（桌面端可用，移动端可能满）──
-    else{
-      if(frontB64){
-        try{localStorage.setItem('card_img_'+id+'_front',frontB64);}
-        catch(err){toast('本地存储已满，连接 Firebase 可解决','warning');}
-      }
-      if(backB64){
-        try{localStorage.setItem('card_img_'+id+'_back',backB64);}
-        catch(err){}
-      }
-      // 无Firebase时从localStorage取图片供详情页显示
-      if(!c.cardFrontUrl){
-        const lf=localStorage.getItem('card_img_'+id+'_front');
-        if(lf) c.cardFrontUrl=lf;
-      }
-      if(!c.cardBackUrl){
-        const lb=localStorage.getItem('card_img_'+id+'_back');
-        if(lb) c.cardBackUrl=lb;
-      }
-    }
-
-    // 清理临时缓存
-    window._pendingFrontB64=null;
-    window._pendingBackB64=null;
-    window._pendingFrontBlob=null;
-    window._pendingBackBlob=null;
-
-    // 存入内存数组
-    const i=customers.findIndex(x=>x.id===id);
-    if(i!==-1)customers[i]=c;else customers.push(c);
-
-    // localStorage 只存文字（save() 里会剥离base64）
-    save();
-
-    // Firestore 存完整数据（含base64图片）
-    syncC(c);
-
-    renderKanban();
-    resetOcrForm();
-    toast('客户已保存','success');
-  });
+    document.querySelectorAll('.nav-btn').forEach(btn=>{
+        if(btn.dataset.tab===tab){btn.classList.add('active');}else{btn.classList.remove('active');}
+    });
+    if(tab==='kanban') renderKanban();
+    if(tab==='product') renderProductTable();
 }
+async function compress(file){return new Promise(ok=>{const img=new Image();img.onload=()=>{const cv=document.createElement('canvas');let w=img.width;if(w>600)w=600;cv.width=w;cv.height=img.height*(w/img.width);cv.getContext('2d').drawImage(img,0,0,w,cv.height);cv.toBlob(ok,'image/jpeg',0.7);};img.src=URL.createObjectURL(file);});}
+async function toB64(blob){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob);});}
+async function recognizeCard(){if(!API.key){toast('请先配置API Key','error');switchTab('settings');return;}if(!frontFile)return;$('btn-recognize').disabled=true;const spinSpan=document.createElement('span');spinSpan.className='spin ml-2';$('btn-recognize').appendChild(spinSpan);try{const blob=await compress(frontFile);const b64=await toB64(blob);const res=await fetch(API.url,{method:'POST',headers:{'Authorization':'Bearer '+API.key,'Content-Type':'application/json'},body:JSON.stringify({model:'qwen-vl-plus',messages:[{role:'user',content:[{type:'image_url',image_url:{url:b64}},{type:'text',text:'提取名片信息JSON：{"name":"","company":"","position":"","phone":"","email":"","country":""}，country用中文'}]}]})});const data=await res.json();const txt=data.choices[0].message.content;const match=txt.match(/\{[\s\S]*\}/);if(match){const j=JSON.parse(match[0]);if(j.name)$('cust-name').value=j.name;if(j.company)$('cust-company').value=j.company;if(j.position)$('cust-position').value=j.position;if(j.phone)$('cust-phone').value=j.phone;if(j.email)$('cust-email').value=j.email;if(j.country)$('cust-country').value=j.country;}window._pendingFrontB64=b64;if(backFile){const b2=await compress(backFile);window._pendingBackB64=await toB64(b2);}toast('识别成功','success');}catch(e){toast('OCR失败','error');}finally{spinSpan.remove();$('btn-recognize').disabled=false;}}
+function saveCustomer(e){e.preventDefault();const id=$('cust-id').value||Date.now().toString();const ex=customers.find(c=>c.id===id);let customerImg=ex?ex.customerImg:'';if($('cust-img-file').files[0]){const reader=new FileReader();reader.onload=ev=>{customerImg=ev.target.result;commit();};reader.readAsDataURL($('cust-img-file').files[0]);return;}commit();function commit(){const newCust={id,name:$('cust-name').value.trim(),company:$('cust-company').value,position:$('cust-position').value,phone:$('cust-phone').value,email:$('cust-email').value,country:$('cust-country').value,city:$('cust-city').value,address:$('cust-address').value,website:$('cust-website').value,wechat:$('cust-wechat').value,source:$('cust-source').value,contactDate:$('cust-date').value,notes:$('cust-notes').value,status:$('cust-status').value||'potential',logs:ex?ex.logs:[],createTime:ex?ex.createTime:new Date().toISOString(),cardFrontUrl:window._pendingFrontB64||ex?.cardFrontUrl||'',cardBackUrl:window._pendingBackB64||ex?.cardBackUrl||'',customerImg};const idx=customers.findIndex(x=>x.id===id);if(idx!==-1)customers[idx]=newCust;else customers.push(newCust);save();if(fbEnabled&&db)db.collection('customers').doc(id).set(newCust);resetForm();renderKanban();toast('客户已保存','success');window._pendingFrontB64=null;window._pendingBackB64=null;}}
+function resetForm(){$('customer-form').reset();$('cust-id').value='';$('prev-front').style.display='none';$('ph-front').style.display='';$('prev-back').style.display='none';frontFile=backFile=null;$('btn-recognize').disabled=true;$('cust-img-preview').style.display='none';}
+function renderKanban(){let list=customers.filter(c=>{if(searchKw){const kw=searchKw.toLowerCase();return (c.name||'').includes(kw)||(c.company||'').includes(kw)||(c.phone||'').includes(kw);}return true;});if(countryFilter)list=list.filter(c=>c.country===countryFilter);$('total-customers').textContent=list.length;['potential','contacted','followed_up','closed','lost'].forEach(s=>{$('col-'+s).innerHTML='';const cnt=list.filter(c=>(c.status||'potential')===s).length;const colHead=document.querySelector(`[data-status="${s}"] .col-cnt`);if(colHead)colHead.textContent=cnt;});list.forEach(c=>{const st=c.status||'potential',hasImage=!!(c.cardFrontUrl||c.customerImg);const card=document.createElement('div');card.className='kcard';card.draggable=true;card.dataset.id=c.id;card.innerHTML=`<div class="flex justify-between items-start"><div class="font-bold text-sm truncate flex-1">${escapeHtml(c.name||'未命名')}${hasImage?'📷':''}</div><div class="flex gap-1"><button data-view="${c.id}" class="text-purple-500"><i class="fas fa-id-card"></i></button><button data-edit="${c.id}" class="text-blue-500"><i class="fas fa-edit"></i></button><button data-del="${c.id}" class="text-red-500"><i class="fas fa-trash"></i></button></div></div>${c.country?`<div class="mt-1"><span class="ctag">${gf(c.country)} ${escapeHtml(c.country)}</span></div>`:''}<div class="text-xs text-gray-600 mt-1">${c.company?`🏢 ${escapeHtml(c.company)}<br>`:''}${c.phone?`📞 ${escapeHtml(c.phone)}<br>`:''}${c.city?`📍 ${escapeHtml(c.city)}`:''}${c.source?`<br>📌 ${escapeHtml(c.source)}`:''}</div><div class="flex justify-between items-center mt-2 pt-1 border-t"><span class="text-xs text-gray-400">${new Date(c.createTime).toLocaleDateString()}</span><div class="flex gap-1">${c.phone?`<button class="wa" data-phone="${escapeHtml(c.phone)}" style="padding:2px 8px;font-size:11px"><i class="fab fa-whatsapp"></i></button>`:''}<select data-sid="${c.id}" class="text-xs p-1 border rounded"><option ${st==='potential'?'selected':''} value="potential">潜在</option><option ${st==='contacted'?'selected':''} value="contacted">联系</option><option ${st==='followed_up'?'selected':''} value="followed_up">跟进</option><option ${st==='closed'?'selected':''} value="closed">成交</option><option ${st==='lost'?'selected':''} value="lost">丢失</option></select></div></div>`;$('col-'+st).appendChild(card);});attachEvents();}
+function attachEvents(){document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openDetail(b.dataset.view);}));document.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();editCustomer(b.dataset.edit);}));document.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();if(confirm('删除客户？')){customers=customers.filter(x=>x.id!==b.dataset.del);save();renderKanban();toast('已删除');}}));document.querySelectorAll('[data-phone]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openWA(b.dataset.phone);}));document.querySelectorAll('[data-sid]').forEach(sel=>sel.addEventListener('change',e=>{const id=sel.dataset.sid;const ns=sel.value;const c=customers.find(x=>x.id===id);if(c){c.status=ns;save();syncC(c);renderKanban();}}));}
+function openDetail(id){const c=customers.find(x=>x.id===id);if(!c)return;$('detail-title').innerHTML=escapeHtml(c.name||'客户');let imgs='';if(c.cardFrontUrl)imgs+=`<div><img src="${c.cardFrontUrl}" class="rounded border cursor-pointer" style="max-height:150px" onclick="openLightbox(this.src)"></div>`;if(c.cardBackUrl)imgs+=`<div><img src="${c.cardBackUrl}" class="rounded border cursor-pointer" style="max-height:150px" onclick="openLightbox(this.src)"></div>`;if(c.customerImg)imgs+=`<div><img src="${c.customerImg}" class="rounded border cursor-pointer" style="max-height:150px" onclick="openLightbox(this.src)"></div>`;$('detail-imgs').innerHTML=imgs||'<div class="text-gray-400 col-span-2 text-center">无图片</div>';$('detail-info').innerHTML=`<div><label>公司</label>${escapeHtml(c.company||'-')}</div><div><label>职位</label>${escapeHtml(c.position||'-')}</div><div><label>电话</label>${escapeHtml(c.phone||'-')}</div><div><label>邮箱</label>${escapeHtml(c.email||'-')}</div><div><label>国家/城市</label>${escapeHtml(c.country||'')} ${escapeHtml(c.city||'')}</div><div><label>地址</label>${escapeHtml(c.address||'-')}</div><div><label>网站</label>${escapeHtml(c.website||'-')}</div><div><label>微信</label>${escapeHtml(c.wechat||'-')}</div><div><label>来源</label>${escapeHtml(c.source||'-')}</div><div><label>联系日期</label>${escapeHtml(c.contactDate||'-')}</div><div><label>备注</label>${escapeHtml(c.notes||'-')}</div>`;$('detail-edit-btn').onclick=()=>{$('detail-modal').classList.remove('show');editCustomer(id);};$('detail-wa-btn').style.display=c.phone?'inline-flex':'none';$('detail-wa-btn').onclick=()=>openWA(c.phone);$('detail-log-btn').onclick=()=>{$('detail-modal').classList.remove('show');openLog(id);};$('detail-modal').classList.add('show');}
+function editCustomer(id){const c=customers.find(x=>x.id===id);if(!c)return;$('cust-id').value=c.id;$('cust-name').value=c.name||'';$('cust-company').value=c.company||'';$('cust-position').value=c.position||'';$('cust-phone').value=c.phone||'';$('cust-email').value=c.email||'';$('cust-country').value=c.country||'';$('cust-city').value=c.city||'';$('cust-address').value=c.address||'';$('cust-website').value=c.website||'';$('cust-wechat').value=c.wechat||'';$('cust-source').value=c.source||'';$('cust-date').value=c.contactDate||'';$('cust-notes').value=c.notes||'';$('cust-status').value=c.status||'potential';if(c.customerImg)$('cust-img-preview').src=c.customerImg,$('cust-img-preview').style.display='block';switchTab('ocr');}
+function openLog(id){const c=customers.find(x=>x.id===id);$('log-cust-id').value=id;$('log-history').innerHTML=(c.logs||[]).slice().reverse().map(l=>`<div class="border-b py-1 text-sm">${escapeHtml(l.content)}<span class="text-gray-400 text-xs ml-2">${new Date(l.timestamp).toLocaleString()}</span>${l.nextStep?`<div class="text-amber-600 text-xs">→ ${escapeHtml(l.nextStep)}</div>`:''}</div>`).join('')||'暂无';$('log-modal').classList.add('show');}
+function syncC(c){if(fbEnabled&&db)db.collection('customers').doc(c.id).set(c);}
+function openWA(p){if(p){let phone=String(p).replace(/\s+/g,'').replace(/[^\d+]/g,'');if(!phone.startsWith('+'))phone='+'+phone;window.open(`https://wa.me/${phone}`,'_blank');}}
 
-function resetOcrForm(){
-  $('customer-form').reset();
-  $('cust-id').value='';
-  $('prev-front').style.display='none';
-  $('ph-front').style.display='';
-  $('prev-back').style.display='none';
-  $('ph-back').style.display='';
-  $('btn-recognize').disabled=true;
-  frontFile=null;
-  backFile=null;
-  window._pendingFrontBlob=null;
-  window._pendingBackBlob=null;
-  window._pendingFrontB64=null;
-  window._pendingBackB64=null;
-}
+function exportCustomersProfessionally(){if(!customers.length){toast('暂无客户数据','error');return;}
+const headers=['姓名','公司','职位','电话','邮箱','国家','城市','地址','网站','微信','客户来源','联系日期','状态','备注','创建时间'];
+let html=`<html><head><meta charset="UTF-8"><title>客户数据</title><style>th{background:#1E3A8A;color:white;font-weight:bold;border:1px solid #9ca3af;padding:8px 12px;text-align:center;vertical-align:middle;}td{border:1px solid #d1d5db;padding:8px 12px;text-align:center;vertical-align:middle;}tr:nth-child(even){background:#F9FAFB;}table{border-collapse:collapse;width:100%;}</style></head><body><table><thead><tr>`;
+headers.forEach(h=>html+=`<th>${h}</th>`);
+html+=`</thead><tbody>`;
+customers.forEach(c=>{html+=`<tr>`;
+html+=`<td>${escapeHtml(c.name||'')}</td><td>${escapeHtml(c.company||'')}</td><td>${escapeHtml(c.position||'')}</td><td>${escapeHtml(c.phone||'')}</td><td>${escapeHtml(c.email||'')}</td><td>${escapeHtml(c.country||'')}</td><td>${escapeHtml(c.city||'')}</td><td>${escapeHtml(c.address||'')}</td><td>${escapeHtml(c.website||'')}</td><td>${escapeHtml(c.wechat||'')}</td><td>${escapeHtml(c.source||'')}</td><td>${escapeHtml(c.contactDate||'')}</td><td>${escapeHtml(c.status||'')}</td><td>${escapeHtml(c.notes||'')}</td><td>${c.createTime?new Date(c.createTime).toLocaleDateString():''}</td>`;html+=`</tr>`;});
+html+=`</tbody></table></body></html>`;
+const blob=new Blob([html],{type:'application/vnd.ms-excel'});
+const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`客户数据_${new Date().toISOString().slice(0,19)}.xls`;link.click();URL.revokeObjectURL(link.href);toast('导出成功！','success');}
 
-function editCustomer(id){
-  const c=customers.find(x=>x.id===id);if(!c)return;
-  $('cust-id').value=c.id;
-  $('cust-name').value=c.name||'';
-  $('cust-company').value=c.company||'';
-  $('cust-position').value=c.position||'';
-  $('cust-phone').value=c.phone||'';
-  $('cust-email').value=c.email||'';
-  $('cust-country').value=c.country||'';
-  $('cust-notes').value=c.notes||'';
-  $('cust-status').value=c.status||'potential';
-  switchTab('ocr');
-  toast('编辑模式','info');
-}
-
-function delCustomer(id){
-  if(!confirm('确定删除？'))return;
-  customers=customers.filter(c=>c.id!==id);
-  localStorage.removeItem('card_img_'+id+'_front');
-  localStorage.removeItem('card_img_'+id+'_back');
-  save();
-  if(fbEnabled&&db)db.collection('customers').doc(id).delete();
-  renderKanban();
-  toast('已删除','success');
-}
-
-function openWA(phone){
-  if(!phone)return;
-  let p=String(phone).replace(/[^\d+]/g,'');
-  if(!p.startsWith('+'))p='+'+p;
-  window.open('https://wa.me/'+p,'_blank');
-}
-
-/* ── 沟通记录 ── */
-const LT={phone:'📞 电话',email:'📧 邮件',online:'💬 在线',meeting:'🤝 面谈'};
-function openLog(id){
-  const c=customers.find(x=>x.id===id);if(!c)return;
-  $('log-cust-id').value=id;
-  $('log-title').textContent='沟通记录 · '+(c.name||'');
-  const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
-  $('log-time').value=now.toISOString().slice(0,16);
-  const logs=c.logs||[];
-  $('log-history').innerHTML=logs.length
-    ?logs.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).map(l=>`
-      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:11px;margin-bottom:7px;font-size:13px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-          <span style="font-weight:600">${LT[l.type]||l.type}</span>
-          <span style="color:#9ca3af;font-size:11px">${new Date(l.timestamp).toLocaleString()}</span>
-        </div>
-        <p style="margin:0;color:#374151">${esc(l.content)}</p>
-        ${l.nextStep?`<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:5px;padding:5px 9px;margin-top:7px;font-size:12px">→ ${esc(l.nextStep)}</div>`:''}
-      </div>`).join('')
-    :'<p style="text-align:center;color:#9ca3af;padding:20px">暂无记录</p>';
-  $('log-modal').classList.add('show');
-}
-
-function saveLog(e){
-  e.preventDefault();
-  const id=$('log-cust-id').value;
-  const c=customers.find(x=>x.id===id);if(!c)return;
-  c.logs=c.logs||[];
-  c.logs.push({
-    timestamp:$('log-time').value||new Date().toISOString(),
-    type:$('log-type').value,
-    content:$('log-content').value.trim(),
-    nextStep:$('log-next').value.trim()
-  });
-  save();syncC(c);openLog(id);
-  $('log-content').value='';$('log-next').value='';
-  toast('记录已添加','success');
-}
-
-/* ── OCR 通用 ── */
-async function compress(file){
-  return new Promise(ok=>{
-    const img=new Image();
-    img.onload=()=>{
-      const cv=document.createElement('canvas');
-      let w=img.width,h=img.height;
-      // 压缩到600px宽，保证base64体积在200KB以内，满足Firestore 1MB限制
-      if(w>600){h=Math.round(h*600/w);w=600;}
-      cv.width=w;cv.height=h;
-      cv.getContext('2d').drawImage(img,0,0,w,h);
-      cv.toBlob(ok,'image/jpeg',.6);
+// Excel导入
+function handleExcelImport(file){
+    const progressDiv=$('import-progress');
+    const progressFill=$('import-progress-fill');
+    const progressText=$('import-progress-text');
+    const progressPct=$('import-progress-pct');
+    progressDiv.style.display='block';
+    progressFill.style.width='0%';
+    progressText.textContent='正在读取文件...';
+    progressPct.textContent='0%';
+    
+    const reader=new FileReader();
+    reader.onload=function(e){
+        progressText.textContent='正在解析Excel...';
+        progressFill.style.width='30%';
+        progressPct.textContent='30%';
+        
+        setTimeout(()=>{
+            const data=new Uint8Array(e.target.result);
+            const workbook=XLSX.read(data,{type:'array'});
+            const sheet=workbook.Sheets[workbook.SheetNames[0]];
+            const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+            if(!rows||rows.length<2){toast('文件无数据','error');progressDiv.style.display='none';return;}
+            
+            progressText.textContent='正在匹配字段...';
+            progressFill.style.width='60%';
+            progressPct.textContent='60%';
+            
+            const headers=rows[0].map(h=>String(h||'').trim());
+            const fieldMap={name:['名称','姓名','name','联系人'],company:['公司','公司名','企业','company'],position:['职位','职务','岗位','position'],phone:['电话','联系电话','手机','phone'],email:['邮箱','电子邮件','email'],country:['国家','country'],city:['城市','city'],address:['通讯地址','地址','address'],website:['公司网址','网址','网站','website'],wechat:['微信','wechat'],source:['客户来源','来源','source'],contactDate:['联系日期','日期','date'],notes:['备注','remark','notes']};
+            let colIdx={};
+            for(let key in fieldMap){colIdx[key]=-1;
+                for(let i=0;i<headers.length;i++){if(fieldMap[key].some(k=>headers[i].includes(k))){colIdx[key]=i;break;}}}
+            if(colIdx.name===-1&&colIdx.phone===-1){toast('未找到姓名或电话列','error');progressDiv.style.display='none';return;}
+            
+            pendingImportData=[];let successCount=0;
+            for(let i=1;i<rows.length;i++){const row=rows[i];if(!row||row.length===0)continue;
+                let name='';if(colIdx.name!==-1)name=row[colIdx.name]?String(row[colIdx.name]).trim():'';
+                if(!name&&colIdx.phone!==-1){let phoneVal=row[colIdx.phone]?String(row[colIdx.phone]).trim():'';if(phoneVal)name='客户_'+phoneVal.slice(-6);}
+                if(!name)continue;
+                const cust={id:Date.now()+'_'+i+'_'+Math.random(),name:name,
+                    company:colIdx.company!==-1?(row[colIdx.company]?String(row[colIdx.company]).trim():''):'',
+                    position:colIdx.position!==-1?(row[colIdx.position]?String(row[colIdx.position]).trim():''):'',
+                    phone:colIdx.phone!==-1?(row[colIdx.phone]?String(row[colIdx.phone]).trim():''):'',
+                    email:colIdx.email!==-1?(row[colIdx.email]?String(row[colIdx.email]).trim():''):'',
+                    country:colIdx.country!==-1?(row[colIdx.country]?String(row[colIdx.country]).trim():''):'',
+                    city:colIdx.city!==-1?(row[colIdx.city]?String(row[colIdx.city]).trim():''):'',
+                    address:colIdx.address!==-1?(row[colIdx.address]?String(row[colIdx.address]).trim():''):'',
+                    website:colIdx.website!==-1?(row[colIdx.website]?String(row[colIdx.website]).trim():''):'',
+                    wechat:colIdx.wechat!==-1?(row[colIdx.wechat]?String(row[colIdx.wechat]).trim():''):'',
+                    source:colIdx.source!==-1?(row[colIdx.source]?String(row[colIdx.source]).trim():''):'',
+                    contactDate:colIdx.contactDate!==-1?(row[colIdx.contactDate]?String(row[colIdx.contactDate]).trim():''):'',
+                    notes:colIdx.notes!==-1?(row[colIdx.notes]?String(row[colIdx.notes]).trim():''):'',
+                    status:'potential',logs:[],createTime:new Date().toISOString(),cardFrontUrl:'',cardBackUrl:'',customerImg:''};
+                pendingImportData.push(cust);successCount++;}
+            if(successCount===0){toast('没有有效数据行','error');progressDiv.style.display='none';return;}
+            
+            progressText.textContent='生成预览...';
+            progressFill.style.width='90%';
+            progressPct.textContent='90%';
+            
+            setTimeout(()=>{
+                let previewHtml='<table style="border-collapse:collapse;width:100%;font-size:12px"><thead><tr style="background:#1E3A8A;color:white">';
+                ['姓名','公司','电话','邮箱','国家','城市','客户来源','状态'].forEach(h=>previewHtml+=`<th style="padding:6px 10px;border:1px solid #ccc">${h}</th>`);
+                previewHtml+='</thead><tbody>';
+                pendingImportData.slice(0,10).forEach(c=>{previewHtml+=`<tr><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.name)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.company)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.phone)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.email)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.country)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.city)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.source)}</td><td style="padding:6px;border:1px solid #ddd">${escapeHtml(c.status)}</td></tr>`;});
+                if(pendingImportData.length>10)previewHtml+=`<tr><td colspan="8" style="text-align:center;padding:8px">... 共 ${pendingImportData.length} 条记录</td></tr>`;
+                previewHtml+='</tbody></table><p class="text-xs text-green-600 mt-2">✅ 解析完成！共 '+pendingImportData.length+' 条数据，点击下方"确认导入"按钮</p>';
+                $('import-preview').innerHTML=previewHtml;
+                $('import-preview').style.display='block';
+                $('confirm-import').disabled=false;
+                progressDiv.style.display='none';
+                toast(`已解析 ${pendingImportData.length} 条客户数据`,'success');
+            },100);
+        },50);
     };
-    img.src=URL.createObjectURL(file);
-  });
+    reader.readAsArrayBuffer(file);
 }
-
-async function toB64(blob){
-  return new Promise(r=>{
-    const rd=new FileReader();
-    rd.onload=()=>r(rd.result);
-    rd.readAsDataURL(blob);
-  });
-}
-
-async function callVision(b64,prompt){
-  const res=await fetch(API.url,{
-    method:'POST',
-    headers:{'Authorization':'Bearer '+API.key,'Content-Type':'application/json'},
-    body:JSON.stringify({
-      model:'qwen-vl-plus',
-      messages:[{role:'user',content:[{type:'image_url',image_url:{url:b64}},{type:'text',text:prompt}]}]
-    })
-  });
-  if(!res.ok)throw new Error('API '+res.status);
-  return(await res.json()).choices[0].message.content;
-}
-
-/* ── 名片 OCR ── */
-async function recognizeCard(){
-  if(!API.key){toast('请先配置 API Key','error');switchTab('settings');return;}
-  if(!frontFile){toast('请上传名片正面','error');return;}
-  $('btn-recognize').disabled=true;$('ocr-spin').style.display='inline-block';
-  try{
-    const frontBlob=await compress(frontFile);
-    const b64=await toB64(frontBlob);
-    const text=await callVision(b64,'提取名片信息，只返回JSON：{"name":"","company":"","position":"","phone":"","email":"","country":""}，country用中文国家名');
-    const m=text.match(/\{[\s\S]*\}/);
-    if(m){
-      const ex=JSON.parse(m[0]);
-      if(ex.name)$('cust-name').value=ex.name;
-      if(ex.company)$('cust-company').value=ex.company;
-      if(ex.position)$('cust-position').value=ex.position;
-      if(ex.phone)$('cust-phone').value=ex.phone;
-      if(ex.email)$('cust-email').value=ex.email;
-      if(ex.country)$('cust-country').value=ex.country;
-      toast('识别成功，请确认后保存','success');
-    }else{
-      toast('未提取到信息，请手动填写','info');
+function confirmImport(e){
+    if(e) e.stopPropagation();
+    if(!pendingImportData.length){toast('没有待导入数据','error');return;}
+    const total=pendingImportData.length;
+    let dupCount=0;
+    for(let i=0;i<pendingImportData.length;i++){
+        const cust=pendingImportData[i];
+        const exists=customers.some(e=>(e.phone&&cust.phone&&e.phone.replace(/\D/g,'')===cust.phone.replace(/\D/g,''))||(e.name===cust.name));
+        if(exists){dupCount++;}
+        customers.push(cust);
+        if(fbEnabled&&db)db.collection('customers').doc(cust.id).set(cust);
     }
-
-    // 缓存图片数据，等待保存时写入Firestore
-    window._pendingFrontBlob=frontBlob;
-    window._pendingFrontB64=await toB64(frontBlob);
-
-    if(backFile){
-      const bb=await compress(backFile);
-      window._pendingBackBlob=bb;
-      window._pendingBackB64=await toB64(bb);
-    }
-  }catch(e){
-    toast('识别失败: '+e.message,'error');
-  }finally{
-    $('btn-recognize').disabled=false;
-    $('ocr-spin').style.display='none';
-  }
+    save();
+    renderKanban();
+    toast(`✅ 导入完成！共导入 ${total} 位客户${dupCount>0?`（其中${dupCount}位与现有客户重复）`:''}`,'success');
+    $('import-modal').classList.remove('show');
+    $('import-preview').style.display='none';
+    $('confirm-import').disabled=true;
+    $('import-file').value='';
+    pendingImportData=[];
 }
 
-/* ── 单张产品 OCR ── */
-async function recognizeProd(file){
-  if(!API.key)return null;
-  try{
-    const b64=await toB64(await compress(file));
-    const text=await callVision(b64,'提取产品铭牌信息，只返回JSON：{"brand":"","type":"","model":"","partNo":"","serial":""}');
-    const m=text.match(/\{[\s\S]*\}/);
-    return m?JSON.parse(m[0]):null;
-  }catch{return null;}
-}
+function renderProductTable(){const tb=$('product-list-body');if(!tb)return;tb.innerHTML=products.slice(-8).map(p=>`<tr><td>${p.imgUrl?`<img src="${p.imgUrl}" class="w-8 h-8 object-cover rounded">`:'-'}</td><td>${escapeHtml(p.model||p.serial||'-')}</td><td><button onclick="window._dp('${p.id}')" class="text-red-500 text-sm">删除</button></td></tr>`).join('');}
+async function autoConnect(){const s=localStorage.getItem('crm_firebase_config');if(s){try{$('firebase-config').value=s;const c=JSON.parse(s);if(!firebase.apps.length)firebase.initializeApp(c);db=firebase.firestore();fbEnabled=true;const statusSpan=$('firebase-status');if(statusSpan){statusSpan.style.display='inline';statusSpan.textContent='已连接';}const cs=await db.collection('customers').get();cs.forEach(d=>{const idx=customers.findIndex(x=>x.id===d.id);if(idx===-1)customers.push({...d.data(),id:d.id});else customers[idx]={...d.data(),id:d.id};});save();renderKanban();return true;}catch(e){}}return false;}
 
-function handleProdUpload(file){
-  if(!file)return;
-  window._curProdFile=file;
-  const rd=new FileReader();
-  rd.onload=e=>{$('prod-preview').src=e.target.result;$('prod-preview').style.display='block';$('prod-ph').style.display='none';};
-  rd.readAsDataURL(file);
-  if(API.key){
-    toast('识别中…','info');
-    recognizeProd(file).then(r=>{
-      if(r){
-        if(r.brand)$('product-brand').value=r.brand;
-        if(r.type)$('product-type').value=r.type;
-        if(r.model)$('product-model').value=r.model;
-        if(r.partNo)$('product-partno').value=r.partNo;
-        if(r.serial)$('product-serial').value=r.serial;
-        toast('识别完成','success');
-      }else toast('未识别到信息','info');
-    });
-  }
-}
-
-/* ── 批量识别 ── */
-function setupBatchFiles(files){
-  const imgs=[...files].filter(f=>f.type.startsWith('image/'));
-  if(imgs.length===0){toast('未检测到图片文件','error');return;}
-  if(imgs.length>20)toast(`最多 20 张，已截取前 20 张`,'warning');
-  batchFiles=imgs.slice(0,20);
-  renderBatchQueue();
-  $('btn-start-batch').disabled=false;
-  $('batch-progress-wrap').style.display='none';
-  $('batch-summary').style.display='none';
-}
-
-function renderBatchQueue(){
-  const wrap=$('batch-queue');
-  wrap.style.display='block';
-  wrap.innerHTML=`<div style="font-size:12px;color:#6b7280;margin:10px 0 8px">已选 <b>${batchFiles.length}</b> 张图片，点击"开始识别"后自动逐张处理并保存</div>`
-    +batchFiles.map((f,i)=>{
-      const url=URL.createObjectURL(f);
-      return`<div class="batch-item" id="bi-${i}">
-        <img src="${url}" alt="">
-        <span class="bi-name">${esc(f.name)}</span>
-        <span class="bi-status st-wait" id="bis-${i}">等待中</span>
-      </div>`;
-    }).join('');
-}
-
-function setBatchItemStatus(i,cls,txt){
-  const el=$('bis-'+i);if(!el)return;
-  el.className='bi-status '+cls;el.textContent=txt;
-}
-
-async function runBatch(){
-  if(!API.key){toast('请先配置 API Key','error');switchTab('settings');return;}
-  if(!batchFiles.length){toast('请先选择图片','error');return;}
-  if(batchRunning){toast('识别中，请稍候','warning');return;}
-  batchRunning=true;
-  $('btn-start-batch').disabled=true;
-  const total=batchFiles.length;
-  let ok=0,fail=0;
-  $('batch-progress-wrap').style.display='block';
-  $('batch-progress-fill').style.width='0%';
-  $('batch-summary').style.display='none';
-  for(let i=0;i<total;i++){
-    const f=batchFiles[i];
-    const pct=Math.round(i/total*100);
-    $('batch-progress-fill').style.width=pct+'%';
-    $('batch-progress-text').textContent=`正在识别第 ${i+1} / ${total} 张`;
-    $('batch-progress-pct').textContent=pct+'%';
-    setBatchItemStatus(i,'st-run','识别中…');
-    try{
-      const blob=await compress(f);
-      const b64=await toB64(blob);
-      const text=await callVision(b64,'提取产品铭牌或标签上的信息，只返回JSON：{"brand":"","type":"","model":"","partNo":"","serial":""}，如果识别不到某字段留空字符串');
-      const m=text.match(/\{[\s\S]*\}/);
-      if(m){
-        const r=JSON.parse(m[0]);
-        const pid=Date.now().toString()+'_'+i;
-        const p={id:pid,brand:r.brand||'',type:r.type||'',model:r.model||'',partNo:r.partNo||'',serial:r.serial||'',notes:'',imgUrl:b64,createTime:new Date().toISOString()};
-        products.push(p);
-        localStorage.setItem('crm_products',JSON.stringify(products));
-        syncP(p);
-        setBatchItemStatus(i,'st-ok','✅ 已保存');
-        ok++;
-      }else{
-        setBatchItemStatus(i,'st-fail','❌ 未识别');fail++;
-      }
-    }catch(e){
-      setBatchItemStatus(i,'st-fail','❌ 失败');fail++;
-      console.warn('批量识别失败',f.name,e);
-    }
-    if(i<total-1) await new Promise(r=>setTimeout(r,600));
-  }
-  $('batch-progress-fill').style.width='100%';
-  $('batch-progress-text').textContent='识别完成';
-  $('batch-progress-pct').textContent='100%';
-  renderProductTable();
-  const sum=$('batch-summary');
-  sum.style.display='block';
-  sum.innerHTML=`<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;font-size:13px">
-    🎉 批量识别完成：<b style="color:#059669">成功 ${ok} 张</b>　${fail?`<b style="color:#dc2626">失败 ${fail} 张</b>`:''}
-    <span style="color:#6b7280;margin-left:8px">· 已自动保存到产品库</span>
-  </div>`;
-  toast(`批量识别完成：成功 ${ok} 张${fail?' · 失败 '+fail+' 张':''}`,'success');
-  batchRunning=false;
-  $('btn-start-batch').disabled=false;
-}
-
-/* ── 产品 CRUD ── */
-function saveProduct(e){
-  e.preventDefault();
-  const eid=$('product-id').value,id=eid||Date.now().toString();
-  const exProd=eid?products.find(x=>x.id===eid):null;
-  const p={
-    id,brand:$('product-brand').value.trim(),type:$('product-type').value.trim(),
-    model:$('product-model').value.trim(),partNo:$('product-partno').value.trim(),
-    serial:$('product-serial').value.trim(),notes:$('product-notes').value.trim(),
-    imgUrl:exProd?(exProd.imgUrl||''):'',createTime:new Date().toISOString()
-  };
-  const i=products.findIndex(x=>x.id===id);if(i!==-1)products[i]=p;else products.push(p);
-  localStorage.setItem('crm_products',JSON.stringify(products));
-  syncP(p);renderProductTable();
-  $('product-form').reset();$('product-id').value='';
-  $('prod-preview').style.display='none';$('prod-ph').style.display='';
-  toast('产品已保存','success');
-
-  if(window._curProdFile){
-    const f=window._curProdFile;window._curProdFile=null;
-    compress(f).then(toB64).then(b64=>{
-      p.imgUrl=b64;
-      const j=products.findIndex(x=>x.id===id);if(j!==-1)products[j]=p;
-      localStorage.setItem('crm_products',JSON.stringify(products));
-      syncP(p);renderProductTable();
-    }).catch(err=>console.warn('产品图片处理失败',err));
-  }else{window._curProdFile=null;}
-}
-
-function delProduct(id){
-  if(!confirm('删除此产品？'))return;
-  products=products.filter(p=>p.id!==id);
-  localStorage.setItem('crm_products',JSON.stringify(products));
-  if(fbEnabled&&db)db.collection('products').doc(id).delete();
-  renderProductTable();toast('已删除','success');
-}
-
-function editProduct(id){
-  const p=products.find(x=>x.id===id);if(!p)return;
-  $('product-id').value=p.id;$('product-brand').value=p.brand||'';$('product-type').value=p.type||'';
-  $('product-model').value=p.model||'';$('product-partno').value=p.partNo||'';
-  $('product-serial').value=p.serial||'';$('product-notes').value=p.notes||'';
-  $('prod-preview').style.display='none';$('prod-ph').style.display='';
-  switchTab('product');toast('编辑模式','info');
-}
-
-function renderProductTable(){
-  const tb=$('product-list-body');if(!tb)return;
-  $('product-count').textContent=products.length;
-  tb.innerHTML=products.length?products.map(p=>`
-    <tr style="border-bottom:1px solid #f3f4f6;transition:background .1s" onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background=''">
-      <td style="padding:7px 8px">${p.imgUrl
-        ?`<img src="${p.imgUrl.startsWith('data:')?p.imgUrl:esc(p.imgUrl)}" style="width:34px;height:34px;object-fit:cover;border-radius:5px;cursor:pointer;border:1px solid #e5e7eb" onclick="openLightbox(this.src)">`
-        :`<div style="width:34px;height:34px;background:#f3f4f6;border-radius:5px;display:flex;align-items:center;justify-content:center"><i class="fas fa-image" style="color:#d1d5db;font-size:12px"></i></div>`}
-      </td>
-      <td style="padding:9px 10px;font-size:13px">${esc(p.brand||'-')}</td>
-      <td style="padding:9px 8px;font-size:13px">${esc(p.type||'-')}</td>
-      <td style="padding:9px 8px;font-size:13px">${esc(p.model||'-')}</td>
-      <td style="padding:9px 8px;font-size:13px">${esc(p.partNo||'-')}</td>
-      <td style="padding:9px 8px;font-size:13px">${esc(p.serial||'-')}</td>
-      <td style="padding:9px 14px">
-        <button onclick="window._ep('${p.id}')" style="color:#3b82f6;background:none;border:none;cursor:pointer;font-size:12px;margin-right:8px">编辑</button>
-        <button onclick="window._dp('${p.id}')" style="color:#f43f5e;background:none;border:none;cursor:pointer;font-size:12px">删除</button>
-      </td>
-    </tr>`).join('')
-    :'<tr><td colspan="7" style="text-align:center;padding:36px;color:#9ca3af;font-size:13px">暂无产品</td></tr>';
-}
-
-/* ── Excel 导出 ── */
-function expCustomers(){
-  if(!customers.length)return toast('暂无数据','error');
-  const rows=customers.map(c=>({
-    '姓名':c.name||'','公司':c.company||'','职位':c.position||'',
-    '电话':c.phone||'','邮箱':c.email||'','国家':c.country||'',
-    '状态':SL[c.status]||'','备注':c.notes||'',
-    '沟通次数':(c.logs||[]).length,
-    '创建时间':c.createTime?new Date(c.createTime).toLocaleString():''
-  }));
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'客户');
-  XLSX.writeFile(wb,'客户数据_'+new Date().toLocaleDateString()+'.xlsx');
-  toast('导出成功','success');
-}
-
-function expProducts(){
-  if(!products.length)return toast('暂无数据','error');
-  // 导出时不含imgUrl（base64太大）
-  const rows=products.map(p=>({品牌:p.brand||'',品名:p.type||'',型号:p.model||'',零件号:p.partNo||'',序列号:p.serial||'',备注:p.notes||'',创建时间:p.createTime?new Date(p.createTime).toLocaleString():''}));
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'产品');
-  XLSX.writeFile(wb,'产品数据_'+new Date().toLocaleDateString()+'.xlsx');
-  toast('导出成功','success');
-}
-
-/* ── 登录 ── */
-function doLogin(){
-  const saved=localStorage.getItem('crm_password');
-  const input=$('login-pwd').value;
-  if(!saved){$('login-sec').style.display='none';$('setpwd-sec').style.display='block';toast('请先设置一个密码','info');return;}
-  if(!input){toast('请输入密码','error');return;}
-  if(input===saved){
-    sessionStorage.setItem('crm_logged','1');
-    $('login-page').style.display='none';
-    $('main-app').classList.add('show');
-    load();
-    if(!autoConnect()){renderKanban();renderProductTable();}
-  }else{
-    toast('密码错误','error');
-    $('login-pwd').value='';
-    $('login-pwd').focus();
-  }
-}
-
-/* ── DOMContentLoaded ── */
 document.addEventListener('DOMContentLoaded',()=>{
-
-  // 登录
-  $('btn-login').addEventListener('click',doLogin);
-  $('login-pwd').addEventListener('keypress',e=>{if(e.key==='Enter')doLogin();});
-  $('btn-show-setpwd').addEventListener('click',()=>{$('login-sec').style.display='none';$('setpwd-sec').style.display='block';});
-  $('btn-back-login').addEventListener('click',()=>{$('setpwd-sec').style.display='none';$('login-sec').style.display='block';});
-  $('btn-save-pwd').addEventListener('click',()=>{
-    const p=$('new-pwd').value;
-    if(p.length<6)return toast('至少6位','error');
-    if(p!==$('cfm-pwd').value)return toast('两次不一致','error');
-    localStorage.setItem('crm_password',p);toast('密码设置成功','success');
-    $('setpwd-sec').style.display='none';$('login-sec').style.display='block';
-  });
-  $('btn-logout').addEventListener('click',()=>{
-    sessionStorage.removeItem('crm_logged');
-    $('login-page').style.display='flex';
-    $('main-app').classList.remove('show');
-  });
-
-  // 导航
-  document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
-
-  // 名片上传
-  $('file-front').addEventListener('change',e=>{
-    if(!e.target.files[0])return;
-    frontFile=e.target.files[0];
-    $('prev-front').src=URL.createObjectURL(frontFile);
-    $('prev-front').style.display='block';$('ph-front').style.display='none';
-    $('btn-recognize').disabled=false;
-  });
-  $('file-back').addEventListener('change',e=>{
-    if(!e.target.files[0])return;
-    backFile=e.target.files[0];
-    $('prev-back').src=URL.createObjectURL(backFile);
-    $('prev-back').style.display='block';$('ph-back').style.display='none';
-  });
-  $('btn-recognize').addEventListener('click',recognizeCard);
-  $('customer-form').addEventListener('submit',saveCustomer);
-  $('btn-wa-form').addEventListener('click',()=>openWA($('cust-phone').value));
-
-  // 单张产品
-  const pdz=$('prod-dz'),pfi=$('prod-file');
-  pdz.addEventListener('click',()=>pfi.click());
-  pfi.addEventListener('change',e=>{if(e.target.files[0])handleProdUpload(e.target.files[0]);});
-  pdz.addEventListener('dragover',e=>{e.preventDefault();pdz.classList.add('on');});
-  pdz.addEventListener('dragleave',()=>pdz.classList.remove('on'));
-  pdz.addEventListener('drop',e=>{e.preventDefault();pdz.classList.remove('on');if(e.dataTransfer.files[0])handleProdUpload(e.dataTransfer.files[0]);});
-  $('product-form').addEventListener('submit',saveProduct);
-
-  // 批量识别
-  const bdz=$('batch-dz'),bfi=$('batch-file-input');
-  bdz.addEventListener('click',e=>{if(e.target===bfi)return;bfi.click();});
-  bfi.addEventListener('change',e=>{if(e.target.files&&e.target.files.length)setupBatchFiles(e.target.files);});
-  bdz.addEventListener('dragenter',e=>{e.preventDefault();bdz.classList.add('on');});
-  bdz.addEventListener('dragover',e=>{e.preventDefault();bdz.classList.add('on');});
-  bdz.addEventListener('dragleave',e=>{if(!bdz.contains(e.relatedTarget))bdz.classList.remove('on');});
-  bdz.addEventListener('drop',e=>{e.preventDefault();bdz.classList.remove('on');if(e.dataTransfer.files&&e.dataTransfer.files.length)setupBatchFiles(e.dataTransfer.files);});
-  $('btn-start-batch').addEventListener('click',runBatch);
-
-  // 灯箱
-  $('lightbox-close').addEventListener('click',closeLightbox);
-  $('lightbox').addEventListener('click',function(e){if(e.target===$('lightbox')||e.target===$('lightbox-hint'))closeLightbox();});
-  $('lightbox').addEventListener('touchend',function(e){if(e.target===$('lightbox')||e.target===$('lightbox-hint'))closeLightbox();});
-  window.openLightbox=openLightbox;
-
-  // 记录 & Modal
-  $('log-form').addEventListener('submit',saveLog);
-  $('close-log').addEventListener('click',()=>$('log-modal').classList.remove('show'));
-  $('log-modal').addEventListener('click',e=>{if(e.target===$('log-modal'))$('log-modal').classList.remove('show');});
-  $('dup-modal').addEventListener('click',e=>{if(e.target===$('dup-modal'))$('dup-modal').classList.remove('show');});
-  $('close-detail').addEventListener('click',()=>$('detail-modal').classList.remove('show'));
-  $('detail-modal').addEventListener('click',e=>{if(e.target===$('detail-modal'))$('detail-modal').classList.remove('show');});
-
-  // Firebase & API
-  $('btn-init-firebase').addEventListener('click',initFB);
-  $('btn-sync').addEventListener('click',()=>{if(!fbEnabled)return toast('请先连接Firebase','error');smartSync();});
-  $('btn-save-api').addEventListener('click',()=>{API.key=$('api-key-input').value.trim();localStorage.setItem('crm_api_key',API.key);toast('API Key 已保存','success');});
-  $('api-key-input').value=API.key;
-
-  // 国家下拉
-  $('country-btn').addEventListener('click',e=>{e.stopPropagation();const dd=$('country-dd');dd.style.display=dd.style.display==='block'?'none':'block';});
-  document.addEventListener('click',e=>{if(!$('country-wrap').contains(e.target))$('country-dd').style.display='none';});
-
-  // 搜索 & 看板
-  $('search-input').addEventListener('input',e=>{searchKw=e.target.value;renderKanban();});
-  $('btn-reset').addEventListener('click',()=>{$('search-input').value='';searchKw='';countryFilter='';$('country-label').textContent='🌏 所有国家';renderKanban();});
-  $('btn-finddup').addEventListener('click',()=>{const g=allDups();if(!g.length){toast('未发现重复 ✓','success');return;}toast(`发现 ${g.length} 组重复，已高亮`,'warning');renderKanban();});
-
-  // 导出 & 清空
-  $('export-customers-excel').addEventListener('click',expCustomers);
-  $('export-products-excel').addEventListener('click',expProducts);
-  $('btn-clear-products').addEventListener('click',()=>{
-    if(!products.length)return toast('产品库已经是空的','info');
-    if(!confirm(`确定清空全部 ${products.length} 件产品？`))return;
-    if(fbEnabled&&db)products.forEach(p=>db.collection('products').doc(p.id).delete().catch(()=>{}));
-    products=[];localStorage.setItem('crm_products','[]');renderProductTable();toast('产品库已清空','success');
-  });
-  $('btn-clear').addEventListener('click',()=>{
-    if(!confirm('清空所有本地数据？'))return;
-    customers=[];products=[];save();renderKanban();renderProductTable();toast('已清空','success');
-  });
-
-  // 初始化 section 显示
-  document.querySelectorAll('.app-section').forEach(s=>{if(!s.classList.contains('active'))s.style.display='none';});
-
-  // 无密码时直接进设置密码
-  if(!localStorage.getItem('crm_password')){$('login-sec').style.display='none';$('setpwd-sec').style.display='block';}
-
-  // 会话恢复
-  if(sessionStorage.getItem('crm_logged')==='1'){
-    $('login-page').style.display='none';$('main-app').classList.add('show');
-    load();if(!autoConnect()){renderKanban();renderProductTable();}
-  }
-
-  if(/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)){
-    document.body.classList.add('is-mobile');
-  }
-});
-
-window._dp=delProduct;
-window._ep=editProduct;
-window.openLightbox=openLightbox;
-
-console.log('✅',VER,'就绪 · 图片→Firestore base64');
+$('btn-login').onclick=()=>{const pwd=$('login-pwd').value;const saved=localStorage.getItem('crm_password');if(!saved){$('login-sec').style.display='none';$('setpwd-sec').style.display='block';}else if(pwd===saved){sessionStorage.setItem('crm_logged','1');$('login-page').style.display='none';$('main-app').classList.add('show');load();autoConnect();renderKanban();renderProductTable();}else toast('密码错误');};
+$('btn-show-setpwd').onclick=()=>{$('login-sec').style.display='none';$('setpwd-sec').style.display='block';};
+$('btn-save-pwd').onclick=()=>{const p=$('new-pwd').value;if(p.length>=6&&p===$('cfm-pwd').value){localStorage.setItem('crm_password',p);toast('密码设置成功');$('setpwd-sec').style.display='none';$('login-sec').style.display='block';}else toast('密码不符或太短');};
+$('btn-back-login').onclick=()=>{$('setpwd-sec').style.display='none';$('login-sec').style.display='block';};
+$('btn-logout').onclick=()=>{sessionStorage.clear();location.reload();};
+document.querySelectorAll('.nav-btn').forEach(btn=>{btn.addEventListener('click',function(e){e.stopPropagation();switchTab(this.dataset.tab);});});
+$('file-front').onchange=e=>{if(e.target.files[0]){frontFile=e.target.files[0];$('prev-front').src=URL.createObjectURL(frontFile);$('prev-front').style.display='block';$('ph-front').style.display='none';$('btn-recognize').disabled=false;}};
+$('file-back').onchange=e=>{if(e.target.files[0]){backFile=e.target.files[0];$('prev-back').src=URL.createObjectURL(backFile);$('prev-back').style.display='block';$('ph-back').style.display='none';}};
+$('btn-recognize').onclick=recognizeCard;$('customer-form').addEventListener('submit',saveCustomer);
+$('btn-wa-form').onclick=()=>openWA($('cust-phone').value);
+$('cust-img-file').onchange=e=>{if(e.target.files[0]){const r=new FileReader();r.onload=ev=>{$('cust-img-preview').src=ev.target.result;$('cust-img-preview').style.display='block';};r.readAsDataURL(e.target.files[0]);}};
+$('export-customers-excel').onclick=exportCustomersProfessionally;
+$('btn-init-firebase').onclick=()=>{try{const cfg=JSON.parse($('firebase-config').value);if(!firebase.apps.length)firebase.initializeApp(cfg);db=firebase.firestore();fbEnabled=true;localStorage.setItem('crm_firebase_config',JSON.stringify(cfg));autoConnect();toast('Firebase已连接');}catch(e){toast('配置错误');}};
+$('btn-save-api').onclick=()=>{API.key=$('api-key-input').value;localStorage.setItem('crm_api_key',API.key);toast('API Key已保存');};$('api-key-input').value=API.key;
+$('search-input').oninput=e=>{searchKw=e.target.value;renderKanban();};
+$('btn-reset').onclick=()=>{$('search-input').value='';searchKw='';countryFilter='';renderKanban();};
+$('country-btn').onclick=e=>{e.stopPropagation();const dd=$('country-dd');if(dd)dd.style.display='block';};
+document.addEventListener('click',()=>{const dd=$('country-dd');if(dd)dd.style.display='none';});
+$('btn-finddup').onclick=()=>toast('重复客户已高亮显示','info');
+$('close-detail').onclick=()=>$('detail-modal').classList.remove('show');
+$('close-log').onclick=()=>$('log-modal').classList.remove('show');
+$('log-form').addEventListener('submit',e=>{e.preventDefault();const id=$('log-cust-id').value;const c=customers.find(x=>x.id===id);if(c){c.logs=c.logs||[];c.logs.push({timestamp:new Date().toISOString(),content:$('log-content').value,nextStep:$('log-next').value});save();syncC(c);openLog(id);$('log-content').value='';$('log-next').value='';toast('记录已添加');}});
+$('btn-clear').onclick=()=>{if(confirm('清空所有客户数据？')){customers=[];save();renderKanban();toast('已清空');}};
+$('lightbox-close').onclick=()=>$('lightbox').classList.remove('show');$('lightbox').onclick=e=>{if(e.target===$('lightbox'))$('lightbox').classList.remove('show');};
+$('btn-import-excel').onclick=function(e){e.stopPropagation();$('import-modal').classList.add('show');$('import-preview').style.display='none';$('confirm-import').disabled=true;$('import-file').value='';pendingImportData=[];$('import-progress').style.display='none';};
+$('close-import').onclick=function(e){e.stopPropagation();$('import-modal').classList.remove('show');};
+$('cancel-import').onclick=function(e){e.stopPropagation();$('import-modal').classList.remove('show');};
+$('import-dz').onclick=function(e){e.stopPropagation();$('import-file').click();};
+$('import-file').onchange=e=>{e.stopPropagation();if(e.target.files[0])handleExcelImport(e.target.files[0]);};
+$('confirm-import').onclick=function(e){e.stopPropagation();confirmImport(e);};
+$('prod-dz').onclick=function(e){e.stopPropagation();$('prod-file').click();};
+$('prod-file').onchange=e=>{if(e.target.files[0]){const file=e.target.files[0];const reader=new FileReader();reader.onload=ev=>{$('prod-preview').src=ev.target.result;$('prod-preview').style.display='block';$('prod-ph').style.display='none';};reader.readAsDataURL(file);toast('请手动填写产品信息','info');}};
+$('product-form').addEventListener('submit',e=>{e.preventDefault();const id=$('product-id').value||Date.now().toString();const p={id:id,model:$('product-model').value,serial:$('product-serial').value,notes:$('product-notes').value,imgUrl:window._prodImgUrl||'',createTime:new Date().toISOString()};products.push(p);save();$('product-form').reset();$('product-id').value='';$('prod-preview').style.display='none';$('prod-ph').style.display='';renderProductTable();toast('产品已保存');});
+if(sessionStorage.getItem('crm_logged')==='1'){$('login-page').style.display='none';$('main-app').classList.add('show');load();autoConnect();renderKanban();renderProductTable();}});
+window.openLightbox=(url)=>{$('lb-img').src=url;$('lightbox').classList.add('show');};window._dp=function(id){products=products.filter(p=>p.id!==id);localStorage.setItem('crm_products',JSON.stringify(products));renderProductTable();};
 })();
 </script>
 </body>
