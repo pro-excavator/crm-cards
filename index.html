@@ -117,7 +117,7 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
 <div class="country-filter-wrap"><input type="text" id="country-filter-input" placeholder="🌏 筛选国家" class="w-36 text-sm" autocomplete="off"><button id="clear-country-btn" class="btn btn-gray text-xs py-1 px-2">清除</button><div id="country-dropdown" class="country-dropdown"></div></div>
 <div class="flex items-center gap-1"><span class="text-xs">添加时间:</span><input type="date" id="date-start" class="w-32 text-sm py-1"><span class="text-xs">至</span><input type="date" id="date-end" class="w-32 text-sm py-1"></div>
 <button class="btn btn-gray text-sm" id="btn-reset">重置</button>
-<button class="btn btn-blue text-sm" id="btn-sync">手动同步</button>
+<button class="btn btn-gray text-sm" id="btn-sync" title="已连接时自动同步，无需手动操作">🔄 <span id="btn-sync-label">未连接</span></button>
 <button class="btn btn-orange text-sm" id="btn-finddup">查重</button>
 <button class="btn btn-green text-sm" id="btn-import-excel"><i class="fas fa-file-import"></i> 导入Excel</button>
 <button class="btn btn-purple text-sm" id="export-customers-excel"><i class="fas fa-file-excel"></i> 导出客户</button>
@@ -248,10 +248,28 @@ async function loadConfig(){
 // ── 同步状态指示器 ──
 function setSyncState(state, text){
   const el=$('sync-indicator');
-  if(!el)return;
-  el.className='';
-  el.className=state;
-  $('sync-text').textContent=text;
+  if(el){el.className=state;$('sync-text').textContent=text;}
+  // 同时更新看板里的同步按钮
+  const btn=$('btn-sync');
+  const lbl=$('btn-sync-label');
+  if(!btn||!lbl)return;
+  if(state==='connected'){
+    btn.className='btn btn-green text-sm';
+    lbl.textContent='实时同步中';
+    btn.title='数据已实时同步，无需手动操作。点击可强制重新拉取。';
+  } else if(state==='syncing'){
+    btn.className='btn btn-blue text-sm';
+    lbl.textContent='同步中...';
+    btn.title='正在同步...';
+  } else if(state==='error'){
+    btn.className='btn btn-red text-sm';
+    lbl.textContent='同步断开，点击重连';
+    btn.title='同步中断，点击重新连接';
+  } else {
+    btn.className='btn btn-gray text-sm';
+    lbl.textContent='未连接云端';
+    btn.title='请先在设置中连接Firebase';
+  }
 }
 
 const toast=(msg,type='info')=>{
@@ -299,38 +317,103 @@ async function recognizeCard(){
   finally{$('btn-recognize').innerHTML=original;$('btn-recognize').disabled=false;}
 }
 
-// ── 核心修复：保存客户时加 updatedAt 时间戳 ──
+// ── 保存客户：带明确的保存状态反馈 ──
 async function saveCustomer(e){
   e.preventDefault();e.stopPropagation();
   const id=$('cust-id').value||Date.now().toString();
   const ex=customers.find(c=>c.id===id);
+  const isEdit=!!ex;
   const now=new Date().toISOString();
   const formData={name:$('cust-name').value.trim(),company:$('cust-company').value,position:$('cust-position').value,phone:$('cust-phone').value,email:$('cust-email').value,country:$('cust-country').value,city:$('cust-city').value,address:$('cust-address').value,website:$('cust-website').value,wechat:$('cust-wechat').value,source:$('cust-source').value,contactDate:$('cust-date').value,notes:$('cust-notes').value,status:$('cust-status').value||'potential'};
   if(!formData.name){toast('请填写姓名','error');return;}
-  const imgFile=$('cust-img-file').files[0];
-  let customerImg=ex?ex.customerImg:'';
-  if(imgFile){customerImg=await new Promise(resolve=>{const r=new FileReader();r.onload=ev=>resolve(ev.target.result);r.readAsDataURL(imgFile);});}
-  const newCust={...formData,id,logs:ex?ex.logs:[],createTime:ex?ex.createTime:now,
-    updatedAt:now,  // ← 关键：每次保存都更新时间戳
-    cardFrontUrl:window._pendingFrontB64||(ex?ex.cardFrontUrl:''),
-    cardBackUrl:window._pendingBackB64||(ex?ex.cardBackUrl:''),customerImg:customerImg||''
-  };
-  const idx=customers.findIndex(x=>x.id===id);
-  if(idx!==-1)customers[idx]=newCust;else customers.push(newCust);
-  saveLocal();
-  if(fbEnabled&&db){
-    setSyncState('syncing','同步中...');
-    try{
-      await db.collection('customers').doc(id).set(newCust);
-      setSyncState('connected','实时同步中');
-      toast('客户已保存并同步到云端','success');
-    }catch(err){
-      setSyncState('error','同步失败');
-      toast('本地已保存，云端同步失败: '+err.message,'error');
+
+  // ── 1. 按钮进入 loading 状态 ──
+  const saveBtn=$('customer-form').querySelector('[type=submit]');
+  const origBtnHTML = saveBtn.innerHTML;
+  saveBtn.disabled=true;
+  saveBtn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 保存中...';
+  saveBtn.style.background='#6b7280';
+
+  try{
+    const imgFile=$('cust-img-file').files[0];
+    let customerImg=ex?ex.customerImg:'';
+    if(imgFile){customerImg=await new Promise(resolve=>{const r=new FileReader();r.onload=ev=>resolve(ev.target.result);r.readAsDataURL(imgFile);});}
+    const newCust={...formData,id,logs:ex?ex.logs:[],createTime:ex?ex.createTime:now,
+      updatedAt:now,
+      cardFrontUrl:window._pendingFrontB64||(ex?ex.cardFrontUrl:''),
+      cardBackUrl:window._pendingBackB64||(ex?ex.cardBackUrl:''),customerImg:customerImg||''
+    };
+    const idx=customers.findIndex(x=>x.id===id);
+    if(idx!==-1)customers[idx]=newCust;else customers.push(newCust);
+    saveLocal();
+
+    // ── 2. 尝试同步云端 ──
+    let synced=false;
+    if(fbEnabled&&db){
+      saveBtn.innerHTML='<i class="fas fa-cloud-upload-alt fa-spin"></i> 同步云端...';
+      try{
+        await db.collection('customers').doc(id).set(newCust);
+        synced=true;
+        setSyncState('connected','实时同步中');
+      }catch(err){
+        setSyncState('error','同步失败');
+      }
     }
-  }else{toast('客户已保存（未连接云端）','info');}
-  resetForm();renderKanban();
-  window._pendingFrontB64=null;window._pendingBackB64=null;
+
+    // ── 3. 大弹窗确认结果 ──
+    showSaveResult(newCust, isEdit, synced);
+
+    resetForm();
+    renderKanban();
+    // 跳到看板并高亮该卡片
+    setTimeout(()=>{
+      switchTab('kanban');
+      setTimeout(()=>highlightCard(id), 300);
+    }, 1800);
+
+    window._pendingFrontB64=null;window._pendingBackB64=null;
+  } finally {
+    saveBtn.disabled=false;
+    saveBtn.innerHTML=origBtnHTML;
+    saveBtn.style.background='';
+  }
+}
+
+// 保存结果大弹窗
+function showSaveResult(cust, isEdit, synced){
+  // 移除旧的
+  const old=document.getElementById('save-result-banner');
+  if(old)old.remove();
+  const div=document.createElement('div');
+  div.id='save-result-banner';
+  div.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9998;background:'+(synced?'#059669':'#2563eb')+';color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 20px rgba(0,0,0,.25);animation:slideDown .25s ease';
+  const styleEl=document.getElementById('save-result-style');
+  if(!styleEl){const s=document.createElement('style');s.id='save-result-style';s.textContent='@keyframes slideDown{from{transform:translateY(-100%)}to{transform:none}}';document.head.appendChild(s);}
+  div.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px">
+      <i class="fas fa-check-circle" style="font-size:24px"></i>
+      <div>
+        <div style="font-weight:700;font-size:15px">${isEdit?'✏️ 修改已保存':'➕ 新客户已添加'} — ${cust.name}</div>
+        <div style="font-size:12px;opacity:.9;margin-top:2px">
+          💾 本地已保存 &nbsp;|&nbsp; ${synced?'☁️ 云端已同步':'⚠️ 云端同步失败（本地已保存）'}
+          ${synced?'&nbsp;|&nbsp; 📱 其他设备稍后自动更新':''}
+        </div>
+      </div>
+    </div>
+    <button onclick="document.getElementById('save-result-banner').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px">✕ 关闭</button>`;
+  document.body.appendChild(div);
+  setTimeout(()=>{if(div.parentNode)div.style.opacity='0';div.style.transition='opacity .4s';setTimeout(()=>div.remove(),400);},4000);
+}
+
+// 高亮刚保存的卡片
+function highlightCard(id){
+  const card=document.querySelector(`.kcard[data-id="${id}"]`);
+  if(!card)return;
+  card.scrollIntoView({behavior:'smooth',block:'center'});
+  card.style.transition='box-shadow .3s, transform .3s';
+  card.style.boxShadow='0 0 0 3px #059669, 0 8px 24px rgba(5,150,105,.35)';
+  card.style.transform='scale(1.02)';
+  setTimeout(()=>{card.style.boxShadow='';card.style.transform='';},2500);
 }
 
 function resetForm(){$('customer-form').reset();$('cust-id').value='';$('prev-front').style.display='none';$('ph-front').style.display='';$('prev-back').style.display='none';$('cust-img-preview').style.display='none';frontFile=backFile=null;$('btn-recognize').disabled=true;}
@@ -458,31 +541,20 @@ async function initFirebaseAndSync(){
 }
 
 async function manualSync(){
-  if(!fbEnabled||!db){toast('请先配置并连接Firebase','error');return;}
+  if(!fbEnabled||!db){
+    toast('请先在设置中连接Firebase','error');
+    switchTab('settings');
+    return;
+  }
+  // 已连接时：重启监听器（强制重新拉取）
   setSyncState('syncing','同步中...');
   try{
-    const snapshot=await db.collection('customers').get();
-    const cloudMap={};snapshot.forEach(doc=>cloudMap[doc.id]={...doc.data(),id:doc.id,logs:doc.data().logs||[]});
-    let mergeCount=0;
-    // 合并：以 updatedAt 最新的为准
-    for(const [id,cloudData] of Object.entries(cloudMap)){
-      const localIdx=customers.findIndex(c=>c.id===id);
-      if(localIdx===-1){customers.push(cloudData);mergeCount++;}
-      else{
-        const lt=new Date(customers[localIdx].updatedAt||customers[localIdx].createTime||0).getTime();
-        const ct=new Date(cloudData.updatedAt||cloudData.createTime||0).getTime();
-        if(ct>lt){customers[localIdx]=cloudData;mergeCount++;}
-      }
-    }
-    // 把本地有但云端没有的推上去
-    let uploadCount=0;
-    for(const c of customers){
-      if(!cloudMap[c.id]){await db.collection('customers').doc(c.id).set(c);uploadCount++;}
-    }
-    saveLocal();renderKanban();
-    setSyncState('connected','实时同步中');
-    toast(`同步完成：合并 ${mergeCount} 条，上传 ${uploadCount} 条`,'success');
-  }catch(err){setSyncState('error','同步失败');toast('同步失败: '+err.message,'error');}
+    startRealtimeSync(); // 重启实时监听，会立即触发全量推送
+    toast('已重新连接，数据自动同步中','success');
+  }catch(err){
+    setSyncState('error','同步失败');
+    toast('同步失败: '+err.message,'error');
+  }
 }
 
 async function disconnectFirebase(){
