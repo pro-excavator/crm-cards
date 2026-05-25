@@ -641,6 +641,34 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('btn-init-firebase').onclick=initFirebaseAndSync;
   $('btn-disconnect-firebase').onclick=disconnectFirebase;
   $('btn-sync').onclick=manualSync;
+
+  // ── 手机从后台回到前台时自动重连 ──
+  // iOS/Android 切换 App 后 WebSocket 会被系统断开，回来必须重启监听
+  let _lastHidden = 0;
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible'){
+      const awayMs = Date.now() - _lastHidden;
+      // 离开超过30秒就重启监听，确保数据是最新的
+      if(fbEnabled && db && awayMs > 30000){
+        console.log('页面重新可见，重启实时监听...');
+        startRealtimeSync();
+      }
+    } else {
+      _lastHidden = Date.now();
+    }
+  });
+
+  // 网络断开重连后也自动恢复
+  window.addEventListener('online', ()=>{
+    if(fbEnabled && db){
+      console.log('网络恢复，重启实时监听...');
+      setSyncState('syncing','重新连接...');
+      setTimeout(()=>startRealtimeSync(), 1000); // 等1秒让网络稳定
+    }
+  });
+  window.addEventListener('offline', ()=>{
+    setSyncState('error','网络断开');
+  });
   $('btn-save-api').onclick=()=>{API.key=$('api-key-input').value;localStorage.setItem('crm_api_key',API.key);toast('API Key已保存','success');};$('api-key-input').value=API.key;
   $('search-input').oninput=e=>{searchKw=e.target.value;renderKanban();};
   $('date-start').onchange=e=>{startDate=e.target.value;renderKanban();};
