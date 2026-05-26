@@ -296,7 +296,32 @@ function switchTab(tab){
   if(tab==='product')renderProductTable();
 }
 
+// 压缩图片用于OCR识别（600px宽）
 async function compress(file){return new Promise(ok=>{const img=new Image();img.onload=()=>{const cv=document.createElement('canvas');let w=img.width;if(w>600)w=600;cv.width=w;cv.height=img.height*(w/img.width);cv.getContext('2d').drawImage(img,0,0,w,cv.height);cv.toBlob(ok,'image/jpeg',0.7);};img.src=URL.createObjectURL(file);});}
+
+// 压缩图片用于云端存储（Firebase限制1MB/文档，图片控制在150KB以内）
+async function compressForCloud(dataUrl){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      const cv=document.createElement('canvas');
+      // 最大400px宽，足够显示缩略图
+      let w=img.width, h=img.height;
+      if(w>400){h=Math.round(h*400/w);w=400;}
+      cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      // 先用0.6质量试一次
+      const try1=cv.toDataURL('image/jpeg',0.6);
+      if(try1.length<200000){resolve(try1);return;} // <150KB直接用
+      // 还是太大就缩到250px再压
+      const cv2=document.createElement('canvas');
+      const s=250/w;cv2.width=250;cv2.height=Math.round(h*s);
+      cv2.getContext('2d').drawImage(img,0,0,cv2.width,cv2.height);
+      resolve(cv2.toDataURL('image/jpeg',0.5));
+    };
+    img.src=dataUrl;
+  });
+}
 async function toB64(blob){return new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob);});}
 async function callVision(b64,prompt){const res=await fetch(API.url,{method:'POST',headers:{'Authorization':'Bearer '+API.key,'Content-Type':'application/json'},body:JSON.stringify({model:'qwen-vl-plus',messages:[{role:'user',content:[{type:'image_url',image_url:{url:b64}},{type:'text',text:prompt}]}]})});if(!res.ok)throw new Error('API '+res.status);const data=await res.json();const txt=data.choices[0].message.content;const match=txt.match(/\{[\s\S]*\}/);return match?JSON.parse(match[0]):null;}
 
@@ -350,13 +375,33 @@ async function saveCustomer(e){
     // ── 2. 尝试同步云端 ──
     let synced=false;
     if(fbEnabled&&db){
+      saveBtn.innerHTML='<i class="fas fa-cloud-upload-alt fa-spin"></i> 压缩图片...';
+      // 压缩图片后再上传，避免超过 Firebase 1MB 文档限制
+      const cloudCust={...newCust};
+      if(cloudCust.customerImg) cloudCust.customerImg=await compressForCloud(cloudCust.customerImg);
+      if(cloudCust.cardFrontUrl) cloudCust.cardFrontUrl=await compressForCloud(cloudCust.cardFrontUrl);
+      if(cloudCust.cardBackUrl) cloudCust.cardBackUrl=await compressForCloud(cloudCust.cardBackUrl);
+      // 检查压缩后大小
+      const docSize=JSON.stringify(cloudCust).length;
       saveBtn.innerHTML='<i class="fas fa-cloud-upload-alt fa-spin"></i> 同步云端...';
-      try{
-        await db.collection('customers').doc(id).set(newCust);
-        synced=true;
-        setSyncState('connected','实时同步中');
-      }catch(err){
-        setSyncState('error','同步失败');
+      if(docSize>900000){
+        // 超过900KB就去掉图片只同步文字
+        const textOnly={...cloudCust,customerImg:'',cardFrontUrl:'',cardBackUrl:''};
+        try{
+          await db.collection('customers').doc(id).set(textOnly);
+          synced=true;
+          setSyncState('connected','实时同步中');
+          toast('⚠️ 图片过大已跳过，文字信息已同步','warning');
+        }catch(err){setSyncState('error','同步失败');}
+      } else {
+        try{
+          await db.collection('customers').doc(id).set(cloudCust);
+          synced=true;
+          setSyncState('connected','实时同步中');
+        }catch(err){
+          setSyncState('error','同步失败');
+          console.error('Firebase写入失败:',err.message,'文档大小:',docSize,'字节');
+        }
       }
     }
 
