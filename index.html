@@ -449,9 +449,14 @@ function startRealtimeSync(){
   setSyncState('syncing','连接中...');
   unsubscribeSnapshot=db.collection('customers').onSnapshot(snapshot=>{
     let changed=false;
+    const removedIds=[];
     snapshot.docChanges().forEach(change=>{
       const d={...change.doc.data(),id:change.doc.id,logs:change.doc.data().logs||[]};
-      if(change.type==='removed'){customers=customers.filter(c=>c.id!==d.id);changed=true;return;}
+      if(change.type==='removed'){
+        customers=customers.filter(c=>c.id!==d.id);
+        removedIds.push(d.id); // 记录要从IDB删除的id
+        changed=true;return;
+      }
       const idx=customers.findIndex(c=>c.id===d.id);
       if(idx===-1){customers.push(d);changed=true;}
       else{
@@ -460,7 +465,12 @@ function startRealtimeSync(){
         if(ct>lt){customers[idx]=d;changed=true;}
       }
     });
-    if(changed){saveLocal();renderKanban();}
+    if(changed){
+      saveLocal();
+      // 清掉已删除客户的IDB图片
+      removedIds.forEach(id=>idbDel('img_'+id,'images'));
+      renderKanban();
+    }
     setSyncState('connected','实时同步中');
     const sd=$('sync-detail');if(sd)sd.textContent='上次: '+new Date().toLocaleTimeString();
   },err=>{setSyncState('error','同步错误');toast('实时同步中断: '+err.message,'error');});
@@ -686,7 +696,12 @@ function attachCardEvents(){
   document.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',async e=>{
     e.stopPropagation();
     if(!confirm('删除该客户？'))return;
-    const id=b.dataset.del;customers=customers.filter(x=>x.id!==id);saveLocal();renderKanban();toast('已删除');
+    const id=b.dataset.del;
+    customers=customers.filter(x=>x.id!==id);
+    saveLocal();
+    idbDel('img_'+id,'images'); // 同时清IDB里的图片
+    renderKanban();
+    toast('已删除');
     if(fbEnabled&&db)await db.collection('customers').doc(id).delete();
   }));
   document.querySelectorAll('[data-phone]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openWA(b.dataset.phone);}));
