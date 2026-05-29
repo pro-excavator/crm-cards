@@ -131,7 +131,7 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
     <div><label>国家</label><input type="text" id="cust-country" list="country-list"><datalist id="country-list"><option>中国</option><option>美国</option><option>日本</option><option>德国</option><option>英国</option><option>加拿大</option></datalist></div>
     <div><label>城市</label><input type="text" id="cust-city"></div>
     <div><label>地址</label><input type="text" id="cust-address"></div>
-    <div><label>网站</label><input type="url" id="cust-website"></div>
+    <div><label>网站</label><input type="text" id="cust-website"></div>
     <div><label>微信</label><input type="text" id="cust-wechat"></div>
     <div><label>客户来源</label><input type="text" id="cust-source"></div>
     <div><label>联系日期</label><input type="date" id="cust-date"></div>
@@ -667,7 +667,22 @@ function resetForm(){
 // ═══════════════════════════════════════
 function renderKanban(){
   let list=customers.filter(c=>{
-    if(searchKw){const kw=searchKw.toLowerCase();return(c.name||'').toLowerCase().includes(kw)||(c.company||'').toLowerCase().includes(kw)||(c.phone||'').includes(kw)||(c.country||'').toLowerCase().includes(kw);}
+    if(searchKw){
+      const kw=searchKw.toLowerCase();
+      return (c.name||'').toLowerCase().includes(kw)
+        ||(c.company||'').toLowerCase().includes(kw)
+        ||(c.phone||'').includes(kw)
+        ||(c.email||'').toLowerCase().includes(kw)
+        ||(c.country||'').toLowerCase().includes(kw)
+        ||(c.city||'').toLowerCase().includes(kw)
+        ||(c.address||'').toLowerCase().includes(kw)
+        ||(c.website||'').toLowerCase().includes(kw)
+        ||(c.wechat||'').toLowerCase().includes(kw)
+        ||(c.source||'').toLowerCase().includes(kw)
+        ||(c.position||'').toLowerCase().includes(kw)
+        ||(c.notes||'').toLowerCase().includes(kw)
+        ||((c.logs||[]).some(l=>(l.content||'').toLowerCase().includes(kw)||(l.nextStep||'').toLowerCase().includes(kw)));
+    }
     return true;
   });
   if(countryFilter)list=list.filter(c=>c.country===countryFilter);
@@ -676,6 +691,19 @@ function renderKanban(){
   // 按最后修改时间降序，最新编辑的排最上面
   list.sort((a,b)=>new Date(b.updatedAt||b.createTime||0)-new Date(a.updatedAt||a.createTime||0));
   $('total-customers').textContent=list.length;
+  // 无结果提示
+  const noRes=$('no-results-tip');
+  if(searchKw&&list.length===0){
+    if(!noRes){
+      const d=document.createElement('div');d.id='no-results-tip';
+      d.style.cssText='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#9ca3af;pointer-events:none;z-index:10';
+      d.innerHTML=`<i class="fas fa-search" style="font-size:36px;margin-bottom:8px;display:block"></i><div>未找到包含 "<strong style="color:#374151">${esc(searchKw)}</strong>" 的客户</div><div style="font-size:12px;margin-top:4px">已搜索：姓名、公司、电话、邮箱、地址、备注、沟通记录等所有字段</div>`;
+      $('kanban-scroll').style.position='relative';
+      $('kanban-scroll').appendChild(d);
+    }
+  }else{
+    if(noRes)noRes.remove();
+  }
   updateCountryList();
   ['potential','contacted','followed_up','closed','lost'].forEach(s=>{
     $('col-'+s).innerHTML='';
@@ -714,6 +742,23 @@ function attachCardEvents(){
   }));
 }
 
+function fmtWebsite(url){
+  if(!url||url==='-')return '-';
+  // 自动补全协议
+  let href=url.trim();
+  if(!href.match(/^https?:\/\//i)) href='https://'+href;
+  return `<a href="${href}" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline;word-break:break-all">${esc(url)} <i class="fas fa-external-link-alt" style="font-size:10px"></i></a>`;
+}
+function fmtEmail(email){
+  if(!email||email==='-')return '-';
+  return `<a href="mailto:${esc(email)}" style="color:#2563eb;text-decoration:underline">${esc(email)} <i class="fas fa-envelope" style="font-size:10px"></i></a>`;
+}
+function fmtAddress(addr){
+  if(!addr||addr==='-')return '-';
+  const q=encodeURIComponent(addr);
+  return `<a href="https://maps.google.com/?q=${q}" target="_blank" rel="noopener" style="color:#2563eb;text-decoration:underline">${esc(addr)} <i class="fas fa-map-marker-alt" style="font-size:10px"></i></a>`;
+}
+
 function openDetail(id){
   const c=customers.find(x=>x.id===id);if(!c)return;
   $('detail-title').innerHTML=esc(c.name||'');
@@ -722,7 +767,19 @@ function openDetail(id){
   if(c.cardBackUrl)imgs+=`<div><img src="${c.cardBackUrl}" class="rounded border cursor-pointer" style="max-height:150px" onclick="openLightbox(this.src)"></div>`;
   if(c.customerImg)imgs+=`<div><img src="${c.customerImg}" class="rounded border cursor-pointer" style="max-height:150px" onclick="openLightbox(this.src)"></div>`;
   $('detail-imgs').innerHTML=imgs||'<div class="text-gray-400 p-2">无图片</div>';
-  $('detail-info').innerHTML=`<div><label>公司</label>${esc(c.company||'-')}</div><div><label>职位</label>${esc(c.position||'-')}</div><div><label>电话</label>${esc(c.phone||'-')}</div><div><label>邮箱</label>${esc(c.email||'-')}</div><div><label>国家/城市</label>${esc(c.country||'')} ${esc(c.city||'')}</div><div><label>地址</label>${esc(c.address||'-')}</div><div><label>网站</label>${esc(c.website||'-')}</div><div><label>微信</label>${esc(c.wechat||'-')}</div><div><label>来源</label>${esc(c.source||'-')}</div><div><label>联系日期</label>${esc(c.contactDate||'-')}</div><div><label>最后修改</label>${c.updatedAt?new Date(c.updatedAt).toLocaleString():'-'}</div><div><label>备注</label>${esc(c.notes||'-')}</div>`;
+  $('detail-info').innerHTML=`
+    <div><label>公司</label>${esc(c.company||'-')}</div>
+    <div><label>职位</label>${esc(c.position||'-')}</div>
+    <div><label>电话</label>${esc(c.phone||'-')}</div>
+    <div><label>邮箱</label>${fmtEmail(c.email)}</div>
+    <div><label>国家/城市</label>${esc(c.country||'')} ${esc(c.city||'')}</div>
+    <div><label>地址</label>${fmtAddress(c.address)}</div>
+    <div><label>网站</label>${fmtWebsite(c.website)}</div>
+    <div><label>微信</label>${esc(c.wechat||'-')}</div>
+    <div><label>来源</label>${esc(c.source||'-')}</div>
+    <div><label>联系日期</label>${esc(c.contactDate||'-')}</div>
+    <div><label>最后修改</label>${c.updatedAt?new Date(c.updatedAt).toLocaleString():'-'}</div>
+    <div><label>备注</label>${esc(c.notes||'-')}</div>`;
   $('detail-edit-btn').onclick=()=>{$('detail-modal').classList.remove('show');editCustomer(id);};
   $('detail-wa-btn').style.display=c.phone?'inline-flex':'none';$('detail-wa-btn').onclick=()=>openWA(c.phone);
   $('detail-log-btn').onclick=()=>{$('detail-modal').classList.remove('show');openLog(id);};
@@ -997,7 +1054,34 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('btn-sync').onclick=manualSync;
   $('btn-save-api').onclick=()=>{API.key=$('api-key-input').value;localStorage.setItem('crm_api_key',API.key);toast('API Key已保存','success');};
   $('api-key-input').value=API.key;
-  $('search-input').oninput=e=>{searchKw=e.target.value;renderKanban();};
+  $('search-input').oninput=e=>{
+    searchKw=e.target.value.trim();
+    renderKanban();
+    // 调试：控制台输出匹配结果
+    if(searchKw){
+      const kw=searchKw.toLowerCase();
+      const matched=customers.filter(c=>
+        (c.name||'').toLowerCase().includes(kw)||(c.company||'').toLowerCase().includes(kw)
+        ||(c.phone||'').includes(kw)||(c.email||'').toLowerCase().includes(kw)
+        ||(c.country||'').toLowerCase().includes(kw)||(c.city||'').toLowerCase().includes(kw)
+        ||(c.address||'').toLowerCase().includes(kw)||(c.website||'').toLowerCase().includes(kw)
+        ||(c.wechat||'').toLowerCase().includes(kw)||(c.source||'').toLowerCase().includes(kw)
+        ||(c.position||'').toLowerCase().includes(kw)||(c.notes||'').toLowerCase().includes(kw)
+        ||((c.logs||[]).some(l=>(l.content||'').toLowerCase().includes(kw)||(l.nextStep||'').toLowerCase().includes(kw)))
+      );
+      console.log(`搜索"${searchKw}"：共${customers.length}位客户，匹配${matched.length}位`);
+      matched.forEach(c=>{
+        const fields=[];
+        if((c.name||'').toLowerCase().includes(kw))fields.push('姓名');
+        if((c.company||'').toLowerCase().includes(kw))fields.push('公司');
+        if((c.phone||'').includes(kw))fields.push('电话');
+        if((c.email||'').toLowerCase().includes(kw))fields.push('邮箱');
+        if((c.notes||'').toLowerCase().includes(kw))fields.push('备注');
+        if((c.logs||[]).some(l=>(l.content||'').toLowerCase().includes(kw)))fields.push('沟通记录');
+        console.log(' -',c.name,'匹配字段:',fields.join('、'));
+      });
+    }
+  };
   $('date-start').onchange=e=>{startDate=e.target.value;renderKanban();};
   $('date-end').onchange=e=>{endDate=e.target.value;renderKanban();};
   const ci=$('country-filter-input');
