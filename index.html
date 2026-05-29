@@ -673,6 +673,8 @@ function renderKanban(){
   if(countryFilter)list=list.filter(c=>c.country===countryFilter);
   if(startDate){const s=new Date(startDate);s.setHours(0,0,0,0);list=list.filter(c=>new Date(c.createTime)>=s);}
   if(endDate){const ed=new Date(endDate);ed.setHours(23,59,59,999);list=list.filter(c=>new Date(c.createTime)<=ed);}
+  // 按最后修改时间降序，最新编辑的排最上面
+  list.sort((a,b)=>new Date(b.updatedAt||b.createTime||0)-new Date(a.updatedAt||a.createTime||0));
   $('total-customers').textContent=list.length;
   updateCountryList();
   ['potential','contacted','followed_up','closed','lost'].forEach(s=>{
@@ -734,22 +736,79 @@ function editCustomer(id){
   $('cust-img-file').value='';switchTab('ocr');toast('正在编辑，修改后点保存','info');
 }
 
-function openLog(id){
+function openLog(id, editingIdx=null){
   const c=customers.find(x=>x.id===id);if(!c)return;
-  $('log-cust-id').value=id;$('log-title').innerHTML='沟通记录 · '+esc(c.name||'');
+  $('log-cust-id').value=id;
+  $('log-title').innerHTML='沟通记录 · '+esc(c.name||'');
   const logs=c.logs||[];
-  $('log-history').innerHTML=logs.length?logs.slice().reverse().map(l=>`<div class="bg-white border rounded p-2 mb-2 text-sm"><div class="text-gray-500 text-xs">${new Date(l.timestamp).toLocaleString()}</div><div>${esc(l.content)}</div>${l.nextStep?`<div class="text-amber-600 text-xs mt-1">→ ${esc(l.nextStep)}</div>`:''}</div>`).join(''):'<div class="text-gray-400 text-center py-4">暂无记录</div>';
+
+  // 渲染历史记录
+  if(logs.length){
+    $('log-history').innerHTML=logs.slice().reverse().map((l,ri)=>{
+      const i=logs.length-1-ri; // 真实index（反转后对应原数组）
+      const isEditing=(editingIdx===i);
+      if(isEditing){
+        return `<div class="border-2 border-blue-400 rounded p-2 mb-2 text-sm bg-blue-50">
+          <div class="text-gray-500 text-xs mb-1">${new Date(l.timestamp).toLocaleString()}</div>
+          <textarea id="log-edit-content-${i}" class="w-full p-1 border rounded text-sm mb-1" rows="2">${esc(l.content)}</textarea>
+          <input id="log-edit-next-${i}" class="w-full p-1 border rounded text-sm mb-2" value="${esc(l.nextStep||'')}" placeholder="下一步">
+          <div class="flex gap-2">
+            <button onclick="saveLogEdit('${id}',${i})" class="btn btn-blue text-xs py-1 px-3">保存</button>
+            <button onclick="openLog('${id}')" class="btn btn-gray text-xs py-1 px-3">取消</button>
+          </div>
+        </div>`;
+      }
+      return `<div class="bg-white border rounded p-2 mb-2 text-sm group">
+        <div class="flex justify-between items-start">
+          <div class="text-gray-500 text-xs">${new Date(l.timestamp).toLocaleString()}</div>
+          <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onclick="openLog('${id}',${i})" class="text-blue-500 text-xs px-1 hover:bg-blue-50 rounded" title="编辑"><i class="fas fa-edit"></i></button>
+            <button onclick="deleteLog('${id}',${i})" class="text-red-500 text-xs px-1 hover:bg-red-50 rounded" title="删除"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+        <div class="mt-1">${esc(l.content)}</div>
+        ${l.nextStep?`<div class="text-amber-600 text-xs mt-1">→ ${esc(l.nextStep)}</div>`:''}
+      </div>`;
+    }).join('');
+  }else{
+    $('log-history').innerHTML='<div class="text-gray-400 text-center py-4">暂无记录</div>';
+  }
+
+  // 新增表单
+  $('log-content').value='';$('log-next').value='';
   $('log-modal').classList.add('show');
+}
+
+async function saveLogEdit(custId, idx){
+  const c=customers.find(x=>x.id===custId);if(!c)return;
+  const contentEl=document.getElementById('log-edit-content-'+idx);
+  const nextEl=document.getElementById('log-edit-next-'+idx);
+  if(!contentEl)return;
+  c.logs[idx].content=contentEl.value;
+  c.logs[idx].nextStep=nextEl?nextEl.value:'';
+  c.updatedAt=new Date().toISOString();
+  saveLocal();if(fbEnabled&&db)await db.collection('customers').doc(custId).set(c);
+  openLog(custId);toast('记录已更新','success');
+}
+
+async function deleteLog(custId, idx){
+  if(!confirm('确定删除这条沟通记录？'))return;
+  const c=customers.find(x=>x.id===custId);if(!c)return;
+  c.logs.splice(idx,1);
+  c.updatedAt=new Date().toISOString();
+  saveLocal();if(fbEnabled&&db)await db.collection('customers').doc(custId).set(c);
+  openLog(custId);renderKanban();toast('记录已删除','success');
 }
 
 async function saveLog(e){
   e.preventDefault();
   const id=$('log-cust-id').value,c=customers.find(x=>x.id===id);
   if(c){
-    c.logs=c.logs||[];c.logs.push({timestamp:new Date().toISOString(),content:$('log-content').value,nextStep:$('log-next').value});
+    c.logs=c.logs||[];
+    c.logs.push({timestamp:new Date().toISOString(),content:$('log-content').value,nextStep:$('log-next').value});
     c.updatedAt=new Date().toISOString();
     saveLocal();if(fbEnabled&&db)await db.collection('customers').doc(id).set(c);
-    openLog(id);$('log-content').value='';$('log-next').value='';toast('记录已添加','success');
+    openLog(id);toast('记录已添加','success');
   }
 }
 
@@ -997,6 +1056,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 window.openLightbox=url=>{$('lb-img').src=url;$('lightbox').classList.remove('hidden');$('lightbox').style.display='flex';};
 window._dp=id=>{products=products.filter(p=>p.id!==id);saveLocal();renderProductTable();};
+window.openLog=openLog;
+window.saveLogEdit=saveLogEdit;
+window.deleteLog=deleteLog;
 
 })();
 </script>
