@@ -531,6 +531,35 @@ async function callVision(b64,prompt){
   const txt=data.choices[0].message.content;
   const m=txt.match(/\{[\s\S]*\}/);return m?JSON.parse(m[0]):null;
 }
+async function callVisionRaw(b64){
+  // 单独调用：提取名片全部原始文字，不做结构化
+  const res=await fetch(API.url,{method:'POST',headers:{'Authorization':'Bearer '+API.key,'Content-Type':'application/json'},body:JSON.stringify({model:'qwen-vl-plus',messages:[{role:'user',content:[{type:'image_url',image_url:{url:b64}},{type:'text',text:'请把这张名片上所有文字原样列出来，每行一条，不要分析，不要翻译，保持原文。'}]}]})});
+  if(!res.ok)return '';
+  const data=await res.json();
+  return data.choices?.[0]?.message?.content||'';
+}
+
+function showRawOcrResult(frontRaw, backRaw){
+  const old=$('ocr-raw-result');if(old)old.remove();
+  if(!frontRaw&&!backRaw)return;
+  const div=document.createElement('div');div.id='ocr-raw-result';
+  div.style.cssText='margin-top:14px;border:1px solid #bae6fd;border-radius:10px;background:#f0f9ff;padding:14px';
+  let html=`<div style="font-size:12px;font-weight:600;color:#0369a1;margin-bottom:8px"><i class="fas fa-text-height"></i> 名片原始识别内容（可手动复制填入上方表单）</div>`;
+  if(frontRaw){
+    html+=`<div style="font-size:11px;color:#6b7280;margin-bottom:3px">正面：</div>`;
+    html+=`<div style="font-size:13px;line-height:1.8;white-space:pre-wrap;color:#1e3a8a;background:#fff;padding:8px;border-radius:6px;margin-bottom:8px;border:1px solid #e0f2fe;user-select:all">${esc(frontRaw)}</div>`;
+  }
+  if(backRaw){
+    html+=`<div style="font-size:11px;color:#6b7280;margin-bottom:3px">背面：</div>`;
+    html+=`<div style="font-size:13px;line-height:1.8;white-space:pre-wrap;color:#1e3a8a;background:#fff;padding:8px;border-radius:6px;border:1px solid #e0f2fe;user-select:all">${esc(backRaw)}</div>`;
+  }
+  html+=`<div style="font-size:11px;color:#9ca3af;margin-top:6px">💡 长按或点击文字可全选复制</div>`;
+  div.innerHTML=html;
+  // 插入到表单末尾
+  const form=$('customer-form');
+  form.appendChild(div);
+}
+
 async function recognizeCard(){
   if(!API.key){toast('请先配置API Key','error');switchTab('settings');return;}
   if(!frontFile){toast('请上传名片正面','error');return;}
@@ -538,18 +567,38 @@ async function recognizeCard(){
   btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 识别中...';
   try{
     const fb=await compress(frontFile),b64=await toB64(fb);
-    const fr=await callVision(b64,'提取名片信息JSON：{"name":"","company":"","position":"","phone":"","email":"","country":""}，country中文');
+
+    // 并行：结构化提取 + 原始文字
+    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 提取字段...';
+    const [fr, frontRaw]=await Promise.all([
+      callVision(b64,'提取名片信息JSON：{"name":"","company":"","position":"","phone":"","email":"","country":"","address":"","website":"","wechat":"","city":""}，country和city用中文，所有字段尽量填写，address包含完整地址'),
+      callVisionRaw(b64)
+    ]);
     let data=fr||{};
+    let backRaw='';
+
     if(backFile){
+      btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 识别背面...';
       const bb=await compress(backFile),bb64=await toB64(bb);
-      const br=await callVision(bb64,'提取背面信息JSON：{"name":"","company":"","position":"","phone":"","email":"","country":"","address":"","website":""}，country中文');
-      if(br){['name','company','position','phone','email','country','address','website'].forEach(k=>{if(br[k]&&!data[k])data[k]=br[k];});}
+      const [br, bRaw]=await Promise.all([
+        callVision(bb64,'提取名片背面信息JSON：{"name":"","company":"","position":"","phone":"","email":"","country":"","address":"","website":"","wechat":"","city":""}，country和city用中文，address包含完整地址'),
+        callVisionRaw(bb64)
+      ]);
+      backRaw=bRaw||'';
+      if(br){['name','company','position','phone','email','country','address','website','wechat','city'].forEach(k=>{if(br[k]&&!data[k])data[k]=br[k];});}
     }
-    const fields={name:'cust-name',company:'cust-company',position:'cust-position',phone:'cust-phone',email:'cust-email',country:'cust-country',address:'cust-address',website:'cust-website'};
+
+    // 填入表单
+    const fields={name:'cust-name',company:'cust-company',position:'cust-position',phone:'cust-phone',email:'cust-email',country:'cust-country',address:'cust-address',website:'cust-website',wechat:'cust-wechat',city:'cust-city'};
     Object.entries(fields).forEach(([k,id])=>{if(data[k])$(id).value=data[k];});
+
     window._pendingFrontB64=b64;
     if(backFile){const bb=await compress(backFile);window._pendingBackB64=await toB64(bb);}
-    toast(backFile?'正反面识别完成！':'正面识别完成！','success');
+
+    // 展示原始识别内容
+    showRawOcrResult(frontRaw, backRaw);
+
+    toast(backFile?'正反面识别完成！':'正面识别完成！识别结果在下方','success');
   }catch(e){toast('识别失败: '+e.message,'error');}
   finally{btn.innerHTML=orig;btn.disabled=false;}
 }
@@ -660,6 +709,7 @@ function resetForm(){
   $('prev-back').style.display='none';$('ph-back').style.display='';
   $('cust-img-preview').style.display='none';
   frontFile=backFile=null;$('btn-recognize').disabled=true;
+  const raw=$('ocr-raw-result');if(raw)raw.remove();
 }
 
 // ═══════════════════════════════════════
