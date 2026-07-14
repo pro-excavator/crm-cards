@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes,viewport-fit=cover">
-<title>智能客户管理系统 v8.5</title>
+<title>智能客户管理系统 v8.6</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -96,7 +96,7 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
   <div style="max-width:1280px;margin:0 auto;padding:0 18px;height:54px;display:flex;align-items:center;justify-content:space-between">
     <div style="display:flex;align-items:center;gap:10px">
       <i class="fas fa-address-card" style="color:#2563eb"></i>
-      <span class="font-bold">CRM v8.5</span>
+      <span class="font-bold">CRM v8.6</span>
       <div id="sync-indicator"><div id="sync-dot"></div><span id="sync-text">未连接云端</span></div>
     </div>
     <nav class="flex gap-1">
@@ -150,10 +150,22 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
 <div class="app-section" id="section-product"><div style="max-width:1000px;margin:0 auto">
 <div class="card-box"><div class="flex justify-between items-center mb-4"><h2 class="font-semibold text-base">📦 产品库</h2><button class="btn btn-purple text-sm" id="export-products-excel"><i class="fas fa-file-excel"></i> 导出Excel</button></div>
 <div class="grid md:grid-cols-2 gap-4">
-  <div><div class="dz" id="prod-dz"><input type="file" accept="image/*" id="prod-file"><div id="prod-ph" class="text-center"><i class="fas fa-image text-3xl text-gray-400"></i><p>上传产品图片</p></div><img id="prod-preview" style="display:none;max-height:100px"></div></div>
-  <form id="product-form"><input type="hidden" id="product-id"><input placeholder="型号" id="product-model"><input placeholder="序列号" id="product-serial"><textarea placeholder="备注" rows="2" id="product-notes"></textarea><button class="btn btn-purple mt-2">保存</button></form>
+  <div>
+    <div class="dz" id="prod-dz"><input type="file" accept="image/*" id="prod-file"><div id="prod-ph" class="text-center"><i class="fas fa-image text-3xl text-gray-400"></i><p>上传产品图片</p></div><img id="prod-preview" style="display:none;max-height:120px"></div>
+    <button class="btn btn-blue w-full mt-2" id="btn-prod-recognize" disabled><i class="fas fa-magic"></i> OCR识别型号</button>
+    <div id="prod-ocr-raw" style="display:none;margin-top:10px;padding:10px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:12px;color:#1e3a8a;white-space:pre-wrap;line-height:1.7"></div>
+  </div>
+  <form id="product-form">
+    <input type="hidden" id="product-id">
+    <input placeholder="型号 *" id="product-model" class="mb-2">
+    <input placeholder="序列号" id="product-serial" class="mb-2">
+    <input placeholder="品牌/厂家" id="product-brand" class="mb-2">
+    <input placeholder="规格参数" id="product-spec" class="mb-2">
+    <textarea placeholder="备注" rows="2" id="product-notes" class="mb-2"></textarea>
+    <button class="btn btn-purple w-full">保存产品</button>
+  </form>
 </div>
-<div class="mt-4 overflow-x-auto"><table class="w-full text-sm"><thead><tr><th>图片</th><th>型号</th><th>备注</th><th>操作</th></tr></thead><tbody id="product-list-body"></tbody></table></div>
+<div class="mt-4 overflow-x-auto"><table class="w-full text-sm"><thead><tr><th>图片</th><th>型号</th><th>品牌</th><th>规格</th><th>备注</th><th>操作</th></tr></thead><tbody id="product-list-body"></tbody></table></div>
 </div></div></div>
 
 <!-- 客户看板 -->
@@ -217,7 +229,7 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
     <button class="btn btn-orange" id="btn-compress-imgs">🗜️ 压缩图片缓存</button>
     <button class="btn btn-red" id="btn-clear">🗑️ 清空所有数据</button>
   </div>
-  <p class="text-xs text-gray-400 mt-2">v8.5 | 图片压缩存储，多端实时同步</p>
+  <p class="text-xs text-gray-400 mt-2">v8.6 | 图片压缩存储，多端实时同步</p>
 </div>
 </div></div>
 
@@ -1133,7 +1145,15 @@ async function confirmImport(){
 // ═══════════════════════════════════════
 function renderProductTable(){
   const tb=$('product-list-body');if(!tb)return;
-  tb.innerHTML=products.slice().reverse().map(p=>`<tr><td><img src="${p.imgUrl||'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%23f3f4f6%22/%3E%3C/svg%3E'}" class="w-10 h-10 object-cover rounded border"></td><td>${esc(p.model||'-')}</td><td>${esc(p.notes||'-')}</td><td><button onclick="window._dp('${p.id}')" class="text-red-500 text-sm">删除</button></td></tr>`).join('');
+  const blank='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%23f3f4f6%22/%3E%3C/svg%3E';
+  tb.innerHTML=products.slice().reverse().map(p=>`<tr>
+    <td><img src="${p.imgUrl||blank}" class="w-12 h-12 object-cover rounded border cursor-pointer" onclick="openLightbox('${p.imgUrl||blank}')"></td>
+    <td><strong>${esc(p.model||'-')}</strong></td>
+    <td>${esc(p.brand||'-')}</td>
+    <td>${esc(p.spec||'-')}</td>
+    <td>${esc(p.notes||'-')}</td>
+    <td><div class="flex gap-1"><button onclick="window._editProd('${p.id}')" class="text-blue-500 text-sm">编辑</button><button onclick="window._dp('${p.id}')" class="text-red-500 text-sm">删除</button></div></td>
+  </tr>`).join('');
 }
 
 // ═══════════════════════════════════════
@@ -1314,9 +1334,48 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('import-file').onchange=e=>{if(e.target.files[0])handleImport(e.target.files[0]);};
   $('confirm-import').onclick=confirmImport;
   $('prod-dz').onclick=()=>$('prod-file').click();
-  $('prod-file').onchange=e=>{if(e.target.files[0]){const r=new FileReader();r.onload=ev=>{$('prod-preview').src=ev.target.result;$('prod-preview').style.display='block';$('prod-ph').style.display='none';window._prodImg=ev.target.result;};r.readAsDataURL(e.target.files[0]);}};
-  $('product-form').addEventListener('submit',e=>{e.preventDefault();const id=$('product-id').value||Date.now().toString();const p={id,model:$('product-model').value,serial:$('product-serial').value,notes:$('product-notes').value,imgUrl:window._prodImg||'',createTime:new Date().toISOString()};products.push(p);saveLocal();$('product-form').reset();$('prod-preview').style.display='none';$('prod-ph').style.display='';window._prodImg='';renderProductTable();toast('产品已保存','success');});
-
+  $('prod-file').onchange=e=>{
+    if(e.target.files[0]){
+      const r=new FileReader();
+      r.onload=ev=>{$('prod-preview').src=ev.target.result;$('prod-preview').style.display='block';$('prod-ph').style.display='none';window._prodImg=ev.target.result;$('btn-prod-recognize').disabled=false;};
+      r.readAsDataURL(e.target.files[0]);
+    }
+  };
+  $('btn-prod-recognize').onclick=async()=>{
+    if(!API.key){toast('请先配置通义千问API Key','error');switchTab('settings');return;}
+    if(!window._prodImg){toast('请先上传产品图片','error');return;}
+    const btn=$('btn-prod-recognize'),orig=btn.innerHTML;
+    btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 识别中...';
+    try{
+      const [structured,raw]=await Promise.all([
+        callVision(window._prodImg,'这是产品图片或标签，提取信息返回JSON：{"model":"型号/产品编号","serial":"序列号SN","brand":"品牌厂家","spec":"规格参数","notes":"其他"}，识别不到留空'),
+        callVisionRaw(window._prodImg)
+      ]);
+      if(structured){
+        if(structured.model)$('product-model').value=structured.model;
+        if(structured.serial)$('product-serial').value=structured.serial;
+        if(structured.brand)$('product-brand').value=structured.brand;
+        if(structured.spec)$('product-spec').value=structured.spec;
+        if(structured.notes)$('product-notes').value=structured.notes;
+      }
+      if(raw){$('prod-ocr-raw').style.display='block';$('prod-ocr-raw').innerHTML='<strong style="color:#0369a1">📄 原始识别内容（可复制）：</strong>\n'+raw.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));}
+      toast('识别完成，请确认后保存','success');
+    }catch(err){toast('识别失败: '+err.message,'error');}
+    finally{btn.innerHTML=orig;btn.disabled=false;}
+  };
+  $('product-form').addEventListener('submit',e=>{
+    e.preventDefault();
+    const model=$('product-model').value.trim();
+    if(!model){toast('请填写型号','error');return;}
+    const id=$('product-id').value||Date.now().toString();
+    const p={id,model,serial:$('product-serial').value,brand:$('product-brand').value||'',spec:$('product-spec').value||'',notes:$('product-notes').value,imgUrl:window._prodImg||'',createTime:new Date().toISOString()};
+    const idx=products.findIndex(x=>x.id===id);
+    if(idx!==-1)products[idx]=p;else products.push(p);
+    saveLocal();$('product-form').reset();$('product-id').value='';
+    $('prod-preview').style.display='none';$('prod-ph').style.display='';
+    $('prod-ocr-raw').style.display='none';$('btn-prod-recognize').disabled=true;
+    window._prodImg='';renderProductTable();toast('产品已保存','success');
+  });
   // 手机回到前台自动重连
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible'&&fbEnabled&&db&&Date.now()-_lastHidden>30000)startRealtimeSync();
@@ -1508,6 +1567,18 @@ window.deleteFromDup=async id=>{
   $('btn-finddup').click();
 };
 window._dp=id=>{products=products.filter(p=>p.id!==id);saveLocal();renderProductTable();};
+window._editProd=id=>{
+  const p=products.find(x=>x.id===id);if(!p)return;
+  switchTab('product');
+  $('product-id').value=p.id;
+  $('product-model').value=p.model||'';
+  $('product-serial').value=p.serial||'';
+  $('product-brand').value=p.brand||'';
+  $('product-spec').value=p.spec||'';
+  $('product-notes').value=p.notes||'';
+  if(p.imgUrl){$('prod-preview').src=p.imgUrl;$('prod-preview').style.display='block';$('prod-ph').style.display='none';window._prodImg=p.imgUrl;$('btn-prod-recognize').disabled=false;}
+  toast('正在编辑产品，修改后点保存','info');
+};
 window.openLog=openLog;
 window.saveLogEdit=saveLogEdit;
 window.deleteLog=deleteLog;
