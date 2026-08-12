@@ -1,0 +1,127 @@
+from pathlib import Path
+
+p = Path('index.html')
+s = p.read_text(encoding='utf-8')
+
+old_api = '''async function callVision(b64,prompt){
+  const res=await fetch(API.url,{method:'POST',headers:{'Authorization':'Bearer '+API.key,'Content-Type':'application/json'},body:JSON.stringify({model:'qwen-vl-plus',messages:[{role:'user',content:[{type:'image_url',image_url:{url:b64}},{type:'text',text:prompt}]}]})});
+  if(!res.ok)throw new Error('API '+res.status);
+  const data=await res.json();
+  const txt=data.choices[0].message.content;
+  const m=txt.match(/\\{[\\s\\S]*\\}/);return m?JSON.parse(m[0]):null;
+}
+async function callVisionRaw(b64){
+  // 单独调用：提取名片全部原始文字，不做结构化
+  const res=await fetch(API.url,{method:'POST',headers:{'Authorization':'Bearer '+API.key,'Content-Type':'application/json'},body:JSON.stringify({model:'qwen-vl-plus',messages:[{role:'user',content:[{type:'image_url',image_url:{url:b64}},{type:'text',text:'请把这张名片上所有文字原样列出来，每行一条，不要分析，不要翻译，保持原文。'}]}]})});
+  if(!res.ok)return '';
+  const data=await res.json();
+  return data.choices?.[0]?.message?.content||'';
+}
+'''
+
+new_api = '''async function callVisionOnce(b64, kind='card'){
+  const isProduct=kind==='product';
+  const prompt=isProduct
+    ? `请只识别这张产品图片/标签一次，并同时完成原始文字提取和字段分析。严格返回JSON，不要返回Markdown或解释：
+{"rawText":"图片上全部原始文字，按看到的顺序逐行保留，不翻译、不改写","fields":{"model":"型号/产品编号","serial":"序列号SN","brand":"品牌厂家","spec":"规格参数","notes":"其他"}}
+要求：rawText必须尽量完整；fields只能根据rawText和图片内容判断，识别不到的字段留空。`
+    : `请只识别这张名片一次，并同时完成原始文字提取和字段分析。严格返回JSON，不要返回Markdown或解释：
+{"rawText":"名片上全部原始文字，按看到的顺序逐行保留，不翻译、不改写","fields":{"name":"","company":"","position":"","phone":"","email":"","country":"","address":"","website":"","wechat":"","city":""}}
+要求：1) rawText必须尽量完整；2) fields从本次识别得到的rawText和图片内容中分析；3) country和city用中文；4) address保留完整地址；5) 识别不到的字段留空。`;
+  const res=await fetch(API.url,{method:'POST',headers:{'Authorization':'Bearer '+API.key,'Content-Type':'application/json'},body:JSON.stringify({model:'qwen-vl-plus',messages:[{role:'user',content:[{type:'image_url',image_url:{url:b64}},{type:'text',text:prompt}]}]})});
+  if(!res.ok)throw new Error('API '+res.status);
+  const data=await res.json();
+  const txt=data.choices?.[0]?.message?.content||'';
+  const m=txt.match(/\\{[\\s\\S]*\\}/);
+  if(!m)throw new Error('OCR返回格式无法解析');
+  const parsed=JSON.parse(m[0]);
+  return {rawText:parsed.rawText||'',fields:parsed.fields||{}};
+}
+'''
+
+old_card = '''    // 并行：结构化提取 + 原始文字
+    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 提取字段...';
+    const [fr, frontRaw]=await Promise.all([
+      callVision(b64,'提取名片信息JSON：{"name":"","company":"","position":"","phone":"","email":"","country":"","address":"","website":"","wechat":"","city":""}，country和city用中文，所有字段尽量填写，address包含完整地址'),
+      callVisionRaw(b64)
+    ]);
+    let data=fr||{};
+    let backRaw='';
+
+    if(backFile){
+      btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 识别背面...';
+      const bb=await compress(backFile),bb64=await toB64(bb);
+      const [br, bRaw]=await Promise.all([
+        callVision(bb64,'提取名片背面信息JSON：{"name":"","company":"","position":"","phone":"","email":"","country":"","address":"","website":"","wechat":"","city":""}，country和city用中文，address包含完整地址'),
+        callVisionRaw(bb64)
+      ]);
+      backRaw=bRaw||'';
+      if(br){['name','company','position','phone','email','country','address','website','wechat','city'].forEach(k=>{if(br[k]&&!data[k])data[k]=br[k];});}
+    }
+'''
+
+new_card = '''    // 每张图片只调用一次：一次返回原始文字 + 结构化字段
+    btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 识别并分析...';
+    const frontResult=await callVisionOnce(b64,'card');
+    let data=frontResult.fields||{};
+    const frontRaw=frontResult.rawText||'';
+    let backRaw='';
+
+    if(backFile){
+      btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> 识别背面...';
+      const bb=await compress(backFile),bb64=await toB64(bb);
+      const backResult=await callVisionOnce(bb64,'card');
+      const br=backResult.fields||{};
+      backRaw=backResult.rawText||'';
+      ['name','company','position','phone','email','country','address','website','wechat','city'].forEach(k=>{if(br[k]&&!data[k])data[k]=br[k];});
+      window._pendingBackB64=bb64;
+    }
+'''
+
+old_back_cache = '''    window._pendingFrontB64=b64;
+    if(backFile){const bb=await compress(backFile);window._pendingBackB64=await toB64(bb);}
+'''
+new_back_cache = '''    window._pendingFrontB64=b64;
+'''
+
+old_product = '''      const [structured,raw]=await Promise.all([
+        callVision(window._prodImg,'这是产品图片或标签，提取信息返回JSON：{"model":"型号/产品编号","serial":"序列号SN","brand":"品牌厂家","spec":"规格参数","notes":"其他"}，识别不到留空'),
+        callVisionRaw(window._prodImg)
+      ]);
+      if(structured){
+        if(structured.model)$('product-model').value=structured.model;
+        if(structured.serial)$('product-serial').value=structured.serial;
+        if(structured.brand)$('product-brand').value=structured.brand;
+        if(structured.spec)$('product-spec').value=structured.spec;
+        if(structured.notes)$('product-notes').value=structured.notes;
+      }
+      if(raw){$('prod-ocr-raw').style.display='block';$('prod-ocr-raw').innerHTML='<strong style="color:#0369a1">📄 原始识别内容（可复制）：</strong>\\n'+raw.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));}
+'''
+
+new_product = '''      const result=await callVisionOnce(window._prodImg,'product');
+      const structured=result.fields||{};
+      const raw=result.rawText||'';
+      if(structured.model)$('product-model').value=structured.model;
+      if(structured.serial)$('product-serial').value=structured.serial;
+      if(structured.brand)$('product-brand').value=structured.brand;
+      if(structured.spec)$('product-spec').value=structured.spec;
+      if(structured.notes)$('product-notes').value=structured.notes;
+      if(raw){$('prod-ocr-raw').style.display='block';$('prod-ocr-raw').innerHTML='<strong style="color:#0369a1">📄 原始识别内容（可复制）：</strong>\\n'+raw.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));}
+'''
+
+for name, old, new in [
+    ('API functions', old_api, new_api),
+    ('card OCR', old_card, new_card),
+    ('back cache', old_back_cache, new_back_cache),
+    ('product OCR', old_product, new_product),
+]:
+    if old not in s:
+        raise SystemExit(f'Expected block not found: {name}')
+    s = s.replace(old, new, 1)
+
+s = s.replace('<title>智能客户管理系统 v8.6</title>', '<title>智能客户管理系统 v8.7</title>', 1)
+s = s.replace('<span class="font-bold">CRM v8.6</span>', '<span class="font-bold">CRM v8.7</span>', 1)
+s = s.replace('v8.6 | 图片压缩存储，多端实时同步', 'v8.7 | OCR单次识别，图片压缩存储，多端实时同步', 1)
+
+p.write_text(s, encoding='utf-8')
+print('OCR patch completed')
