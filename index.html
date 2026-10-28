@@ -52,6 +52,8 @@ html,body{height:100%;margin:0;padding:0;font-family:'Segoe UI',Roboto,system-ui
 @keyframes slideDown{from{transform:translateY(-100%)}to{transform:none}}
 .wa{background:#25D366;color:#fff;padding:3px 9px;border-radius:20px;font-size:12px;border:none;cursor:pointer}
 .wa:hover{background:#128C7E}
+.wa.wa-invalid{background:#f59e0b}
+.wa.wa-invalid:hover{background:#d97706}
 input,select,textarea{width:100%;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-size:14px;outline:none}
 input:focus{border-color:#2563eb}
 label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4px}
@@ -674,16 +676,25 @@ async function saveCustomer(e){
   const isEdit=!!ex;
   const now=new Date().toISOString();
   const name=$('cust-name').value.trim();
-  const phone=$('cust-phone').value.trim();
+  let phone=$('cust-phone').value.trim();
+  const country=$('cust-country').value.trim();
   const company=$('cust-company').value.trim();
   if(!name){toast('请填写姓名','error');return;}
+  const waPhone=normalizeWhatsAppPhone(phone,country);
+  if(phone&&waPhone.ok&&waPhone.addedCode){
+    phone='+'+waPhone.phone;
+    $('cust-phone').value=phone;
+    toast(`已根据${country}自动补全国际区号：${phone}`,'info');
+  }
 
   // ── 新增客户时检测重复 ──
   if(!isEdit){
-    const phoneClean=phone.replace(/\D/g,'');
+    const phoneClean=waPhone.ok?waPhone.phone:phone.replace(/\D/g,'');
     const dupMatches=customers.filter(c=>{
       const sameName=c.name===name;
-      const samePhone=phoneClean.length>=6&&c.phone&&c.phone.replace(/\D/g,'')===phoneClean;
+      const existingWA=normalizeWhatsAppPhone(c.phone,c.country);
+      const existingPhone=existingWA.ok?existingWA.phone:String(c.phone||'').replace(/\D/g,'');
+      const samePhone=phoneClean.length>=6&&existingPhone===phoneClean;
       const sameNameCompany=c.name===name&&company&&c.company===company;
       return sameName||samePhone||sameNameCompany;
     });
@@ -709,8 +720,8 @@ async function saveCustomer(e){
     const newCust={
       id,name,
       company:$('cust-company').value,position:$('cust-position').value,
-      phone:$('cust-phone').value,email:$('cust-email').value,
-      country:$('cust-country').value,city:$('cust-city').value,
+      phone,email:$('cust-email').value,
+      country,city:$('cust-city').value,
       address:$('cust-address').value,website:$('cust-website').value,
       wechat:$('cust-wechat').value,source:$('cust-source').value,
       contactDate:$('cust-date').value,notes:$('cust-notes').value,
@@ -844,8 +855,10 @@ function renderKanban(){
     // 找最近一条有下次联系日期的记录
     const nextDates=(c.logs||[]).filter(l=>l.nextContactDate).map(l=>l.nextContactDate).sort();
     const nearestDate=nextDates.length?nextDates[0]:null;
+    const waInfo=c.phone?normalizeWhatsAppPhone(c.phone,c.country):null;
+    const waTitle=waInfo?whatsAppStatusText(waInfo,c.country):'';
     const card=document.createElement('div');card.className='kcard';card.dataset.id=c.id;
-    card.innerHTML=`<div class="flex justify-between items-start"><div class="font-bold text-sm truncate flex-1">${esc(c.name||'未命名')}${hasImg?' 📷':''}</div><div class="flex gap-1"><button data-view="${c.id}" class="text-purple-500"><i class="fas fa-id-card"></i></button><button data-edit="${c.id}" class="text-blue-500"><i class="fas fa-edit"></i></button><button data-del="${c.id}" class="text-red-500"><i class="fas fa-trash"></i></button></div></div>${c.country?`<div class="mt-1"><span class="ctag">${flag(c.country)} ${esc(c.country)}</span></div>`:''}<div class="text-xs text-gray-600 mt-1">${c.company?`🏢 ${esc(c.company)}<br>`:''}${c.phone?`📞 ${esc(c.phone)}<br>`:''}${c.city?`📍 ${esc(c.city)}`:''}${c.source?`<br>📌 ${esc(c.source)}`:''}</div>${nearestDate?`<div class="mt-1">${fmtNextDate(nearestDate)}</div>`:''}<div class="flex justify-between items-center mt-2 pt-1 border-t"><span class="text-xs text-gray-400">${c.createTime?new Date(c.createTime).toLocaleDateString():''}</span><div class="flex gap-1">${c.phone?`<button class="wa" data-phone="${esc(c.phone)}" style="padding:2px 8px;font-size:11px"><i class="fab fa-whatsapp"></i></button>`:''}<button data-log="${c.id}" class="text-green-600 text-xs bg-transparent border-0"><i class="far fa-comment-dots"></i>${(c.logs||[]).length||''}</button><select data-sid="${c.id}" class="text-xs p-1 border rounded"><option ${st==='potential'?'selected':''} value="potential">潜在</option><option ${st==='contacted'?'selected':''} value="contacted">联系</option><option ${st==='followed_up'?'selected':''} value="followed_up">跟进</option><option ${st==='closed'?'selected':''} value="closed">成交</option><option ${st==='lost'?'selected':''} value="lost">丢失</option></select></div></div>`;
+    card.innerHTML=`<div class="flex justify-between items-start"><div class="font-bold text-sm truncate flex-1">${esc(c.name||'未命名')}${hasImg?' 📷':''}</div><div class="flex gap-1"><button data-view="${c.id}" class="text-purple-500"><i class="fas fa-id-card"></i></button><button data-edit="${c.id}" class="text-blue-500"><i class="fas fa-edit"></i></button><button data-del="${c.id}" class="text-red-500"><i class="fas fa-trash"></i></button></div></div>${c.country?`<div class="mt-1"><span class="ctag">${flag(c.country)} ${esc(c.country)}</span></div>`:''}<div class="text-xs text-gray-600 mt-1">${c.company?`🏢 ${esc(c.company)}<br>`:''}${c.phone?`📞 ${esc(c.phone)}<br>`:''}${c.city?`📍 ${esc(c.city)}`:''}${c.source?`<br>📌 ${esc(c.source)}`:''}</div>${nearestDate?`<div class="mt-1">${fmtNextDate(nearestDate)}</div>`:''}<div class="flex justify-between items-center mt-2 pt-1 border-t"><span class="text-xs text-gray-400">${c.createTime?new Date(c.createTime).toLocaleDateString():''}</span><div class="flex gap-1">${c.phone?`<button class="wa${waInfo&&waInfo.ok?'':' wa-invalid'}" data-phone="${esc(c.phone)}" data-country="${esc(c.country||'')}" title="${esc(waTitle)}" style="padding:2px 8px;font-size:11px"><i class="fab fa-whatsapp"></i>${waInfo&&waInfo.ok?'':' !'}</button>`:''}<button data-log="${c.id}" class="text-green-600 text-xs bg-transparent border-0"><i class="far fa-comment-dots"></i>${(c.logs||[]).length||''}</button><select data-sid="${c.id}" class="text-xs p-1 border rounded"><option ${st==='potential'?'selected':''} value="potential">潜在</option><option ${st==='contacted'?'selected':''} value="contacted">联系</option><option ${st==='followed_up'?'selected':''} value="followed_up">跟进</option><option ${st==='closed'?'selected':''} value="closed">成交</option><option ${st==='lost'?'selected':''} value="lost">丢失</option></select></div></div>`;
     $('col-'+st).appendChild(card);
   });
   attachCardEvents();
@@ -865,7 +878,7 @@ function attachCardEvents(){
     toast('已删除');
     if(fbEnabled&&db)await db.collection('customers').doc(id).delete();
   }));
-  document.querySelectorAll('[data-phone]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openWA(b.dataset.phone);}));
+  document.querySelectorAll('[data-phone]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openWA(b.dataset.phone,b.dataset.country);}));
   document.querySelectorAll('[data-log]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openLog(b.dataset.log);}));
   document.querySelectorAll('[data-sid]').forEach(sel=>sel.addEventListener('change',async()=>{
     const c=customers.find(x=>x.id===sel.dataset.sid);
@@ -912,7 +925,8 @@ function openDetail(id){
     <div><label>最后修改</label>${c.updatedAt?new Date(c.updatedAt).toLocaleString():'-'}</div>
     <div><label>备注</label>${esc(c.notes||'-')}</div>`;
   $('detail-edit-btn').onclick=()=>{$('detail-modal').classList.remove('show');editCustomer(id);};
-  $('detail-wa-btn').style.display=c.phone?'inline-flex':'none';$('detail-wa-btn').onclick=()=>openWA(c.phone);
+  const waInfo=normalizeWhatsAppPhone(c.phone,c.country),waBtn=$('detail-wa-btn');
+  waBtn.style.display=c.phone?'inline-flex':'none';waBtn.classList.toggle('wa-invalid',!!c.phone&&!waInfo.ok);waBtn.title=c.phone?whatsAppStatusText(waInfo,c.country):'';waBtn.onclick=()=>openWA(c.phone,c.country);
   $('detail-log-btn').onclick=()=>{$('detail-modal').classList.remove('show');openLog(id);};
   $('detail-modal').classList.add('show');
 }
@@ -1057,7 +1071,84 @@ function scheduleReminder(name, dateStr){
   });
 }
 
-function openWA(p){if(p){let phone=String(p).replace(/\s+/g,'').replace(/[^\d+]/g,'');if(!phone.startsWith('+'))phone='+'+phone;window.open(`https://wa.me/${phone}`,'_blank');}}
+const WHATSAPP_DIAL_COUNTRIES=[
+  ['86','中国|China|CN'],['852','中国香港|香港|Hong Kong|HK'],['853','中国澳门|澳门|Macao|Macau|MO'],['886','中国台湾|台湾|Taiwan|TW'],
+  ['1','美国|United States|USA|US'],['1','加拿大|Canada|CA'],['52','墨西哥|Mexico|MX'],['55','巴西|Brazil|Brasil|BR'],
+  ['54','阿根廷|Argentina|AR'],['56','智利|Chile|CL'],['57','哥伦比亚|Colombia|CO'],['51','秘鲁|Peru|PE'],['593','厄瓜多尔|Ecuador|EC'],
+  ['58','委内瑞拉|Venezuela|VE'],['598','乌拉圭|Uruguay|UY'],['595','巴拉圭|Paraguay|PY'],['591','玻利维亚|Bolivia|BO'],
+  ['506','哥斯达黎加|Costa Rica|CR'],['507','巴拿马|Panama|PA'],['502','危地马拉|Guatemala|GT'],['1','多米尼加|Dominican Republic|DO'],
+  ['44','英国|United Kingdom|Britain|UK|GB'],['353','爱尔兰|Ireland|IE'],['33','法国|France|FR'],['49','德国|Germany|DE'],['39','意大利|Italy|IT'],
+  ['34','西班牙|Spain|ES'],['351','葡萄牙|Portugal|PT'],['31','荷兰|Netherlands|NL'],['32','比利时|Belgium|BE'],['41','瑞士|Switzerland|CH'],
+  ['43','奥地利|Austria|AT'],['48','波兰|Poland|PL'],['420','捷克|Czechia|Czech Republic|CZ'],['421','斯洛伐克|Slovakia|SK'],
+  ['36','匈牙利|Hungary|HU'],['40','罗马尼亚|Romania|RO'],['359','保加利亚|Bulgaria|BG'],['30','希腊|Greece|GR'],['90','土耳其|Turkey|Türkiye|TR'],
+  ['7','俄罗斯|Russia|Russian Federation|RU'],['380','乌克兰|Ukraine|UA'],['375','白俄罗斯|Belarus|BY'],['46','瑞典|Sweden|SE'],
+  ['47','挪威|Norway|NO'],['45','丹麦|Denmark|DK'],['358','芬兰|Finland|FI'],['381','塞尔维亚|Serbia|RS'],['385','克罗地亚|Croatia|HR'],
+  ['386','斯洛文尼亚|Slovenia|SI'],['81','日本|Japan|JP'],['82','韩国|南韩|South Korea|Republic of Korea|KR'],['91','印度|India|IN'],
+  ['92','巴基斯坦|Pakistan|PK'],['880','孟加拉国|孟加拉|Bangladesh|BD'],['94','斯里兰卡|Sri Lanka|LK'],['977','尼泊尔|Nepal|NP'],
+  ['62','印度尼西亚|印尼|Indonesia|ID'],['60','马来西亚|Malaysia|MY'],['65','新加坡|Singapore|SG'],['66','泰国|Thailand|TH'],
+  ['84','越南|Vietnam|Viet Nam|VN'],['63','菲律宾|Philippines|PH'],['95','缅甸|Myanmar|Burma|MM'],['855','柬埔寨|Cambodia|KH'],
+  ['856','老挝|Laos|Lao PDR|LA'],['673','文莱|Brunei|BN'],['976','蒙古|Mongolia|MN'],['7','哈萨克斯坦|Kazakhstan|KZ'],
+  ['998','乌兹别克斯坦|Uzbekistan|UZ'],['971','阿联酋|阿拉伯联合酋长国|United Arab Emirates|UAE|AE'],['966','沙特阿拉伯|沙特|Saudi Arabia|SA'],
+  ['974','卡塔尔|Qatar|QA'],['965','科威特|Kuwait|KW'],['968','阿曼|Oman|OM'],['973','巴林|Bahrain|BH'],['972','以色列|Israel|IL'],
+  ['962','约旦|Jordan|JO'],['961','黎巴嫩|Lebanon|LB'],['964','伊拉克|Iraq|IQ'],['98','伊朗|Iran|IR'],
+  ['27','南非|South Africa|ZA'],['20','埃及|Egypt|EG'],['212','摩洛哥|Morocco|MA'],['213','阿尔及利亚|Algeria|DZ'],['216','突尼斯|Tunisia|TN'],
+  ['234','尼日利亚|Nigeria|NG'],['233','加纳|Ghana|GH'],['254','肯尼亚|Kenya|KE'],['255','坦桑尼亚|Tanzania|TZ'],['256','乌干达|Uganda|UG'],
+  ['251','埃塞俄比亚|Ethiopia|ET'],['221','塞内加尔|Senegal|SN'],['225','科特迪瓦|象牙海岸|Ivory Coast|Côte d’Ivoire|CI'],
+  ['237','喀麦隆|Cameroon|CM'],['244','安哥拉|Angola|AO'],['258','莫桑比克|Mozambique|MZ'],['263','津巴布韦|Zimbabwe|ZW'],
+  ['260','赞比亚|Zambia|ZM'],['267','博茨瓦纳|Botswana|BW'],['264','纳米比亚|Namibia|NA'],['243','刚果民主共和国|刚果金|DR Congo|CD'],
+  ['242','刚果共和国|刚果布|Republic of the Congo|CG'],['61','澳大利亚|Australia|AU'],['64','新西兰|New Zealand|NZ'],
+  ['679','斐济|Fiji|FJ'],['675','巴布亚新几内亚|Papua New Guinea|PG']
+];
+
+function normalizeCountryKey(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\u3400-\u9fff]/g,'');}
+function getWhatsAppDialCode(country){
+  const key=normalizeCountryKey(country);if(!key)return'';
+  const aliases=[];
+  for(const [code,names] of WHATSAPP_DIAL_COUNTRIES){
+    for(const name of names.split('|')){
+      const alias=normalizeCountryKey(name);
+      if(key===alias)return code;
+      aliases.push({code,alias});
+    }
+  }
+  const matches=aliases.filter(({alias})=>{const canContain=/[^a-z0-9]/i.test(alias)?alias.length>=2:alias.length>=4;return canContain&&key.includes(alias);});
+  matches.sort((a,b)=>b.alias.length-a.alias.length);
+  return matches[0]?.code||'';
+}
+function normalizeWhatsAppPhone(value,country=''){
+  const raw=String(value||'').trim();
+  if(!raw)return{ok:false,message:'未填写电话号码'};
+  const firstPhone=(raw.match(/(?:\+|00)?\d[\d\s().-]{5,}\d/)||[])[0]||raw;
+  const international=/^(?:\+|00)/.test(firstPhone.trim());
+  let digits=firstPhone.replace(/\D/g,'');
+  if(international&&digits.startsWith('00'))digits=digits.slice(2);
+  let addedCode=false,dialCode='';
+  if(!international){
+    dialCode=getWhatsAppDialCode(country);
+    if(!dialCode)return{ok:false,message:country?`无法识别“${country}”的国际区号，请在电话前手动填写 +国家区号`:'电话号码缺少国际区号，请先填写客户国家或在电话前添加 +国家区号'};
+    const alreadyInternational=digits.startsWith(dialCode)&&digits.length>=dialCode.length+7;
+    if(!alreadyInternational){
+      const national=dialCode==='39'?digits:digits.replace(/^0+/, '');
+      digits=dialCode+national;addedCode=true;
+    }
+  }
+  if(digits.length<8||digits.length>15)return{ok:false,message:`号码整理后为 +${digits}，长度不符合国际电话号码规则（8-15位）`};
+  return{ok:true,phone:digits,addedCode,dialCode,message:''};
+}
+function whatsAppStatusText(info,country=''){
+  if(!info.ok)return info.message;
+  const prefix=info.addedCode?`已根据${country}自动补为 +${info.phone}`:`格式校验通过：+${info.phone}`;
+  return prefix+'；点击打开 WhatsApp（无法提前确认该号码是否已注册）';
+}
+function openWA(p,country=''){
+  const info=normalizeWhatsAppPhone(p,country);
+  if(!info.ok){toast(info.message,'error');return;}
+  if(info.addedCode)toast(`已根据${country}自动使用国际号码 +${info.phone}`,'info');
+  const phone=info.phone;
+  const stamp=Date.now();
+  const url=`https://web.whatsapp.com/send/?phone=${phone}&type=phone_number&app_absent=0&ts=${stamp}`;
+  window.open(url,`whatsapp_${phone}_${stamp}`,'noopener,noreferrer');
+}
 
 function updateCountryList(){
   const input=$('country-filter-input'),dd=$('country-dropdown');if(!input||!dd)return;
@@ -1259,7 +1350,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('file-back').onchange=e=>{if(e.target.files[0]){backFile=e.target.files[0];$('prev-back').src=URL.createObjectURL(backFile);$('prev-back').style.display='block';$('ph-back').style.display='none';}};
   $('btn-recognize').onclick=recognizeCard;
   $('customer-form').addEventListener('submit',saveCustomer);
-  $('btn-wa-form').onclick=()=>openWA($('cust-phone').value);
+  $('btn-wa-form').onclick=()=>openWA($('cust-phone').value,$('cust-country').value);
   $('cust-img-file').onchange=e=>{if(e.target.files[0]){const r=new FileReader();r.onload=ev=>{$('cust-img-preview').src=ev.target.result;$('cust-img-preview').style.display='block';};r.readAsDataURL(e.target.files[0]);}};
   $('export-customers-excel').onclick=exportCustomers;
   $('export-products-excel').onclick=exportProducts;
