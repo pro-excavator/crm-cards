@@ -283,6 +283,7 @@ let unsubscribeSnapshot=null;
 let _lastHidden=0;
 
 const API={key:localStorage.getItem('crm_api_key')||'', url:'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'};
+const VISION_MODEL='qwen3.8-flash';
 const $=id=>document.getElementById(id);
 
 // ═══════════════════════════════════════
@@ -560,8 +561,12 @@ async function callVisionOnce(b64, kind='card'){
     : `请只识别这张名片一次，并同时完成原始文字提取和字段分析。严格返回JSON，不要返回Markdown或解释：
 {"rawText":"名片上全部原始文字，按看到的顺序逐行保留，不翻译、不改写","fields":{"name":"","company":"","position":"","phone":"","email":"","country":"","address":"","website":"","wechat":"","city":""}}
 要求：1) rawText必须尽量完整；2) fields从本次识别得到的rawText和图片内容中分析；3) country和city用中文；4) address保留完整地址；5) 识别不到的字段留空。`;
-  const res=await fetch(API.url,{method:'POST',headers:{'Authorization':'Bearer '+API.key,'Content-Type':'application/json'},body:JSON.stringify({model:'qwen-vl-plus',messages:[{role:'user',content:[{type:'image_url',image_url:{url:b64}},{type:'text',text:prompt}]}]})});
-  if(!res.ok)throw new Error('API '+res.status);
+  const res=await fetch(API.url,{method:'POST',headers:{'Authorization':'Bearer '+API.key,'Content-Type':'application/json'},body:JSON.stringify({model:VISION_MODEL,messages:[{role:'user',content:[{type:'image_url',image_url:{url:b64}},{type:'text',text:prompt}]}]})});
+  if(!res.ok){
+    let detail='';
+    try{const err=await res.json();detail=err?.error?.message||err?.message||'';}catch(_){/* 忽略非JSON错误响应 */}
+    throw new Error('API '+res.status+(detail?'：'+detail:''));
+  }
   const data=await res.json();
   const txt=data.choices?.[0]?.message?.content||'';
   const m=txt.match(/\{[\s\S]*\}/);
