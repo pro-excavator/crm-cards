@@ -154,7 +154,7 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
 <div class="grid md:grid-cols-2 gap-4">
   <div>
     <div class="dz" id="prod-dz"><input type="file" accept="image/*" id="prod-file"><div id="prod-ph" class="text-center"><i class="fas fa-image text-3xl text-gray-400"></i><p>上传产品图片</p></div><img id="prod-preview" style="display:none;max-height:120px"></div>
-    <button class="btn btn-blue w-full mt-2" id="btn-prod-recognize" disabled><i class="fas fa-magic"></i> OCR识别型号</button>
+    <button class="btn btn-blue w-full mt-2" id="btn-prod-recognize" disabled><i class="fas fa-magic"></i> OCR识别询盘表格</button>
     <div id="prod-ocr-raw" style="display:none;margin-top:10px;padding:10px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;font-size:12px;color:#1e3a8a;white-space:pre-wrap;line-height:1.7"></div>
   </div>
   <form id="product-form">
@@ -162,12 +162,13 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
     <input placeholder="型号 *" id="product-model" class="mb-2">
     <input placeholder="序列号" id="product-serial" class="mb-2">
     <input placeholder="品牌/厂家" id="product-brand" class="mb-2">
-    <input placeholder="规格参数" id="product-spec" class="mb-2">
+    <input placeholder="产品描述" id="product-spec" class="mb-2">
+    <input type="number" min="0" step="1" placeholder="数量" id="product-quantity" class="mb-2">
     <textarea placeholder="备注" rows="2" id="product-notes" class="mb-2"></textarea>
-    <button class="btn btn-purple w-full">保存产品</button>
+    <button class="btn btn-purple w-full" id="save-product-btn">保存产品</button>
   </form>
 </div>
-<div class="mt-4 overflow-x-auto"><table class="w-full text-sm"><thead><tr><th>图片</th><th>型号</th><th>品牌</th><th>规格</th><th>备注</th><th>操作</th></tr></thead><tbody id="product-list-body"></tbody></table></div>
+<div class="mt-4 overflow-x-auto"><table class="w-full text-sm"><thead><tr><th>图片</th><th>型号</th><th>描述</th><th>数量</th><th>其他信息</th><th>操作</th></tr></thead><tbody id="product-list-body"></tbody></table></div>
 </div></div></div>
 
 <!-- 客户看板 -->
@@ -557,9 +558,15 @@ async function toB64(blob){return new Promise(r=>{const fr=new FileReader();fr.o
 async function callVisionOnce(b64, kind='card'){
   const isProduct=kind==='product';
   const prompt=isProduct
-    ? `请只识别这张产品图片/标签一次，并同时完成原始文字提取和字段分析。严格返回JSON，不要返回Markdown或解释：
-{"rawText":"图片上全部原始文字，按看到的顺序逐行保留，不翻译、不改写","fields":{"model":"型号/产品编号","serial":"序列号SN","brand":"品牌厂家","spec":"规格参数","notes":"其他"}}
-要求：rawText必须尽量完整；fields只能根据rawText和图片内容判断，识别不到的字段留空。`
+    ? `请识别这张客户询盘图片中的表格或产品清单。严格返回JSON，不要返回Markdown或解释：
+{"rawText":"图片上全部原始文字，按视觉顺序逐行保留","items":[{"model":"第一列的完整型号/产品编号","description":"同一行第二列的产品描述","quantity":1}]}
+要求：
+1) 图片中的每一条可见数据行都必须对应items中的一项，严格按照从上到下的顺序；
+2) 不得把多行合并到一个字段，不得去重；即使描述相同也要保留为独立行；
+3) model保留第一列完整文字，包括ISUZU等品牌前缀、空格和连字符；
+4) description只填写该行第二列内容；quantity只填写该行数量列的数值；
+5) 不翻译、不改写、不推测看不到的内容；缺失字段留空；
+6) 如果图片不是表格，也返回一项items。`
     : `请只识别这张名片一次，并同时完成原始文字提取和字段分析。严格返回JSON，不要返回Markdown或解释：
 {"rawText":"名片上全部原始文字，按看到的顺序逐行保留，不翻译、不改写","fields":{"name":"","company":"","position":"","phone":"","email":"","country":"","address":"","website":"","wechat":"","city":""}}
 要求：1) rawText必须尽量完整；2) fields从本次识别得到的rawText和图片内容中分析；3) country和city用中文；4) address保留完整地址；5) 识别不到的字段留空。`;
@@ -574,7 +581,7 @@ async function callVisionOnce(b64, kind='card'){
   const m=txt.match(/\{[\s\S]*\}/);
   if(!m)throw new Error('OCR返回格式无法解析');
   const parsed=JSON.parse(m[0]);
-  return {rawText:parsed.rawText||'',fields:parsed.fields||{}};
+  return {rawText:parsed.rawText||'',fields:parsed.fields||{},items:Array.isArray(parsed.items)?parsed.items:[]};
 }
 
 function showRawOcrResult(frontRaw, backRaw){
@@ -1187,10 +1194,44 @@ function exportCustomers(){
 
 function exportProducts(){
   if(!products.length){toast('暂无数据','error');return;}
-  let html=`<html><head><meta charset="UTF-8"><style>th{background:#1E3A8A;color:white;border:1px solid #ccc;padding:8px}td{border:1px solid #ddd;padding:8px}</style></head><body><table><thead><tr><th>型号</th><th>序列号</th><th>备注</th><th>时间</th></tr></thead><tbody>`;
-  products.forEach(p=>html+=`<tr><td>${esc(p.model)}</td><td>${esc(p.serial)}</td><td>${esc(p.notes)}</td><td>${p.createTime?new Date(p.createTime).toLocaleString():''}</td></tr>`);
-  html+='</tbody></table></body></html>';
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'application/vnd.ms-excel'}));a.download=`产品数据_${new Date().toISOString().slice(0,10)}.xls`;a.click();toast('导出成功','success');
+  const rows=buildProductsExportRows(products);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:28},{wch:42},{wch:10}];
+  ws['!autofilter']={ref:`A1:C${rows.length}`};
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'客户询盘');
+  XLSX.writeFile(wb,`产品数据_${new Date().toISOString().slice(0,10)}.xlsx`,{compression:true});
+  toast(`已按图片列导出 ${products.length} 行`,'success');
+}
+
+function normalizeProductQuantity(value){
+  if(value===null||value===undefined||String(value).trim()==='')return'';
+  const match=String(value).trim().replace(/,/g,'').match(/-?\d+(?:\.\d+)?/);
+  return match?Number(match[0]):'';
+}
+function normalizeProductItems(items,fields={}){
+  const source=Array.isArray(items)&&items.length?items:[{
+    model:fields.model||'',description:fields.description||fields.spec||'',quantity:fields.quantity??'',serial:fields.serial||'',brand:fields.brand||'',notes:fields.notes||''
+  }];
+  return source.map(item=>({
+    model:String(item?.model||item?.partNumber||item?.code||'').trim(),
+    description:String(item?.description||item?.spec||item?.name||'').trim(),
+    quantity:normalizeProductQuantity(item?.quantity??item?.qty),
+    serial:String(item?.serial||'').trim(),brand:String(item?.brand||'').trim(),notes:String(item?.notes||'').trim()
+  })).filter(item=>item.model||item.description||item.quantity!=='');
+}
+function buildProductsExportRows(list){
+  return [['型号','描述','数量'],...list.map(p=>[p.model||'',p.description||p.spec||'',p.quantity===''||p.quantity===undefined?'':p.quantity])];
+}
+
+function renderProductOcrPreview(items,raw){
+  let html='<strong style="color:#0369a1">识别结果（按图片行列）</strong>';
+  if(items.length){
+    html+='<div style="overflow-x:auto;margin-top:6px"><table style="width:100%;border-collapse:collapse;background:#fff"><thead><tr><th style="border:1px solid #bae6fd;padding:5px">型号</th><th style="border:1px solid #bae6fd;padding:5px">描述</th><th style="border:1px solid #bae6fd;padding:5px">数量</th></tr></thead><tbody>';
+    items.forEach(item=>{html+=`<tr><td style="border:1px solid #bae6fd;padding:5px">${esc(item.model)}</td><td style="border:1px solid #bae6fd;padding:5px">${esc(item.description)}</td><td style="border:1px solid #bae6fd;padding:5px;text-align:center">${item.quantity===''?'':esc(String(item.quantity))}</td></tr>`;});
+    html+='</tbody></table></div>';
+  }
+  if(raw)html+=`<details style="margin-top:8px"><summary style="cursor:pointer;color:#6b7280">查看原始识别文字</summary><div style="white-space:pre-wrap;margin-top:5px">${esc(raw)}</div></details>`;
+  $('prod-ocr-raw').innerHTML=html;$('prod-ocr-raw').style.display='block';
 }
 
 // ═══════════════════════════════════════
@@ -1257,14 +1298,22 @@ async function confirmImport(){
 function renderProductTable(){
   const tb=$('product-list-body');if(!tb)return;
   const blank='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%23f3f4f6%22/%3E%3C/svg%3E';
-  tb.innerHTML=products.slice().reverse().map(p=>`<tr>
+  const sorted=products.slice().sort((a,b)=>String(b.createTime||'').localeCompare(String(a.createTime||''))||(a.batchIndex??0)-(b.batchIndex??0));
+  tb.innerHTML=sorted.map(p=>`<tr>
     <td><img src="${p.imgUrl||blank}" class="w-12 h-12 object-cover rounded border cursor-pointer" onclick="openLightbox('${p.imgUrl||blank}')"></td>
     <td><strong>${esc(p.model||'-')}</strong></td>
-    <td>${esc(p.brand||'-')}</td>
-    <td>${esc(p.spec||'-')}</td>
-    <td>${esc(p.notes||'-')}</td>
+    <td>${esc(p.description||p.spec||'-')}</td>
+    <td style="text-align:center">${p.quantity===''||p.quantity===undefined?'-':esc(String(p.quantity))}</td>
+    <td>${esc([p.serial?`序列号：${p.serial}`:'',p.brand?`品牌：${p.brand}`:'',p.notes||''].filter(Boolean).join('；')||'-')}</td>
     <td><div class="flex gap-1"><button onclick="window._editProd('${p.id}')" class="text-blue-500 text-sm">编辑</button><button onclick="window._dp('${p.id}')" class="text-red-500 text-sm">删除</button></div></td>
   </tr>`).join('');
+}
+
+function resetProductForm(){
+  $('product-form').reset();$('product-id').value='';$('prod-file').value='';
+  $('prod-preview').style.display='none';$('prod-ph').style.display='';
+  $('prod-ocr-raw').style.display='none';$('btn-prod-recognize').disabled=true;
+  $('save-product-btn').textContent='保存产品';window._prodImg='';window._pendingProductItems=[];
 }
 
 // ═══════════════════════════════════════
@@ -1449,7 +1498,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('prod-file').onchange=e=>{
     if(e.target.files[0]){
       const r=new FileReader();
-      r.onload=ev=>{$('prod-preview').src=ev.target.result;$('prod-preview').style.display='block';$('prod-ph').style.display='none';window._prodImg=ev.target.result;$('btn-prod-recognize').disabled=false;};
+      r.onload=ev=>{$('prod-preview').src=ev.target.result;$('prod-preview').style.display='block';$('prod-ph').style.display='none';window._prodImg=ev.target.result;window._pendingProductItems=[];$('save-product-btn').textContent='保存产品';$('prod-ocr-raw').style.display='none';$('btn-prod-recognize').disabled=false;};
       r.readAsDataURL(e.target.files[0]);
     }
   };
@@ -1462,13 +1511,20 @@ document.addEventListener('DOMContentLoaded',()=>{
       const result=await callVisionOnce(window._prodImg,'product');
       const structured=result.fields||{};
       const raw=result.rawText||'';
-      if(structured.model)$('product-model').value=structured.model;
-      if(structured.serial)$('product-serial').value=structured.serial;
-      if(structured.brand)$('product-brand').value=structured.brand;
-      if(structured.spec)$('product-spec').value=structured.spec;
-      if(structured.notes)$('product-notes').value=structured.notes;
-      if(raw){$('prod-ocr-raw').style.display='block';$('prod-ocr-raw').innerHTML='<strong style="color:#0369a1">📄 原始识别内容（可复制）：</strong>\n'+raw.replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));}
-      toast('识别完成，请确认后保存','success');
+      const items=normalizeProductItems(result.items,structured).filter(item=>item.model||item.description||item.quantity!=='');
+      if(!items.length)throw new Error('未识别到有效的产品行，请使用更清晰、完整的表格截图');
+      if(items.some(item=>/[;；\n]/.test(item.model)))throw new Error('识别结果仍把多行型号合并在一起，请裁剪到表格区域后重新识别');
+      window._pendingProductItems=items;
+      const first=items[0];
+      $('product-model').value=first.model;
+      $('product-spec').value=first.description;
+      $('product-quantity').value=first.quantity;
+      $('product-serial').value=first.serial||structured.serial||'';
+      $('product-brand').value=first.brand||structured.brand||'';
+      $('product-notes').value=first.notes||structured.notes||'';
+      $('save-product-btn').textContent=items.length>1?`保存识别结果（${items.length}行）`:'保存产品';
+      renderProductOcrPreview(items,raw);
+      toast(`已按图片顺序识别 ${items.length} 行，请确认后保存`,'success');
     }catch(err){toast('识别失败: '+err.message,'error');}
     finally{btn.innerHTML=orig;btn.disabled=false;}
   };
@@ -1476,14 +1532,21 @@ document.addEventListener('DOMContentLoaded',()=>{
     e.preventDefault();
     const model=$('product-model').value.trim();
     if(!model){toast('请填写型号','error');return;}
-    const id=$('product-id').value||Date.now().toString();
-    const p={id,model,serial:$('product-serial').value,brand:$('product-brand').value||'',spec:$('product-spec').value||'',notes:$('product-notes').value,imgUrl:window._prodImg||'',createTime:new Date().toISOString()};
+    const editId=$('product-id').value;
+    const pending=!editId&&Array.isArray(window._pendingProductItems)?window._pendingProductItems:[];
+    const now=new Date().toISOString();
+    if(pending.length>1){
+      const items=pending.map((item,index)=>index===0?{...item,model,description:$('product-spec').value.trim(),quantity:normalizeProductQuantity($('product-quantity').value),serial:$('product-serial').value,brand:$('product-brand').value||'',notes:$('product-notes').value}:item);
+      items.forEach((item,index)=>products.push({id:Date.now()+'_'+index+'_'+Math.random(),model:item.model,serial:item.serial||'',brand:item.brand||'',description:item.description||'',spec:item.description||'',quantity:normalizeProductQuantity(item.quantity),notes:item.notes||'',imgUrl:index===0?(window._prodImg||''):'',batchIndex:index,createTime:now}));
+      saveLocal();resetProductForm();renderProductTable();toast(`已按图片行列保存 ${items.length} 个产品`,'success');return;
+    }
+    const id=editId||Date.now().toString();
+    const existing=products.find(x=>x.id===id)||{};
+    const description=$('product-spec').value.trim();
+    const p={...existing,id,model,serial:$('product-serial').value,brand:$('product-brand').value||'',description,spec:description,quantity:normalizeProductQuantity($('product-quantity').value),notes:$('product-notes').value,imgUrl:window._prodImg||existing.imgUrl||'',createTime:existing.createTime||now};
     const idx=products.findIndex(x=>x.id===id);
     if(idx!==-1)products[idx]=p;else products.push(p);
-    saveLocal();$('product-form').reset();$('product-id').value='';
-    $('prod-preview').style.display='none';$('prod-ph').style.display='';
-    $('prod-ocr-raw').style.display='none';$('btn-prod-recognize').disabled=true;
-    window._prodImg='';renderProductTable();toast('产品已保存','success');
+    saveLocal();resetProductForm();renderProductTable();toast('产品已保存','success');
   });
   // 手机回到前台自动重连
   document.addEventListener('visibilitychange',()=>{
@@ -1679,11 +1742,13 @@ window._dp=id=>{products=products.filter(p=>p.id!==id);saveLocal();renderProduct
 window._editProd=id=>{
   const p=products.find(x=>x.id===id);if(!p)return;
   switchTab('product');
+  window._pendingProductItems=[];window._prodImg=p.imgUrl||'';$('save-product-btn').textContent='保存产品';
   $('product-id').value=p.id;
   $('product-model').value=p.model||'';
   $('product-serial').value=p.serial||'';
   $('product-brand').value=p.brand||'';
-  $('product-spec').value=p.spec||'';
+  $('product-spec').value=p.description||p.spec||'';
+  $('product-quantity').value=p.quantity??'';
   $('product-notes').value=p.notes||'';
   if(p.imgUrl){$('prod-preview').src=p.imgUrl;$('prod-preview').style.display='block';$('prod-ph').style.display='none';window._prodImg=p.imgUrl;$('btn-prod-recognize').disabled=false;}
   toast('正在编辑产品，修改后点保存','info');
