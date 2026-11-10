@@ -1164,6 +1164,11 @@ function openWA(p,country=''){
   if(!info.ok){toast(info.message,'error');return;}
   if(info.addedCode)toast(`已根据${country}自动使用国际号码 +${info.phone}`,'info');
   const phone=info.phone;
+  const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(isMobile){
+    window.location.assign(`https://wa.me/${phone}`);
+    return;
+  }
   const stamp=Date.now();
   const url=`https://web.whatsapp.com/send/?phone=${phone}&type=phone_number&app_absent=0&ts=${stamp}`;
   window.open(url,`whatsapp_${phone}_${stamp}`,'noopener,noreferrer');
