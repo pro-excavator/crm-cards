@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes,viewport-fit=cover">
-<title>智能客户管理系统 v8.7</title>
+<title>智能客户管理系统 v8.7.1</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -98,7 +98,7 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
   <div style="max-width:1280px;margin:0 auto;padding:0 18px;height:54px;display:flex;align-items:center;justify-content:space-between">
     <div style="display:flex;align-items:center;gap:10px">
       <i class="fas fa-address-card" style="color:#2563eb"></i>
-      <span class="font-bold">CRM v8.7</span>
+      <span class="font-bold">CRM v8.7.1</span>
       <div id="sync-indicator"><div id="sync-dot"></div><span id="sync-text">未连接云端</span></div>
     </div>
     <nav class="flex gap-1">
@@ -222,6 +222,23 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
   <p class="text-xs text-gray-500 mt-2" id="cloud-status-text">⚠️ 未连接云端，数据仅保存在本地</p>
 </div>
 <div class="card-box"><h3>🤖 通义千问API</h3><input type="password" id="api-key-input" placeholder="sk-xxx"><button class="btn btn-gray mt-2" id="btn-save-api">保存</button></div>
+
+<div class="card-box" id="backup-panel-v871">
+  <h3>🛡️ 数据备份与安全恢复 <span class="text-xs text-gray-500">v8.7.1</span></h3>
+  <p class="text-xs text-gray-600 mb-2">请分别在手机、电脑上备份。一次导出客户、沟通记录、名片正反面图片和产品资料；文件仅下载到本机，不上传第三方服务器。</p>
+  <div class="flex gap-2 flex-wrap my-3">
+    <button class="btn btn-green" id="backup-v871-export" type="button">⬇️ 一键完整备份 JSON</button>
+    <button class="btn btn-blue" id="backup-v871-choose" type="button">📂 选择备份进行校验</button>
+    <input id="backup-v871-file" type="file" accept=".json,application/json" style="display:none">
+  </div>
+  <div id="backup-v871-status" class="text-xs text-gray-600 p-2 bg-gray-50 rounded-lg" role="status" aria-live="polite">尚未备份。备份不包含登录密码、AI API 密钥或 Firebase 配置。</div>
+  <div id="backup-v871-preview" style="display:none" class="mt-3 p-3 rounded-lg border border-gray-200">
+    <p class="font-bold mb-2">恢复前预览（不会自动修改数据）</p>
+    <div id="backup-v871-summary" class="text-xs whitespace-pre-line mb-3"></div>
+    <button id="backup-v871-merge" type="button" class="btn btn-green">✅ 确认安全合并恢复（不覆盖旧记录）</button>
+  </div>
+  <p class="text-xs text-gray-500 mt-3">恢复时，已有客户和产品均保留；同 ID 或疑似重复的客户不覆盖。恢复前会自动再次下载当前设备备份。云端连接期间禁止恢复，防止冲突。</p>
+</div>
 <div class="card-box">
   <h3>📊 数据管理</h3>
   <div id="storage-info" class="text-xs text-gray-500 mb-3 p-2 bg-gray-50 rounded-lg">
@@ -232,7 +249,7 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
     <button class="btn btn-orange" id="btn-compress-imgs">🗜️ 压缩图片缓存</button>
     <button class="btn btn-red" id="btn-clear">🗑️ 清空所有数据</button>
   </div>
-  <p class="text-xs text-gray-400 mt-2">v8.7 | OCR单次识别，图片压缩存储，多端实时同步</p>
+  <p class="text-xs text-gray-400 mt-2">v8.7.1 | OCR单次识别，图片压缩存储，多端实时同步</p>
 </div>
 </div></div>
 
@@ -469,6 +486,259 @@ function switchTab(tab){
   if(tab==='kanban')renderKanban();
   if(tab==='product')renderProductTable();
   if(tab==='settings')updateStorageInfo();
+}
+
+
+// ═══════════════════════════════════════
+// v8.7.1 增量功能：离线完整备份、校验与安全合并恢复
+// 注意：不改动 v8.7 的 Firebase 同步逻辑，禁止在云端连接时恢复
+// ═══════════════════════════════════════
+const BACKUP_V871_FORMAT='EMP_CRM_FULL_BACKUP';
+const BACKUP_V871_IMG=['customerImg','cardFrontUrl','cardBackUrl'];
+let backupV871Selected=null;
+
+function backupV871Status(message,isError){
+  const el=$('backup-v871-status');
+  if(el){el.textContent=message;el.style.color=isError?'#991b1b':'#065f46';el.style.background=isError?'#fef2f2':'#ecfdf5';}
+}
+function backupV871Date(){
+  const d=new Date();
+  const local=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString();
+  return local.slice(0,19).replace(/[-:T]/g,'');
+}
+async function backupV871Hash(data){
+  if(!window.crypto||!window.crypto.subtle)throw new Error('当前浏览器不支持 SHA-256 完整性校验，请使用 HTTPS 网站打开。');
+  const bytes=new TextEncoder().encode(JSON.stringify(data));
+  const digest=await window.crypto.subtle.digest('SHA-256',bytes);
+  return Array.from(new Uint8Array(digest)).map(v=>v.toString(16).padStart(2,'0')).join('');
+}
+function backupV871Clone(value){
+  return JSON.parse(JSON.stringify(value));
+}
+async function backupV871ReadImages(){
+  const database=await openIDB();
+  if(!database)throw new Error('无法读取 IndexedDB 名片图片。为避免遗漏图片，本次不生成不完整备份。');
+  return new Promise((resolve,reject)=>{
+    const out={};
+    let done=false;
+    try{
+      const tx=database.transaction('images','readonly');
+      const req=tx.objectStore('images').openCursor();
+      req.onsuccess=ev=>{
+        const cursor=ev.target.result;
+        if(cursor){out[String(cursor.key)]=cursor.value;cursor.continue();}
+      };
+      req.onerror=()=>{if(!done){done=true;reject(req.error||new Error('图片读取失败'));}};
+      tx.onerror=()=>{if(!done){done=true;reject(tx.error||new Error('图片数据库事务失败'));}};
+      tx.onabort=()=>{if(!done){done=true;reject(tx.error||new Error('图片数据库读取中止'));}};
+      tx.oncomplete=()=>{if(!done){done=true;resolve(out);}};
+    }catch(e){reject(e);}
+  });
+}
+function backupV871Records(){
+  const persisted=JSON.parse(localStorage.getItem('crm_customers')||'[]');
+  const all=new Map();
+  if(Array.isArray(persisted))persisted.forEach(c=>{if(c&&c.id!=null)all.set(String(c.id),c);});
+  customers.forEach(c=>{if(c&&c.id!=null)all.set(String(c.id),c);});
+  const savedProducts=JSON.parse(localStorage.getItem('crm_products')||'[]');
+  const prod=new Map();
+  if(Array.isArray(savedProducts))savedProducts.forEach(p=>{if(p&&p.id!=null)prod.set(String(p.id),p);});
+  products.forEach(p=>{if(p&&p.id!=null)prod.set(String(p.id),p);});
+  return {customers:backupV871Clone(Array.from(all.values())),products:backupV871Clone(Array.from(prod.values()))};
+}
+async function backupV871Build(){
+  const record=backupV871Records();
+  const images=await backupV871ReadImages();
+  record.customers.forEach(c=>{
+    const key='img_'+String(c.id);
+    const stored=images[key]||{};
+    BACKUP_V871_IMG.forEach(f=>{if(!c[f]&&stored[f])c[f]=stored[f];});
+    const merged={...stored};
+    BACKUP_V871_IMG.forEach(f=>{if(c[f]&&!merged[f])merged[f]=c[f];});
+    if(Object.keys(merged).length)images[key]=merged;
+  });
+  const data={customers:record.customers,products:record.products,images};
+  const checksum=await backupV871Hash(data);
+  return {
+    format:BACKUP_V871_FORMAT,schemaVersion:1,appVersion:'8.7.1',
+    createdAt:new Date().toISOString(),sourceOrigin:location.origin,
+    counts:{customers:data.customers.length,products:data.products.length,imageRecords:Object.keys(images).length},
+    checksumAlgorithm:'SHA-256',checksum,data
+  };
+}
+async function backupV871Download(prefix){
+  try{
+    backupV871Status('正在读取客户及图片，请勿关闭页面……',false);
+    const doc=await backupV871Build();
+    const fileName=(prefix||'EMP_CRM_完整备份')+'_v8.7.1_'+backupV871Date()+'.json';
+    const blob=new Blob([JSON.stringify(doc)],{type:'application/json;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=fileName;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    backupV871Status('已触发下载：'+fileName+'；客户 '+doc.counts.customers+' 条，产品 '+doc.counts.products+' 条，图片存储记录 '+doc.counts.imageRecords+' 条。请在下载目录确认文件确实存在。',false);
+    return true;
+  }catch(e){
+    backupV871Status('备份失败，未生成可用备份：'+e.message,true);
+    return false;
+  }
+}
+function backupV871ContactKeys(c){
+  const keys=[];
+  const email=String(c.email||'').trim().toLowerCase();
+  const phone=String(c.phone||'').replace(/[^0-9]/g,'');
+  const name=String(c.name||'').trim().toLowerCase();
+  const company=String(c.company||'').trim().toLowerCase();
+  if(email)keys.push('e:'+email);
+  if(phone.length>=7)keys.push('p:'+phone);
+  if(name&&company)keys.push('n:'+name+'|'+company);
+  return keys;
+}
+function backupV871Diff(data){
+  const current=backupV871Records();
+  const existingId=new Set(current.customers.map(c=>String(c.id)));
+  const signatures=new Set(current.customers.flatMap(backupV871ContactKeys));
+  const addCustomers=[];
+  let repeatedCustomers=0;
+  for(const c of data.customers){
+    const keys=backupV871ContactKeys(c);
+    if(existingId.has(String(c.id))||keys.some(k=>signatures.has(k))){repeatedCustomers++;continue;}
+    addCustomers.push(c);
+    existingId.add(String(c.id));
+    keys.forEach(k=>signatures.add(k));
+  }
+  const prodId=new Set(current.products.map(p=>String(p.id)));
+  const addProducts=[];
+  let repeatedProducts=0;
+  for(const p of data.products){
+    if(prodId.has(String(p.id))){repeatedProducts++;continue;}
+    addProducts.push(p);prodId.add(String(p.id));
+  }
+  return {addCustomers,addProducts,repeatedCustomers,repeatedProducts};
+}
+async function backupV871Inspect(file){
+  backupV871Selected=null;
+  $('backup-v871-preview').style.display='none';
+  try{
+    if(!file)return;
+    if(file.size>250*1024*1024)throw new Error('文件大于250MB，无法安全在浏览器中处理。');
+    backupV871Status('正在校验备份文件，请勿关闭页面……',false);
+    const obj=JSON.parse(await file.text());
+    if(!obj||obj.format!==BACKUP_V871_FORMAT||obj.schemaVersion!==1)throw new Error('不是 v8.7.1 完整备份格式。');
+    if(!obj.data||!Array.isArray(obj.data.customers)||!Array.isArray(obj.data.products)||!obj.data.images||Array.isArray(obj.data.images)||typeof obj.data.images!=='object')throw new Error('备份数据结构不完整。');
+    if(obj.checksumAlgorithm!=='SHA-256'||typeof obj.checksum!=='string')throw new Error('缺少完整性校验字段。');
+    const hash=await backupV871Hash(obj.data);
+    if(hash!==obj.checksum)throw new Error('SHA-256 校验失败。文件可能不完整或已被修改，已阻止恢复。');
+    if(obj.counts&&(
+      obj.counts.customers!==obj.data.customers.length||
+      obj.counts.products!==obj.data.products.length||
+      obj.counts.imageRecords!==Object.keys(obj.data.images).length
+    ))throw new Error('备份数量校验不一致。');
+    const checkIds=(arr,label)=>{
+      const ids=new Set();
+      for(const entry of arr){
+        if(!entry||!['string','number'].includes(typeof entry.id)||String(entry.id).trim()==='')throw new Error(label+'存在缺少 ID 的记录。');
+        const k=String(entry.id);
+        if(ids.has(k))throw new Error(label+'存在重复 ID：'+k);
+        ids.add(k);
+      }
+    };
+    checkIds(obj.data.customers,'客户');checkIds(obj.data.products,'产品');
+    const delta=backupV871Diff(obj.data);
+    const summary=[
+      '文件：'+file.name,
+      '创建时间：'+new Date(obj.createdAt).toLocaleString(),
+      '来源站点：'+String(obj.sourceOrigin||'未知'),
+      '校验：SHA-256 通过',
+      '备份：客户 '+obj.data.customers.length+'，产品 '+obj.data.products.length+'，图片记录 '+Object.keys(obj.data.images).length,
+      '拟新增：客户 '+delta.addCustomers.length+'，产品 '+delta.addProducts.length,
+      '跳过：已有或疑似重复客户 '+delta.repeatedCustomers+'，已有产品 '+delta.repeatedProducts,
+      '当前本地数据不会被删除或覆盖；有冲突的记录仍保留在此备份文件。'
+    ].join('\n');
+    $('backup-v871-summary').textContent=summary;
+    $('backup-v871-preview').style.display='block';
+    backupV871Selected=obj;
+    backupV871Status('备份文件已验证。请检查预览，再决定是否恢复。',false);
+  }catch(e){
+    backupV871Status('校验未通过，未修改任何客户资料：'+e.message,true);
+  }
+}
+async function backupV871WriteImages(updates){
+  if(!updates.length)return;
+  const database=await openIDB();
+  if(!database)throw new Error('图片数据库不可用，已终止恢复。');
+  return new Promise((resolve,reject)=>{
+    let done=false;
+    try{
+      const tx=database.transaction('images','readwrite');
+      const store=tx.objectStore('images');
+      updates.forEach(([key,val])=>store.put(val,key));
+      tx.oncomplete=()=>{if(!done){done=true;resolve();}};
+      tx.onerror=()=>{if(!done){done=true;reject(tx.error||new Error('图片写入失败'));}};
+      tx.onabort=()=>{if(!done){done=true;reject(tx.error||new Error('图片写入中止'));}};
+    }catch(e){reject(e);}
+  });
+}
+async function backupV871Restore(){
+  const input=backupV871Selected;
+  if(!input){backupV871Status('请先选择并校验备份文件。',true);return;}
+  if(fbEnabled&&db){backupV871Status('检测到 Firebase 云端连接。请先在设置页断开云端，再进行本地恢复，避免旧同步代码覆盖记录。',true);return;}
+  const delta=backupV871Diff(input.data);
+  if(!delta.addCustomers.length&&!delta.addProducts.length){
+    backupV871Status('没有需要补入的新客户或新产品。现有记录未修改。',false);return;
+  }
+  if(!confirm('将新增 '+delta.addCustomers.length+' 位客户及 '+delta.addProducts.length+' 条产品。\n现有同 ID 或疑似重复记录不会覆盖。\n系统会先下载恢复前的完整备份。是否继续？'))return;
+  const oldBtn=$('backup-v871-merge');
+  oldBtn.disabled=true;
+  try{
+    const saved=await backupV871Download('EMP_CRM_恢复前备份');
+    if(!saved)throw new Error('恢复前备份失败，已取消恢复。');
+    const updatedCustomers=backupV871Records().customers.concat(backupV871Clone(delta.addCustomers));
+    const updatedProducts=backupV871Records().products.concat(backupV871Clone(delta.addProducts));
+    const currentImages=await backupV871ReadImages();
+    const imageUpdates=[];
+    for(const c of updatedCustomers){
+      const key='img_'+String(c.id);
+      const imageFromBackup=input.data.images[key]||{};
+      const existing=currentImages[key]||{};
+      const combined={...existing};
+      BACKUP_V871_IMG.forEach(f=>{
+        if(!combined[f]&&imageFromBackup[f])combined[f]=imageFromBackup[f];
+        if(!combined[f]&&c[f])combined[f]=c[f];
+      });
+      if(Object.keys(combined).length&&JSON.stringify(combined)!==JSON.stringify(existing)){
+        imageUpdates.push([key,combined]);
+      }
+    }
+    await backupV871WriteImages(imageUpdates);
+    const oldCustomers=localStorage.getItem('crm_customers');
+    const oldProducts=localStorage.getItem('crm_products');
+    try{
+      const slim=updatedCustomers.map(c=>{const r={...c};BACKUP_V871_IMG.forEach(f=>delete r[f]);return r;});
+      localStorage.setItem('crm_customers',JSON.stringify(slim));
+      localStorage.setItem('crm_products',JSON.stringify(updatedProducts));
+      if(JSON.parse(localStorage.getItem('crm_customers')||'[]').length!==slim.length||
+         JSON.parse(localStorage.getItem('crm_products')||'[]').length!==updatedProducts.length)throw new Error('本地数据写入未通过校验。');
+    }catch(e){
+      try{
+        if(oldCustomers===null)localStorage.removeItem('crm_customers');
+        else localStorage.setItem('crm_customers',oldCustomers);
+        if(oldProducts===null)localStorage.removeItem('crm_products');
+        else localStorage.setItem('crm_products',oldProducts);
+      }catch(rollbackError){console.error('本地回滚失败:',rollbackError);}
+      throw e;
+    }
+    customers=updatedCustomers;products=updatedProducts;
+    // 原版 saveLocal 继续负责图片缓存；安全恢复不调用 Firebase
+    saveLocal();
+    renderKanban();renderProductTable();updateStorageInfo();
+    backupV871Status('安全恢复完成：新客户 '+delta.addCustomers.length+' 条，新产品 '+delta.addProducts.length+' 条。未覆盖任何已有文字记录。请再下载一次备份并核对图片。',false);
+    $('backup-v871-preview').style.display='none';
+    backupV871Selected=null;
+  }catch(e){
+    backupV871Status('恢复未完成：'+e.message+'。原有客户文字数据没有被主动删除，请检查本地空间。',true);
+  }finally{oldBtn.disabled=false;}
 }
 
 // ═══════════════════════════════════════
@@ -1398,6 +1668,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
 
   // ── 其他事件绑定 ──
+  $('backup-v871-export').onclick=()=>backupV871Download('EMP_CRM_完整备份');
+  $('backup-v871-choose').onclick=()=>$('backup-v871-file').click();
+  $('backup-v871-file').onchange=e=>backupV871Inspect(e.target.files[0]);
+  $('backup-v871-merge').onclick=backupV871Restore;
   $('btn-logout').onclick=()=>{if(unsubscribeSnapshot)unsubscribeSnapshot();sessionStorage.clear();location.reload();};
   document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',function(){
     switchTab(this.dataset.tab);
