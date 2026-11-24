@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5,user-scalable=yes,viewport-fit=cover">
-<title>智能客户管理系统 v8.7.1</title>
+<title>智能客户管理系统 v8.8</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -98,7 +98,7 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
   <div style="max-width:1280px;margin:0 auto;padding:0 18px;height:54px;display:flex;align-items:center;justify-content:space-between">
     <div style="display:flex;align-items:center;gap:10px">
       <i class="fas fa-address-card" style="color:#2563eb"></i>
-      <span class="font-bold">CRM v8.7.1</span>
+      <span class="font-bold">CRM v8.8</span>
       <div id="sync-indicator"><div id="sync-dot"></div><span id="sync-text">未连接云端</span></div>
     </div>
     <nav class="flex gap-1">
@@ -220,11 +220,12 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
     <button class="btn btn-gray" id="btn-disconnect-firebase" style="display:none">断开连接</button>
   </div>
   <p class="text-xs text-gray-500 mt-2" id="cloud-status-text">⚠️ 未连接云端，数据仅保存在本地</p>
+  <p id="sync-v88-detail" class="text-xs text-gray-500 mt-2">离线补传队列等待连接。</p>
 </div>
 <div class="card-box"><h3>🤖 通义千问API</h3><input type="password" id="api-key-input" placeholder="sk-xxx"><button class="btn btn-gray mt-2" id="btn-save-api">保存</button></div>
 
 <div class="card-box" id="backup-panel-v871">
-  <h3>🛡️ 数据备份与安全恢复 <span class="text-xs text-gray-500">v8.7.1</span></h3>
+  <h3>🛡️ 数据备份与安全恢复 <span class="text-xs text-gray-500">v8.8（兼容旧备份）</span></h3>
   <p class="text-xs text-gray-600 mb-2">请分别在手机、电脑上备份。一次导出客户、沟通记录、名片正反面图片和产品资料；文件仅下载到本机，不上传第三方服务器。</p>
   <div class="flex gap-2 flex-wrap my-3">
     <button class="btn btn-green" id="backup-v871-export" type="button">⬇️ 一键完整备份 JSON</button>
@@ -249,7 +250,7 @@ label{font-size:12px;font-weight:500;color:#374151;display:block;margin-bottom:4
     <button class="btn btn-orange" id="btn-compress-imgs">🗜️ 压缩图片缓存</button>
     <button class="btn btn-red" id="btn-clear">🗑️ 清空所有数据</button>
   </div>
-  <p class="text-xs text-gray-400 mt-2">v8.7.1 | OCR单次识别，图片压缩存储，多端实时同步</p>
+  <p class="text-xs text-gray-400 mt-2">v8.8 | OCR单次识别，图片压缩存储，多端实时同步</p>
 </div>
 </div></div>
 
@@ -367,14 +368,21 @@ async function loadConfig(){
 // 存储：文字→localStorage，图片→IndexedDB
 // ═══════════════════════════════════════
 function saveLocal(){
-  // 剥离图片，只存文字到 localStorage
   const slim=customers.map(c=>{const t={...c};IMG_FIELDS.forEach(f=>delete t[f]);return t;});
-  try{localStorage.setItem('crm_customers',JSON.stringify(slim));}catch(e){console.error('localStorage写入失败:',e);}
-  try{localStorage.setItem('crm_products',JSON.stringify(products));}catch(e){}
-  // 图片异步存 IndexedDB，不阻塞
+  let oldCustomers=[],oldProducts=[];
+  try{oldCustomers=JSON.parse(localStorage.getItem('crm_customers')||'[]')||[];}catch(e){}
+  try{oldProducts=JSON.parse(localStorage.getItem('crm_products')||'[]')||[];}catch(e){}
+  try{
+    localStorage.setItem('crm_customers',JSON.stringify(slim));
+    localStorage.setItem('crm_products',JSON.stringify(products));
+  }catch(e){setSyncState('error','本地保存失败');toast('本地空间不足，请立即下载备份：'+e.message,'error');throw e;}
+  if(!_v88RemoteApplying){
+    syncV88Track('customers',oldCustomers,slim);
+    syncV88Track('products',oldProducts,products);
+  }
   customers.forEach(c=>{
     const imgs={};IMG_FIELDS.forEach(f=>{if(c[f])imgs[f]=c[f];});
-    if(Object.keys(imgs).length) idbSet('img_'+c.id,imgs,'images');
+    if(Object.keys(imgs).length)idbSet('img_'+c.id,imgs,'images');
   });
 }
 
@@ -557,10 +565,14 @@ async function backupV871Build(){
     BACKUP_V871_IMG.forEach(f=>{if(c[f]&&!merged[f])merged[f]=c[f];});
     if(Object.keys(merged).length)images[key]=merged;
   });
-  const data={customers:record.customers,products:record.products,images};
+  // v8.8 将未完成同步的操作队列和冲突文字归档一起纳入完整备份。
+  let syncSafety={pending:{customers:{},products:{}},archive:[]};
+  try{syncSafety.pending=JSON.parse(localStorage.getItem('crm_sync_pending_v88')||'{"customers":{},"products":{}}');}catch(e){}
+  try{syncSafety.archive=JSON.parse(localStorage.getItem('crm_sync_archive_v88')||'[]');}catch(e){}
+  const data={customers:record.customers,products:record.products,images,syncSafety};
   const checksum=await backupV871Hash(data);
   return {
-    format:BACKUP_V871_FORMAT,schemaVersion:1,appVersion:'8.7.1',
+    format:BACKUP_V871_FORMAT,schemaVersion:1,appVersion:'8.8',
     createdAt:new Date().toISOString(),sourceOrigin:location.origin,
     counts:{customers:data.customers.length,products:data.products.length,imageRecords:Object.keys(images).length},
     checksumAlgorithm:'SHA-256',checksum,data
@@ -570,7 +582,7 @@ async function backupV871Download(prefix){
   try{
     backupV871Status('正在读取客户及图片，请勿关闭页面……',false);
     const doc=await backupV871Build();
-    const fileName=(prefix||'EMP_CRM_完整备份')+'_v8.7.1_'+backupV871Date()+'.json';
+    const fileName=(prefix||'EMP_CRM_完整备份')+'_v8.8_'+backupV871Date()+'.json';
     const blob=new Blob([JSON.stringify(doc)],{type:'application/json;charset=utf-8'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -625,7 +637,7 @@ async function backupV871Inspect(file){
     if(file.size>250*1024*1024)throw new Error('文件大于250MB，无法安全在浏览器中处理。');
     backupV871Status('正在校验备份文件，请勿关闭页面……',false);
     const obj=JSON.parse(await file.text());
-    if(!obj||obj.format!==BACKUP_V871_FORMAT||obj.schemaVersion!==1)throw new Error('不是 v8.7.1 完整备份格式。');
+    if(!obj||obj.format!==BACKUP_V871_FORMAT||obj.schemaVersion!==1)throw new Error('不是支持的 EMP CRM 完整备份格式。');
     if(!obj.data||!Array.isArray(obj.data.customers)||!Array.isArray(obj.data.products)||!obj.data.images||Array.isArray(obj.data.images)||typeof obj.data.images!=='object')throw new Error('备份数据结构不完整。');
     if(obj.checksumAlgorithm!=='SHA-256'||typeof obj.checksum!=='string')throw new Error('缺少完整性校验字段。');
     const hash=await backupV871Hash(obj.data);
@@ -730,6 +742,7 @@ async function backupV871Restore(){
       throw e;
     }
     customers=updatedCustomers;products=updatedProducts;
+    // 恢复后不主动将旧记录标记为最新版本；重连时按云端/本地更新时间安全核对。
     // 原版 saveLocal 继续负责图片缓存；安全恢复不调用 Firebase
     saveLocal();
     renderKanban();renderProductTable();updateStorageInfo();
@@ -742,82 +755,288 @@ async function backupV871Restore(){
 }
 
 // ═══════════════════════════════════════
-// Firebase 实时同步
+// Firebase 双向安全同步 v8.8（不影响离线备份）
 // ═══════════════════════════════════════
-function startRealtimeSync(){
-  if(!db||!fbEnabled)return;
-  if(unsubscribeSnapshot){unsubscribeSnapshot();unsubscribeSnapshot=null;}
-  setSyncState('syncing','连接中...');
-  unsubscribeSnapshot=db.collection('customers').onSnapshot(snapshot=>{
-    let changed=false;
-    const removedIds=[];
-    snapshot.docChanges().forEach(change=>{
-      const d={...change.doc.data(),id:change.doc.id,logs:change.doc.data().logs||[]};
-      if(change.type==='removed'){
-        customers=customers.filter(c=>c.id!==d.id);
-        removedIds.push(d.id); // 记录要从IDB删除的id
-        changed=true;return;
-      }
-      const idx=customers.findIndex(c=>c.id===d.id);
-      if(idx===-1){customers.push(d);changed=true;}
-      else{
-        const lt=new Date(customers[idx].updatedAt||customers[idx].createTime||0).getTime();
-        const ct=new Date(d.updatedAt||d.createTime||0).getTime();
-        if(ct>lt){customers[idx]=d;changed=true;}
-      }
-    });
-    if(changed){
-      saveLocal();
-      // 清掉已删除客户的IDB图片
-      removedIds.forEach(id=>idbDel('img_'+id,'images'));
-      renderKanban();
-    }
-    setSyncState('connected','实时同步中');
-    const sd=$('sync-detail');if(sd)sd.textContent='上次: '+new Date().toLocaleTimeString();
-  },err=>{setSyncState('error','同步错误');toast('实时同步中断: '+err.message,'error');});
+const SYNC88_KEY='crm_sync_pending_v88',SYNC88_ARCHIVE='crm_sync_archive_v88';
+let _v88RemoteApplying=false,_v88Flushing=false,_v88Seq=0;
+let _v88Ready={customers:false,products:false},_v88ProductAllowed=true;
+let _v88ProductsListener=null,_v88Timer=null,_v88Timeout=null,_v88Retry=null;
+let _v88Delay=3000,_v88Success=0;
+let _v88Pending=syncV88Load();
+function syncV88Load(){
+  try{
+    const v=JSON.parse(localStorage.getItem(SYNC88_KEY)||'{}');
+    return {customers:v.customers&&typeof v.customers==='object'?v.customers:{},products:v.products&&typeof v.products==='object'?v.products:{}};
+  }catch(e){return {customers:{},products:{}};}
 }
-
+function syncV88PendingCount(){return Object.keys(_v88Pending.customers).length+Object.keys(_v88Pending.products).length;}
+function syncV88SaveQueue(){
+  try{localStorage.setItem(SYNC88_KEY,JSON.stringify(_v88Pending));}
+  catch(e){console.error('离线队列无法写入:',e);toast('同步队列保存失败，立即下载完整备份','error');}
+}
+function syncV88Archive(type,item,reason){
+  if(!item)return;
+  try{
+    const list=JSON.parse(localStorage.getItem(SYNC88_ARCHIVE)||'[]');
+    const safe={...item};IMG_FIELDS.forEach(k=>delete safe[k]);delete safe.imgUrl;
+    const code=type+'|'+safe.id+'|'+(safe.updatedAt||'')+'|'+reason;
+    if(list.some(x=>x.code===code))return;
+    list.push({code,type,reason,archivedAt:new Date().toISOString(),item:safe});
+    localStorage.setItem(SYNC88_ARCHIVE,JSON.stringify(list.slice(-60)));
+  }catch(e){console.warn('冲突历史容量不足:',e);}
+}
+function syncV88Enqueue(type,id,op,item){
+  const key=String(id);
+  if(op==='delete'&&item)syncV88Archive(type,item,'本地删除前保存');
+  _v88Pending[type][key]={op,rev:Date.now()+'_'+Math.random().toString(36).slice(2),at:new Date().toISOString(),
+    old:op==='delete'?item:undefined};
+  syncV88SaveQueue();syncV88Schedule();
+}
+function syncV88Track(type,before,after){
+  const prior=new Map((Array.isArray(before)?before:[]).filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
+  const current=new Map((Array.isArray(after)?after:[]).filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
+  for(const [id,entry] of current){
+    if(!prior.has(id)||JSON.stringify(prior.get(id))!==JSON.stringify(entry))syncV88Enqueue(type,id,'upsert');
+  }
+  for(const [id,entry] of prior)if(!current.has(id))syncV88Enqueue(type,id,'delete',entry);
+}
+function syncV88Display(state,msg){
+  const left=syncV88PendingCount();
+  setSyncState(state,msg+(left?' · 待传'+left:''));
+  const note=$('cloud-status-text');
+  if(note)note.textContent=(state==='connected'?'✅ 云端已连接':state==='syncing'?'🔄 正在核对云端':'⚠️ 云端未连接或连接异常')+
+    '；待传 '+left+' 条'+(_v88Success?'；上次成功 '+new Date(_v88Success).toLocaleTimeString():'');
+  const detail=$('sync-v88-detail');
+  if(detail)detail.textContent='客户：'+(_v88Ready.customers?'已连接':'未连接')+
+    '；产品：'+(_v88Ready.products?'已连接':_v88ProductAllowed?'等待连接':'权限不足')+
+    '；离线数据保留在本机。';
+}
+function syncV88Stop(){
+  _v88Seq++;
+  if(unsubscribeSnapshot){try{unsubscribeSnapshot();}catch(e){}unsubscribeSnapshot=null;}
+  if(_v88ProductsListener){try{_v88ProductsListener();}catch(e){}_v88ProductsListener=null;}
+  if(_v88Timer){clearTimeout(_v88Timer);_v88Timer=null;}
+  if(_v88Timeout){clearTimeout(_v88Timeout);_v88Timeout=null;}
+  if(_v88Retry){clearTimeout(_v88Retry);_v88Retry=null;}
+  _v88Ready={customers:false,products:false};
+}
+function syncV88Schedule(){
+  if(_v88Timer)clearTimeout(_v88Timer);
+  _v88Timer=setTimeout(()=>{_v88Timer=null;syncV88Flush();},650);
+}
+function syncV88Retry(msg){
+  if(!fbEnabled||!db)return;
+  syncV88Display('error',msg);
+  if(_v88Retry)clearTimeout(_v88Retry);
+  const delay=_v88Delay;_v88Delay=Math.min(_v88Delay*2,60000);
+  _v88Retry=setTimeout(()=>{_v88Retry=null;if(navigator.onLine!==false&&fbEnabled&&db)startRealtimeSync();},delay);
+}
+function syncV88Stable(value){
+  if(Array.isArray(value))return '['+value.map(syncV88Stable).join(',')+']';
+  if(value&&typeof value==='object')return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+syncV88Stable(value[k])).join(',')+'}';
+  return JSON.stringify(value);
+}
+function syncV88TextSignature(item,type){
+  const c={...item};
+  delete c.id;delete c._deleted;delete c.deletedAt;
+  if(type==='customers')IMG_FIELDS.forEach(k=>delete c[k]);else delete c.imgUrl;
+  return syncV88Stable(c);
+}
+function syncV88Combine(local,remote,preferLocal,type){
+  const main=preferLocal?local:remote,other=preferLocal?remote:local;
+  const joined={...other,...main,id:String(main.id||other.id)};
+  if(type==='customers'){
+    IMG_FIELDS.forEach(k=>{if(!joined[k])joined[k]=other[k]||'';});
+    const logs=[],seen=new Set();
+    for(const row of [...(Array.isArray(main.logs)?main.logs:[]),...(Array.isArray(other.logs)?other.logs:[])]){
+      const key=syncV88Stable(row);
+      if(!seen.has(key)){logs.push(row);seen.add(key);}
+    }
+    joined.logs=logs;
+  }else if(!joined.imgUrl)joined.imgUrl=other.imgUrl||'';
+  return joined;
+}
+function syncV88Merge(type,snapshot){
+  const old=type==='customers'?customers:products;
+  const local=new Map(old.filter(x=>x&&x.id!=null).map(x=>[String(x.id),x]));
+  const cloud=new Map(snapshot.docs.map(doc=>[doc.id,{...doc.data(),id:doc.id}]));
+  let changed=false;
+  for(const [id,remote] of cloud){
+    const existing=local.get(id),pending=_v88Pending[type][id];
+    if(remote._deleted){
+      if(pending&&pending.op==='upsert'){syncV88Archive(type,remote,'删除与编辑冲突');continue;}
+      if(existing){syncV88Archive(type,existing,'云端软删除前归档');local.delete(id);changed=true;}
+      continue;
+    }
+    if(pending&&pending.op==='delete')continue;
+    if(!existing){local.set(id,remote);changed=true;continue;}
+    if(syncV88TextSignature(existing,type)===syncV88TextSignature(remote,type))continue;
+    const lt=Date.parse(existing.updatedAt||existing.createTime||'')||0;
+    const rt=Date.parse(remote.updatedAt||remote.createTime||'')||0;
+    const localWins=!!pending||lt>=rt;
+    syncV88Archive(type,localWins?remote:existing,localWins?'云端有不同版本':'本地有不同版本');
+    const merged=syncV88Combine(existing,remote,localWins,type);
+    if(syncV88Stable(existing)!==syncV88Stable(merged)){local.set(id,merged);changed=true;}
+    if(localWins&&!pending)syncV88Enqueue(type,id,'upsert');
+    else if(!localWins&&syncV88TextSignature(merged,type)!==syncV88TextSignature(remote,type))
+      syncV88Enqueue(type,id,'upsert'); // 沟通记录无损合并
+  }
+  for(const [id,item] of local)if(!cloud.has(id)&&!_v88Pending[type][id])syncV88Enqueue(type,id,'upsert');
+  for(const [id,job] of Object.entries(_v88Pending[type]))
+    if(job.op==='delete'&&local.has(id)){local.delete(id);changed=true;}
+  if(changed){
+    _v88RemoteApplying=true;
+    try{
+      const data=Array.from(local.values());
+      if(type==='customers')customers=data;else products=data;
+      saveLocal();
+    }finally{_v88RemoteApplying=false;}
+    if(type==='customers')renderKanban();else renderProductTable();
+  }
+}
+async function syncV88Payload(type,item){
+  const doc={...item};
+  const fields=type==='customers'?IMG_FIELDS:['imgUrl'];
+  for(const key of fields){
+    if(typeof doc[key]==='string'&&doc[key].startsWith('data:image')){
+      try{doc[key]=await compressImg(doc[key]);}catch(e){console.warn('图片压缩未完成:',e);}
+    }
+  }
+  if(JSON.stringify(doc).length>850000){
+    fields.forEach(k=>doc[k]='');
+    console.warn('超大图片仅保存于本地备份:',type,item.id);
+  }
+  if(JSON.stringify(doc).length>850000)throw new Error('单个云端记录过大，请精简备注内容');
+  return doc;
+}
+async function syncV88Flush(){
+  if(!fbEnabled||!db||!_v88Ready.customers||_v88Flushing||navigator.onLine===false)return;
+  const batchSeq=_v88Seq;
+  _v88Flushing=true;
+  let hadError=false;
+  try{
+    for(const type of ['customers','products']){
+      if(type==='products'&&!_v88Ready.products)continue;
+      for(const [id,item] of Object.entries({..._v88Pending[type]})){
+        if(batchSeq!==_v88Seq||!fbEnabled||!db)break;
+        if(!_v88Pending[type][id]||_v88Pending[type][id].rev!==item.rev)continue;
+        let doc;
+        if(item.op==='delete'){
+          doc={...item.old,id,_deleted:true,deletedAt:item.at,updatedAt:item.at};
+          IMG_FIELDS.forEach(k=>delete doc[k]);delete doc.imgUrl;
+        }else{
+          const current=(type==='customers'?customers:products).find(x=>String(x.id)===id);
+          if(!current)continue;
+          doc=await syncV88Payload(type,current);
+        }
+        await db.collection(type).doc(id).set(doc);
+        if(batchSeq!==_v88Seq)break;
+        if(_v88Pending[type][id]?.rev===item.rev){
+          delete _v88Pending[type][id];syncV88SaveQueue();
+        }
+        _v88Success=Date.now();
+        syncV88Display('syncing','正在提交');
+      }
+    }
+    _v88Delay=3000;
+    if(batchSeq===_v88Seq)syncV88Display('connected','实时同步中');
+  }catch(e){
+    hadError=true;
+    console.error('云端写入失败:',e);
+    syncV88Display('error','上传失败');
+    const detail=$('sync-v88-detail');
+    if(detail)detail.textContent='写入错误：'+(e.code==='permission-denied'?'Firestore 权限拒绝，请检查 Rules':e.message)+
+      '；本地待传 '+syncV88PendingCount()+' 条，未删除。';
+    if(e.code!=='permission-denied')syncV88Retry('上传失败');
+  }finally{
+    _v88Flushing=false;
+    // 本轮上传过程中又产生的本地修改，继续补传；产品无访问权限时不空转。
+    if(!hadError&&batchSeq===_v88Seq&&(
+      Object.keys(_v88Pending.customers).length||
+      (_v88Ready.products&&Object.keys(_v88Pending.products).length)
+    ))syncV88Schedule();
+  }
+}
+function startRealtimeSync(){
+  if(!fbEnabled||!db)return;
+  syncV88Stop();
+  const seq=_v88Seq;
+  _v88ProductAllowed=true;
+  syncV88Display('syncing','连接中...');
+  _v88Timeout=setTimeout(()=>{
+    if(seq===_v88Seq&&!_v88Ready.customers)syncV88Retry('18秒未连接云端，稍后重试');
+  },18000);
+  try{
+    unsubscribeSnapshot=db.collection('customers').onSnapshot({includeMetadataChanges:true},
+      snap=>{
+        if(seq!==_v88Seq)return;
+        if(snap.metadata.fromCache){
+          if(!_v88Ready.customers)syncV88Display('syncing','等待服务器响应');
+          return;
+        }
+        _v88Ready.customers=true;_v88Delay=3000;
+        if(_v88Timeout){clearTimeout(_v88Timeout);_v88Timeout=null;}
+        syncV88Merge('customers',snap);
+        syncV88Display('connected','实时连接');
+        syncV88Schedule();
+      },
+      err=>{
+        if(seq!==_v88Seq)return;
+        console.error('客户监听中断:',err);
+        if(err.code==='permission-denied'){
+          syncV88Display('error','Firebase 权限不足');
+          const d=$('sync-v88-detail');
+          if(d)d.textContent='Firestore customers 集合无访问权限，请核对项目配置、身份认证和 Rules。客户本地数据未删除。';
+        }else syncV88Retry('云端连接中断');
+      });
+    _v88ProductsListener=db.collection('products').onSnapshot({includeMetadataChanges:true},
+      snap=>{
+        if(seq!==_v88Seq||snap.metadata.fromCache)return;
+        _v88Ready.products=true;
+        syncV88Merge('products',snap);syncV88Schedule();
+      },
+      err=>{
+        if(seq!==_v88Seq)return;
+        _v88ProductAllowed=false;_v88Ready.products=false;
+        const d=$('sync-v88-detail');
+        if(d)d.textContent='客户同步可继续，产品同步未成功：'+err.message+'。请检查 Firestore products 集合权限。';
+      });
+  }catch(e){syncV88Retry('初始化失败：'+e.message);}
+}
 async function initFirebaseAndSync(){
   const cfg=$('firebase-config').value.trim();
-  if(!cfg){toast('请填写Firebase配置','error');return;}
+  if(!cfg){toast('请填写 Firebase 配置','error');return;}
   try{
     const config=JSON.parse(cfg);
-    if(!config.apiKey||!config.projectId){toast('配置缺少apiKey或projectId','error');return;}
-    if(unsubscribeSnapshot){unsubscribeSnapshot();unsubscribeSnapshot=null;}
-    if(!firebase.apps.length){
-      firebase.initializeApp(config);
-    }else if(firebase.apps[0].options.projectId!==config.projectId){
-      await firebase.apps[0].delete();
-      firebase.initializeApp(config);
+    if(!config.apiKey||!config.projectId)throw new Error('配置缺少 apiKey 或 projectId');
+    syncV88Stop();
+    if(!firebase.apps.length)firebase.initializeApp(config);
+    else if(firebase.apps[0].options.projectId!==config.projectId){
+      await firebase.apps[0].delete();firebase.initializeApp(config);
     }
     db=firebase.firestore();fbEnabled=true;
     await saveConfig(cfg);
-    $('cloud-status-text').innerHTML='✅ 已连接云端，实时同步开启';
     $('btn-disconnect-firebase').style.display='';
-    if(customers.length>0){
-      const snap=await db.collection('customers').get();
-      if(snap.empty){for(const c of customers)await db.collection('customers').doc(c.id).set(c);}
-    }
     startRealtimeSync();
-    toast('实时同步已开启','success');
-  }catch(e){toast('配置错误: '+e.message,'error');}
+    toast('已开始核对云端，连接完成后自动补传','info');
+  }catch(e){
+    fbEnabled=false;db=null;syncV88Display('error','连接配置失败');
+    toast('Firebase 配置错误：'+e.message,'error');
+  }
 }
-
 async function disconnectFirebase(){
-  if(unsubscribeSnapshot){unsubscribeSnapshot();unsubscribeSnapshot=null;}
-  fbEnabled=false;db=null;
+  syncV88Stop();fbEnabled=false;db=null;
   await saveConfig(null);
   setSyncState('','未连接云端');
-  $('cloud-status-text').innerHTML='⚠️ 未连接云端';
+  $('cloud-status-text').textContent='⚠️ 云端已断开，离线待传 '+syncV88PendingCount()+' 条仍保存在本机';
   $('btn-disconnect-firebase').style.display='none';
   $('firebase-config').value='';
-  toast('已断开','info');
+  toast('已断开，客户及待同步队列未删除','info');
 }
-
 async function manualSync(){
   if(!fbEnabled||!db){toast('请先连接Firebase','error');switchTab('settings');return;}
   startRealtimeSync();
-  toast('已重新连接实时同步','success');
+  toast('已重新核对两端，请以连接状态为准','info');
 }
 
 // ═══════════════════════════════════════
@@ -1015,26 +1234,9 @@ async function saveCustomer(e){
     if(idx!==-1)customers[idx]=newCust;else customers.push(newCust);
     saveLocal();
 
-    // 云端同步（压缩图片）
-    let synced=false,syncNote='';
-    if(fbEnabled&&db){
-      saveBtn.innerHTML='<i class="fas fa-cloud-upload-alt fa-spin"></i> 同步云端...';
-      try{
-        const cloudCust={...newCust};
-        const safeCompress=async(d)=>{if(!d)return'';try{return await compressImg(d);}catch(e){return'';}};
-        cloudCust.customerImg=await safeCompress(newCust.customerImg);
-        cloudCust.cardFrontUrl=await safeCompress(newCust.cardFrontUrl);
-        cloudCust.cardBackUrl=await safeCompress(newCust.cardBackUrl);
-        const size=JSON.stringify(cloudCust).length;
-        if(size>900000){
-          await db.collection('customers').doc(id).set({...cloudCust,customerImg:'',cardFrontUrl:'',cardBackUrl:''});
-          syncNote='（图片过大，仅同步文字）';
-        }else{
-          await db.collection('customers').doc(id).set(cloudCust);
-        }
-        synced=true;setSyncState('connected','实时同步中');
-      }catch(err){setSyncState('error','同步失败');syncNote='云端失败: '+err.message;}
-    }
+    // v8.8: 先保存本地和补传队列，连接云端后自动上传。
+    let synced=false,syncNote='（本机已保存，等待云端确认）';
+    syncV88Schedule();
 
     // 顶部结果横幅
     showSaveBanner(newCust,isEdit,synced,syncNote);
@@ -1150,16 +1352,16 @@ function attachCardEvents(){
     const id=b.dataset.del;
     customers=customers.filter(x=>x.id!==id);
     saveLocal();
-    idbDel('img_'+id,'images'); // 同时清IDB里的图片
+    // 软删除保留图片供备份恢复
     renderKanban();
     toast('已删除');
-    if(fbEnabled&&db)await db.collection('customers').doc(id).delete();
+    syncV88Schedule();
   }));
   document.querySelectorAll('[data-phone]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openWA(b.dataset.phone,b.dataset.country);}));
   document.querySelectorAll('[data-log]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openLog(b.dataset.log);}));
   document.querySelectorAll('[data-sid]').forEach(sel=>sel.addEventListener('change',async()=>{
     const c=customers.find(x=>x.id===sel.dataset.sid);
-    if(c){c.status=sel.value;c.updatedAt=new Date().toISOString();saveLocal();if(fbEnabled&&db)await db.collection('customers').doc(c.id).set(c);renderKanban();}
+    if(c){c.status=sel.value;c.updatedAt=new Date().toISOString();saveLocal();syncV88Schedule();renderKanban();}
   }));
 }
 
@@ -1297,7 +1499,7 @@ async function saveLogEdit(custId, idx){
   c.logs[idx].nextContactDate=document.getElementById('log-edit-date-'+idx)?.value||'';
   c.logs[idx].fileLink=document.getElementById('log-edit-link-'+idx)?.value||'';
   c.updatedAt=new Date().toISOString();
-  saveLocal();if(fbEnabled&&db)await db.collection('customers').doc(custId).set(c);
+  saveLocal();syncV88Schedule();
   openLog(custId);toast('记录已更新','success');
 }
 
@@ -1306,7 +1508,7 @@ async function deleteLog(custId, idx){
   const c=customers.find(x=>x.id===custId);if(!c)return;
   c.logs.splice(idx,1);
   c.updatedAt=new Date().toISOString();
-  saveLocal();if(fbEnabled&&db)await db.collection('customers').doc(custId).set(c);
+  saveLocal();syncV88Schedule();
   openLog(custId);renderKanban();toast('记录已删除','success');
 }
 
@@ -1324,7 +1526,7 @@ async function saveLog(e){
       fileLink:$('log-file-link').value
     });
     c.updatedAt=new Date().toISOString();
-    saveLocal();if(fbEnabled&&db)await db.collection('customers').doc(id).set(c);
+    saveLocal();syncV88Schedule();
     // 设置浏览器提醒
     if(nextDate) scheduleReminder(c.name, nextDate);
     openLog(id);toast('记录已添加','success');
@@ -1560,7 +1762,7 @@ async function confirmImport(){
     const exists=customers.some(e=>(e.phone&&cust.phone&&e.phone.replace(/\D/g,'')===cust.phone.replace(/\D/g,''))||(e.name===cust.name));
     if(exists)dup++;
     customers.push(cust);n++;
-    if(fbEnabled&&db)await db.collection('customers').doc(cust.id).set(cust);
+    // 统一由 saveLocal() 记录离线补传队列
   }
   saveLocal();renderKanban();
   toast(`导入${n}位${dup?`(${dup}位重复)`:''}`,'success');
@@ -1620,7 +1822,6 @@ async function initApp(){
       if(cfg.apiKey&&cfg.projectId){
         if(!firebase.apps.length)firebase.initializeApp(cfg);
         db=firebase.firestore();fbEnabled=true;
-        $('cloud-status-text').innerHTML='✅ 已连接云端，实时同步开启';
         $('btn-disconnect-firebase').style.display='';
         startRealtimeSync();
       }
@@ -1764,7 +1965,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('close-detail').onclick=()=>$('detail-modal').classList.remove('show');
   $('close-log').onclick=()=>$('log-modal').classList.remove('show');
   $('log-form').addEventListener('submit',saveLog);
-  $('btn-clear').onclick=()=>{if(confirm('清空所有数据？')){customers=[];products=[];saveLocal();renderKanban();renderProductTable();toast('已清空','success');if(fbEnabled&&db)db.collection('customers').get().then(s=>s.forEach(d=>d.ref.delete()));}};
+  $('btn-clear').onclick=()=>toast('为避免手机电脑数据被批量删除，v8.8 暂时禁用清空全部数据。请逐条删除。','error');
   $('lightbox-close').onclick=()=>{$('lightbox').classList.add('hidden');$('lightbox').style.display='';};
   $('lightbox').onclick=e=>{if(e.target===$('lightbox')){$('lightbox').classList.add('hidden');$('lightbox').style.display='';}};
   $('btn-import-excel').onclick=()=>{$('import-modal').classList.add('show');$('import-preview').style.display='none';$('confirm-import').disabled=true;$('import-file').value='';pendingImportData=[];$('import-progress').style.display='none';};
@@ -1832,8 +2033,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(document.visibilityState==='visible'&&fbEnabled&&db&&Date.now()-_lastHidden>30000)startRealtimeSync();
     else _lastHidden=Date.now();
   });
-  window.addEventListener('online',()=>{if(fbEnabled&&db){setSyncState('syncing','重新连接...');setTimeout(startRealtimeSync,1000);}});
-  window.addEventListener('offline',()=>setSyncState('error','网络断开'));
+  window.addEventListener('online',()=>{if(fbEnabled&&db){syncV88Display('syncing','网络已恢复');setTimeout(startRealtimeSync,1000);}});
+  window.addEventListener('offline',()=>syncV88Display('error','网络断开'));
 
   // 压缩图片缓存
   $('btn-compress-imgs').onclick=async()=>{
@@ -1988,14 +2189,7 @@ window.doMerge=async function(idsStr){
   const idx=customers.findIndex(c=>c.id===cs[0].id);
   if(idx!==-1)customers[idx]=mergedCust;
   saveLocal();
-  // 云端：删除其他，更新主记录
-  if(fbEnabled&&db){
-    for(const did of deleteIds){
-      await db.collection('customers').doc(did).delete();
-      idbDel('img_'+did,'images');
-    }
-    await db.collection('customers').doc(mergedCust.id).set(mergedCust);
-  }
+  // v8.8: 本地合并通过持久离线队列进行云端同步，保留删除前归档。
   document.getElementById('merge-modal')?.remove();
   document.getElementById('dup-modal-v2')?.remove();
   renderKanban();
@@ -2011,8 +2205,8 @@ window.deleteFromDup=async id=>{
   if(!confirm('确定删除这位客户？'))return;
   customers=customers.filter(x=>x.id!==id);
   saveLocal();
-  idbDel('img_'+id,'images');
-  if(fbEnabled&&db)await db.collection('customers').doc(id).delete();
+  // v8.8: 保留备份图片，软删除任务已加入补传队列。
+  syncV88Schedule();
   toast('已删除','success');
   document.getElementById('dup-modal-v2')?.remove();
   $('btn-finddup').click();
