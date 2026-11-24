@@ -913,6 +913,7 @@ async function syncV88Flush(){
   if(!fbEnabled||!db||!_v88Ready.customers||_v88Flushing||navigator.onLine===false)return;
   const batchSeq=_v88Seq;
   _v88Flushing=true;
+  let hadError=false;
   try{
     for(const type of ['customers','products']){
       if(type==='products'&&!_v88Ready.products)continue;
@@ -938,15 +939,23 @@ async function syncV88Flush(){
       }
     }
     _v88Delay=3000;
-    syncV88Display('connected','实时同步中');
+    if(batchSeq===_v88Seq)syncV88Display('connected','实时同步中');
   }catch(e){
+    hadError=true;
     console.error('云端写入失败:',e);
     syncV88Display('error','上传失败');
     const detail=$('sync-v88-detail');
     if(detail)detail.textContent='写入错误：'+(e.code==='permission-denied'?'Firestore 权限拒绝，请检查 Rules':e.message)+
       '；本地待传 '+syncV88PendingCount()+' 条，未删除。';
     if(e.code!=='permission-denied')syncV88Retry('上传失败');
-  }finally{_v88Flushing=false;}
+  }finally{
+    _v88Flushing=false;
+    // 本轮上传过程中又产生的本地修改，继续补传；产品无访问权限时不空转。
+    if(!hadError&&batchSeq===_v88Seq&&(
+      Object.keys(_v88Pending.customers).length||
+      (_v88Ready.products&&Object.keys(_v88Pending.products).length)
+    ))syncV88Schedule();
+  }
 }
 function startRealtimeSync(){
   if(!fbEnabled||!db)return;
