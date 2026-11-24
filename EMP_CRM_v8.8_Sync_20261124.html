@@ -565,10 +565,14 @@ async function backupV871Build(){
     BACKUP_V871_IMG.forEach(f=>{if(c[f]&&!merged[f])merged[f]=c[f];});
     if(Object.keys(merged).length)images[key]=merged;
   });
-  const data={customers:record.customers,products:record.products,images};
+  // v8.8 将未完成同步的操作队列和冲突文字归档一起纳入完整备份。
+  let syncSafety={pending:{customers:{},products:{}},archive:[]};
+  try{syncSafety.pending=JSON.parse(localStorage.getItem('crm_sync_pending_v88')||'{"customers":{},"products":{}}');}catch(e){}
+  try{syncSafety.archive=JSON.parse(localStorage.getItem('crm_sync_archive_v88')||'[]');}catch(e){}
+  const data={customers:record.customers,products:record.products,images,syncSafety};
   const checksum=await backupV871Hash(data);
   return {
-    format:BACKUP_V871_FORMAT,schemaVersion:1,appVersion:'8.7.1',
+    format:BACKUP_V871_FORMAT,schemaVersion:1,appVersion:'8.8',
     createdAt:new Date().toISOString(),sourceOrigin:location.origin,
     counts:{customers:data.customers.length,products:data.products.length,imageRecords:Object.keys(images).length},
     checksumAlgorithm:'SHA-256',checksum,data
@@ -578,7 +582,7 @@ async function backupV871Download(prefix){
   try{
     backupV871Status('正在读取客户及图片，请勿关闭页面……',false);
     const doc=await backupV871Build();
-    const fileName=(prefix||'EMP_CRM_完整备份')+'_v8.7.1_'+backupV871Date()+'.json';
+    const fileName=(prefix||'EMP_CRM_完整备份')+'_v8.8_'+backupV871Date()+'.json';
     const blob=new Blob([JSON.stringify(doc)],{type:'application/json;charset=utf-8'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
@@ -633,7 +637,7 @@ async function backupV871Inspect(file){
     if(file.size>250*1024*1024)throw new Error('文件大于250MB，无法安全在浏览器中处理。');
     backupV871Status('正在校验备份文件，请勿关闭页面……',false);
     const obj=JSON.parse(await file.text());
-    if(!obj||obj.format!==BACKUP_V871_FORMAT||obj.schemaVersion!==1)throw new Error('不是 v8.7.1 完整备份格式。');
+    if(!obj||obj.format!==BACKUP_V871_FORMAT||obj.schemaVersion!==1)throw new Error('不是支持的 EMP CRM 完整备份格式。');
     if(!obj.data||!Array.isArray(obj.data.customers)||!Array.isArray(obj.data.products)||!obj.data.images||Array.isArray(obj.data.images)||typeof obj.data.images!=='object')throw new Error('备份数据结构不完整。');
     if(obj.checksumAlgorithm!=='SHA-256'||typeof obj.checksum!=='string')throw new Error('缺少完整性校验字段。');
     const hash=await backupV871Hash(obj.data);
@@ -738,9 +742,7 @@ async function backupV871Restore(){
       throw e;
     }
     customers=updatedCustomers;products=updatedProducts;
-    // 恢复后为所有现有客户和产品安排保守补传（不覆盖云端较新版本）。
-    updatedCustomers.forEach(c=>syncV88Enqueue('customers',c.id,'upsert'));
-    updatedProducts.forEach(p=>syncV88Enqueue('products',p.id,'upsert'));
+    // 恢复后不主动将旧记录标记为最新版本；重连时按云端/本地更新时间安全核对。
     // 原版 saveLocal 继续负责图片缓存；安全恢复不调用 Firebase
     saveLocal();
     renderKanban();renderProductTable();updateStorageInfo();
@@ -909,11 +911,13 @@ async function syncV88Payload(type,item){
 }
 async function syncV88Flush(){
   if(!fbEnabled||!db||!_v88Ready.customers||_v88Flushing||navigator.onLine===false)return;
+  const batchSeq=_v88Seq;
   _v88Flushing=true;
   try{
     for(const type of ['customers','products']){
       if(type==='products'&&!_v88Ready.products)continue;
       for(const [id,item] of Object.entries({..._v88Pending[type]})){
+        if(batchSeq!==_v88Seq||!fbEnabled||!db)break;
         if(!_v88Pending[type][id]||_v88Pending[type][id].rev!==item.rev)continue;
         let doc;
         if(item.op==='delete'){
@@ -925,6 +929,7 @@ async function syncV88Flush(){
           doc=await syncV88Payload(type,current);
         }
         await db.collection(type).doc(id).set(doc);
+        if(batchSeq!==_v88Seq)break;
         if(_v88Pending[type][id]?.rev===item.rev){
           delete _v88Pending[type][id];syncV88SaveQueue();
         }
